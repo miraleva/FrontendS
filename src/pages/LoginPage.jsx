@@ -65,7 +65,7 @@ export default function LoginPage() {
     const video = e.target;
     if (video.duration && video.currentTime >= video.duration - 0.15) {
       video.currentTime = 0;
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
   };
 
