@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
@@ -24,7 +24,21 @@ export default function SignupPage() {
     password: '',
     confirmPassword: ''
   });
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (langRef.current && !langRef.current.contains(event.target)) {
+        setIsLangOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const currentLangLabel = i18n.language ? i18n.language.slice(0, 2).toUpperCase() : 'EN';
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -113,27 +127,61 @@ export default function SignupPage() {
     navigate('/login');
   }
 
+  const handleTimeUpdate = (e) => {
+    const video = e.target;
+    if (video.duration && video.currentTime >= video.duration - 0.15) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 relative z-10 font-sans">
-      {/* Floating Language Switcher */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Floating Language Switcher Dropdown */}
+      <div className="fixed top-4 right-4 z-50" ref={langRef}>
         <button
           type="button"
-          onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'tr' : 'en')}
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1 text-white text-[13px] font-semibold hover:bg-white/20 transition-all duration-200 uppercase"
+          onClick={() => setIsLangOpen(!isLangOpen)}
+          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-[#F27B13] text-[16px] font-semibold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/20 focus:outline-none"
         >
-          {i18n.language.slice(0, 2)}
+          <span>{currentLangLabel}</span>
+          <svg className={`w-4 h-4 transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
+        
+        {isLangOpen && (
+          <div className="absolute right-0 mt-2 w-28 bg-[#023047]/95 backdrop-blur-md border border-white/10 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in">
+            {['en', 'tr', 'ru', 'de'].map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => {
+                  i18n.changeLanguage(lang);
+                  setIsLangOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2 text-[15px] transition-colors duration-150 ${
+                  i18n.language.startsWith(lang)
+                    ? 'text-[#F27B13] font-bold bg-white/5'
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                {lang.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Background Video Container */}
-      <div className="fixed inset-0 w-screen h-screen -z-20">
+      <div className="fixed inset-0 w-screen h-screen -z-20 bg-black">
         <video
           src="/videos/background.mp4"
           autoPlay
-          loop
           muted
           playsInline
+          preload="auto"
+          onTimeUpdate={handleTimeUpdate}
           className="w-full h-full object-cover"
         />
       </div>
@@ -141,14 +189,16 @@ export default function SignupPage() {
       {/* Dark Overlay */}
       <div className="fixed inset-0 w-screen h-screen bg-black/40 -z-10" />
 
-      {/* Glassmorphism Login Container */}
+      {/* Glassmorphism Container */}
       <div className="w-full max-w-[550px] bg-white/5 backdrop-blur-sm border border-white/20 rounded-[32px] shadow-2xl p-6 md:p-8 animate-fade-in my-8">
         <div className="text-center mb-8">
-          <h1 className="text-[30px] md:text-[36px] font-bold tracking-tight text-white mb-2 font-display">
+          <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-white mb-2 font-display">
             {t('create_account_title')}
           </h1>
-          <p className="text-[14px] md:text-[16px] text-white/80">
-            {t('signup_subtitle')}
+          <p className="text-[16px] md:text-[18px] text-white/80">
+            <Trans i18nKey="signup_subtitle">
+              Chat with <span className="text-[#F27B13] font-bold" style={{ textShadow: '0 0 12px rgba(242,123,19,0.4)' }}>Sanny</span>
+            </Trans>
           </p>
         </div>
 
@@ -157,7 +207,7 @@ export default function SignupPage() {
           <div className="flex gap-3">
             {/* First Name Input */}
             <div className="flex flex-col gap-2 flex-1">
-              <label htmlFor="name" className="text-[13px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+              <label htmlFor="name" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
                 {t('first_name_label')}
               </label>
               <div className="relative flex items-center">
@@ -175,17 +225,17 @@ export default function SignupPage() {
                   onBlur={() => handleBlur('name')}
                   placeholder={t('first_name_placeholder')}
                   maxLength={40}
-                  className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[14px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-black/50 transition-all duration-300"
+                  className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
                 />
               </div>
               {fieldErrors.name && (
-                <p className="text-[12px] text-red-400 pl-4 mt-1">{fieldErrors.name}</p>
+                <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.name}</p>
               )}
             </div>
 
             {/* Last Name Input */}
             <div className="flex flex-col gap-2 flex-1">
-              <label htmlFor="lastname" className="text-[13px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+              <label htmlFor="lastname" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
                 {t('last_name_label')}
               </label>
               <div className="relative flex items-center">
@@ -203,18 +253,18 @@ export default function SignupPage() {
                   onBlur={() => handleBlur('lastname')}
                   placeholder={t('last_name_placeholder')}
                   maxLength={40}
-                  className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[14px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-black/50 transition-all duration-300"
+                  className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
                 />
               </div>
               {fieldErrors.lastname && (
-                <p className="text-[12px] text-red-400 pl-4 mt-1">{fieldErrors.lastname}</p>
+                <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.lastname}</p>
               )}
             </div>
           </div>
 
           {/* Email Input */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-[13px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="email" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
               {t('email_label')}
             </label>
             <div className="relative flex items-center">
@@ -232,17 +282,17 @@ export default function SignupPage() {
                 onBlur={() => handleBlur('email')}
                 placeholder={t('email_placeholder')}
                 maxLength={100}
-                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[14px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-black/50 transition-all duration-300"
+                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
               />
             </div>
             {fieldErrors.email && (
-              <p className="text-[12px] text-red-400 pl-4 mt-1">{fieldErrors.email}</p>
+              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.email}</p>
             )}
           </div>
 
           {/* Phone Number Input */}
           <div className="flex flex-col gap-2 relative z-50">
-            <label htmlFor="phone" className="text-[13px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="phone" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
               {t('phone_label')}
             </label>
             <PhoneInput
@@ -251,21 +301,21 @@ export default function SignupPage() {
               value={formData.phone}
               onChange={handlePhoneChange}
               onBlur={() => handleBlur('phone')}
-              className="flex items-center w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full px-5 py-3 text-white focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:bg-black/50 transition-all duration-300"
+              className="flex items-center w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full px-5 py-3 text-white focus-within:ring-2 focus-within:ring-primary/50 focus-within:bg-black/50 transition-all duration-300"
               numberInputProps={{
-                className: 'bg-transparent border-0 outline-none w-full text-[14px] text-white placeholder-white/40 focus:ring-0 focus:outline-none ml-3',
+                className: 'bg-transparent border-0 outline-none w-full text-[16px] text-white placeholder-white/40 focus:ring-0 focus:outline-none ml-3',
                 placeholder: t('phone_placeholder'),
                 id: 'phone'
               }}
             />
             {fieldErrors.phone && (
-              <p className="text-[12px] text-red-400 pl-4 mt-1">{fieldErrors.phone}</p>
+              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.phone}</p>
             )}
           </div>
 
           {/* Password Input */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="text-[13px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="password" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
               {t('password_label')}
             </label>
             <div className="relative flex items-center">
@@ -283,7 +333,7 @@ export default function SignupPage() {
                 onBlur={() => handleBlur('password')}
                 placeholder={t('password_placeholder')}
                 maxLength={30}
-                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-14 py-4 text-[14px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-black/50 transition-all duration-300"
+                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-14 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
               />
               <button
                 type="button"
@@ -306,13 +356,13 @@ export default function SignupPage() {
               </button>
             </div>
             {fieldErrors.password && (
-              <p className="text-[12px] text-red-400 pl-4 mt-1">{fieldErrors.password}</p>
+              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.password}</p>
             )}
           </div>
 
           {/* Confirm Password Input */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="confirmPassword" className="text-[13px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="confirmPassword" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
               {t('confirm_password_label')}
             </label>
             <div className="relative flex items-center">
@@ -330,7 +380,7 @@ export default function SignupPage() {
                 onBlur={() => handleBlur('confirmPassword')}
                 placeholder={t('confirm_password_placeholder')}
                 maxLength={30}
-                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-14 py-4 text-[14px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-black/50 transition-all duration-300"
+                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-14 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
               />
               <button
                 type="button"
@@ -353,14 +403,14 @@ export default function SignupPage() {
               </button>
             </div>
             {fieldErrors.confirmPassword && (
-              <p className="text-[12px] text-red-400 pl-4 mt-1">{fieldErrors.confirmPassword}</p>
+              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.confirmPassword}</p>
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Button Centered Redesign */}
           <button
             type="submit"
-            className="w-full bg-[#F59E0B] hover:bg-amber-600 active:scale-[0.98] text-white font-bold py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-amber-500/30 font-sans tracking-wide mt-2 text-[16px]"
+            className="max-w-[220px] w-full mx-auto block bg-primary hover:bg-primary-dark active:scale-95 text-white font-bold py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-primary/30 font-sans tracking-wide mt-4 text-[18px]"
           >
             {t('signup_button')}
           </button>
@@ -368,11 +418,11 @@ export default function SignupPage() {
 
         {/* Bottom Text */}
         <div className="mt-8 text-center">
-          <p className="text-[14px] text-white/60">
+          <p className="text-[16px] text-white/60">
             {t('have_account')}{' '}
             <Link
               to="/login"
-              className="text-[#F59E0B] hover:text-amber-400 font-semibold hover:underline transition-colors duration-200"
+              className="text-[#F27B13] hover:text-amber-500 font-semibold hover:underline transition-colors duration-200"
             >
               {t('login_link')}
             </Link>
