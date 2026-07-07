@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import SannyLogo from '../components/SannyLogo';
+import LanguageSelector from '../components/LanguageSelector';
 import 'react-phone-number-input/style.css';
 
 export default function SignupPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     lastname: '',
@@ -24,21 +26,7 @@ export default function SignupPage() {
     password: '',
     confirmPassword: ''
   });
-  const [isLangOpen, setIsLangOpen] = useState(false);
-  const langRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (langRef.current && !langRef.current.contains(event.target)) {
-        setIsLangOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const currentLangLabel = i18n.language ? i18n.language.slice(0, 2).toUpperCase() : 'EN';
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -135,43 +123,32 @@ export default function SignupPage() {
     }
   };
 
+  const renderSubtitle = (text) => {
+    if (!text) return '';
+    const parts = text.split(/(Sanny)/i);
+    return parts.map((part, index) => {
+      if (part.toLowerCase() === 'sanny') {
+        return (
+          <span
+            key={index}
+            className="text-[#f07c24] font-bold"
+            style={{ textShadow: '0 0 12px rgba(240,124,36,0.4)' }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 relative z-10 font-sans">
-      {/* Floating Language Switcher Dropdown */}
-      <div className="fixed top-4 right-4 z-50" ref={langRef}>
-        <button
-          type="button"
-          onClick={() => setIsLangOpen(!isLangOpen)}
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-[#F27B13] text-[16px] font-semibold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/20 focus:outline-none"
-        >
-          <span>{currentLangLabel}</span>
-          <svg className={`w-4 h-4 transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        
-        {isLangOpen && (
-          <div className="absolute right-0 mt-2 w-28 bg-[#023047]/95 backdrop-blur-md border border-white/10 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in">
-            {['en', 'tr', 'ru', 'de'].map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() => {
-                  i18n.changeLanguage(lang);
-                  setIsLangOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2 text-[15px] transition-colors duration-150 ${
-                  i18n.language.startsWith(lang)
-                    ? 'text-[#F27B13] font-bold bg-white/5'
-                    : 'text-white hover:bg-white/10'
-                }`}
-              >
-                {lang.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Shared Header Bar Logo on Left */}
+      <SannyLogo />
+
+      {/* Shared Floating Language Switcher Dropdown */}
+      <LanguageSelector />
 
       {/* Background Video Container */}
       <div className="fixed inset-0 w-screen h-screen -z-20 bg-black">
@@ -196,9 +173,7 @@ export default function SignupPage() {
             {t('create_account_title')}
           </h1>
           <p className="text-[16px] md:text-[18px] text-white/80">
-            <Trans i18nKey="signup_subtitle">
-              Chat with <span className="text-[#F27B13] font-bold" style={{ textShadow: '0 0 12px rgba(242,123,19,0.4)' }}>Sanny</span>
-            </Trans>
+            {renderSubtitle(t('signup_subtitle'))}
           </p>
         </div>
 
@@ -422,7 +397,7 @@ export default function SignupPage() {
             {t('have_account')}{' '}
             <Link
               to="/login"
-              className="text-[#F27B13] hover:text-amber-500 font-semibold hover:underline transition-colors duration-200"
+              className="text-[#0096c7] hover:text-[#023e8a] font-semibold hover:underline transition-colors duration-200"
             >
               {t('login_link')}
             </Link>

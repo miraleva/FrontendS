@@ -1,29 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import SannyLogo from '../components/SannyLogo';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function LoginPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
-  const [isLangOpen, setIsLangOpen] = useState(false);
-  const langRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (langRef.current && !langRef.current.contains(event.target)) {
-        setIsLangOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const currentLangLabel = i18n.language ? i18n.language.slice(0, 2).toUpperCase() : 'EN';
 
   const validateEmail = (val) => {
     if (!val.trim()) {
@@ -81,43 +69,32 @@ export default function LoginPage() {
     }
   };
 
+  const renderSubtitle = (text) => {
+    if (!text) return '';
+    const parts = text.split(/(Sanny)/i);
+    return parts.map((part, index) => {
+      if (part.toLowerCase() === 'sanny') {
+        return (
+          <span
+            key={index}
+            className="text-[#f07c24] font-bold"
+            style={{ textShadow: '0 0 12px rgba(240,124,36,0.4)' }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative z-10 font-sans">
-      {/* Floating Language Switcher Dropdown */}
-      <div className="fixed top-4 right-4 z-50" ref={langRef}>
-        <button
-          type="button"
-          onClick={() => setIsLangOpen(!isLangOpen)}
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-[#F27B13] text-[16px] font-semibold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/20 focus:outline-none"
-        >
-          <span>{currentLangLabel}</span>
-          <svg className={`w-4 h-4 transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        
-        {isLangOpen && (
-          <div className="absolute right-0 mt-2 w-28 bg-[#023047]/95 backdrop-blur-md border border-white/10 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in">
-            {['en', 'tr', 'ru', 'de'].map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() => {
-                  i18n.changeLanguage(lang);
-                  setIsLangOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2 text-[15px] transition-colors duration-150 ${
-                  i18n.language.startsWith(lang)
-                    ? 'text-[#F27B13] font-bold bg-white/5'
-                    : 'text-white hover:bg-white/10'
-                }`}
-              >
-                {lang.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Shared Header Bar Logo on Left */}
+      <SannyLogo />
+
+      {/* Shared Floating Language Switcher Dropdown */}
+      <LanguageSelector />
 
       {/* Background Video Container */}
       <div className="fixed inset-0 w-screen h-screen -z-20 bg-black">
@@ -136,15 +113,13 @@ export default function LoginPage() {
       <div className="fixed inset-0 w-screen h-screen bg-black/40 -z-10" />
 
       {/* Glassmorphism Login Container */}
-      <div className="w-full max-w-[550px] bg-white/15 backdrop-blur-sm border border-white/20 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
+      <div className="w-full max-w-[550px] bg-white/5 backdrop-blur-sm border border-white/20 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
         <div className="text-center mb-8">
           <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-white mb-2 font-display">
             {t('welcome_title')}
           </h1>
           <p className="text-[16px] md:text-[18px] text-white/80">
-            <Trans i18nKey="welcome_subtitle">
-              Chat with <span className="text-[#F27B13] font-bold" style={{ textShadow: '0 0 12px rgba(242,123,19,0.4)' }}>Sanny</span>
-            </Trans>
+            {renderSubtitle(t('welcome_subtitle'))}
           </p>
         </div>
 
@@ -231,7 +206,7 @@ export default function LoginPage() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="mr-2 rounded border-white/20 bg-black/30 text-[#F27B13] focus:ring-0 focus:ring-offset-0 w-4 h-4 accent-[#F27B13]"
+                className="mr-2 rounded border-white/20 bg-black/30 text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4 accent-primary"
               />
               {t('remember_me')}
             </label>
@@ -258,7 +233,7 @@ export default function LoginPage() {
             {t('no_account')}{' '}
             <Link
               to="/signup"
-              className="text-[#F27B13] hover:text-amber-500 font-semibold hover:underline transition-colors duration-200"
+              className="text-[#0096c7] hover:text-[#023e8a] font-semibold hover:underline transition-colors duration-200"
             >
               {t('signup_link')}
             </Link>
