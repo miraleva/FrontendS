@@ -51,7 +51,7 @@ export default function LoginPage() {
           {/* Email Input */}
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-s font-semibold text-white/90 uppercase tracking-wider pl-4">
-              Email Address
+              Emaıl Address
             </label>
             <div className="relative flex items-center">
               <div className="absolute left-5 text-white/60 pointer-events-none">

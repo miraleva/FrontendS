@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
+import SignupPage from './pages/SignupPage.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
 
 function ChatPagePlaceholder() {
@@ -18,6 +19,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route element={<MainLayout />}>
           <Route path="/chat" element={<ChatPagePlaceholder />} />
           <Route path="/documents" element={<DocumentPagePlaceholder />} />
