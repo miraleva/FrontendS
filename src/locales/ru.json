@@ -1,6 +1,6 @@
 {
-  "welcome_title": "Welcome Back To Sanny",
-  "welcome_subtitle": "Sign in to continue your journey.",
+  "welcome_title": "С возвращением в Sanny",
+  "welcome_subtitle": "Общайтесь с Sanny",
   "email_label": "Адрес электронной почты",
   "email_placeholder": "Введите адрес электронной почты",
   "password_label": "Пароль",
@@ -17,7 +17,7 @@
   "mismatch_error": "Пароли не совпадают",
   "letters_error": "Допускаются только буквы",
   "create_account_title": "Создать аккаунт",
-  "signup_subtitle": "Chat with Sanny",
+  "signup_subtitle": "Общайтесь с Sanny",
   "first_name_label": "Имя",
   "first_name_placeholder": "Введите имя",
   "last_name_label": "Фамилия",
