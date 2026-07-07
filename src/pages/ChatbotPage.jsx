@@ -85,7 +85,7 @@ export default function Index() {
                     <div className="border-t px-6 md:px-8 py-6 md:py-8" style={{
                         borderColor: "rgba(255, 255, 255, 0.1)",
                     }}>
-                        <p className="text-white/60 text-sm font-medium mb-4">
+                        <p className="text-white/100 text-sm font-medium mb-4">
                             Popular queries
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -98,7 +98,7 @@ export default function Index() {
                                 <button
                                     key={idx}
                                     onClick={() => setSearchQuery(query)}
-                                    className="p-3 rounded-lg text-left text-white/70 hover:text-white text-sm transition-all hover:bg-white/10"
+                                    className="p-3 rounded-lg text-left text-white/100 hover:text-white text-md transition-all hover:bg-white/10 font-semibold"
                                     style={{
                                         backgroundColor: "rgba(255, 255, 255, 0.05)",
                                     }}
@@ -111,8 +111,8 @@ export default function Index() {
                 </div>
 
                 {/* Footer Info */}
-                <div className="mt-12 text-center text-white/50 text-sm">
-                    <p>Powered by premium travel assistant</p>
+                <div className="mt-12 text-center text-white/80 text-sm">
+                    <p>Powered by SAN TSG</p>
                 </div>
             </div>
         </div>
