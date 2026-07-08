@@ -6,6 +6,7 @@ import PastAppointments from './pages/PastAppointments.jsx';
 import SearchChats from './pages/SearchChats.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import Settings from './pages/Settings.jsx';
 
 function DocumentPagePlaceholder() {
   return <div className="p-6 text-text-secondary">Dokuman yonetimi (FE2 tarafindan doldurulacak)</div>;
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/documents" element={<DocumentPagePlaceholder />} />
           <Route path="/history" element={<HistoryPagePlaceholder />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

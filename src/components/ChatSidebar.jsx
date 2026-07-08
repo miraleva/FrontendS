@@ -145,8 +145,8 @@ export default function ChatSidebar({
           <button
             onClick={() => navigate('/chat')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isChatActive
-                ? 'bg-slate-100 text-primary'
-                : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'
+              ? 'bg-slate-100 text-primary'
+              : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'
               }`}
           >
             <MessageSquare size={16} />
@@ -156,8 +156,8 @@ export default function ChatSidebar({
           <button
             onClick={() => navigate('/appointments')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isAppointmentsActive
-                ? 'bg-slate-100 text-primary'
-                : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'
+              ? 'bg-slate-100 text-primary'
+              : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'
               }`}
           >
             <Clock size={16} />
@@ -236,7 +236,8 @@ export default function ChatSidebar({
       <div className="p-4 flex items-center justify-between">
         <div
           onClick={() => navigate('/profile')}
-          className="flex items-center gap-3 cursor-pointer hover:bg-slate-100/80 p-1.5 -m-1.5 rounded-lg transition-colors min-w-0 flex-1"
+          className={`flex items-center gap-3 cursor-pointer p-1.5 -m-1.5 rounded-lg transition-colors min-w-0 flex-1 ${location.pathname === '/profile' ? 'bg-slate-100' : 'hover:bg-slate-100/80'
+            }`}
           title="View Profile"
         >
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-sm shadow-sm select-none">
@@ -252,8 +253,13 @@ export default function ChatSidebar({
           </div>
         </div>
 
+        {/* Ayarlar Butonu Güncellemesi */}
         <button
-          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary hover:text-text-primary focus:outline-none ml-2"
+          onClick={() => navigate('/settings')} // Tıklanınca /settings rotasına gider
+          className={`p-2 rounded-lg transition-colors focus:outline-none ml-2 ${location.pathname === '/settings'
+            ? 'bg-slate-100 text-primary' // Eğer ayarlar sayfasındaysak aktif stili uygula
+            : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
+            }`}
           title="Settings"
         >
           <Settings size={18} />
