@@ -234,12 +234,16 @@ export default function ChatSidebar({
 
       {/* 8. Bottom Footer */}
       <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-3 cursor-pointer hover:bg-slate-100/80 p-1.5 -m-1.5 rounded-lg transition-colors min-w-0 flex-1"
+          title="View Profile"
+        >
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-sm shadow-sm select-none">
             {displayUsername.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-text-primary truncate max-w-[140px]" title={username}>
+            <span className="text-sm font-semibold text-text-primary truncate max-w-[120px]" title={username}>
               {displayUsername}
             </span>
             <span className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">
@@ -249,7 +253,7 @@ export default function ChatSidebar({
         </div>
 
         <button
-          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary hover:text-text-primary focus:outline-none"
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary hover:text-text-primary focus:outline-none ml-2"
           title="Settings"
         >
           <Settings size={18} />
