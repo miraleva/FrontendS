@@ -175,20 +175,21 @@ export default function Index() {
                 // 1. Welcome operations screen (Centered)
                 <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center">
                   <div className="mb-8 text-center flex flex-col items-center">
-                    <img
-                      src="/logo.png"
-                      alt="Sanny Logo"
-                      className="h-20 w-auto object-contain mb-4 select-none"
-                    />
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-[#1E232C] mb-2 font-display">
-                      {t(getGreetingKey(), { username })}
-                    </h1>
+                    <div className="flex flex-row items-center justify-center gap-4 mb-2 select-none">
+                      <img
+                        src="/logo.png"
+                        alt="Sanny Logo"
+                        className="h-16 md:h-20 w-auto object-contain"
+                      />
+                      <h1 className="text-3xl md:text-4xl font-extrabold text-[#1E232C] font-display">
+                        {t(getGreetingKey(), { username })}
+                      </h1>
+                    </div>
                     <p className="text-[#1E232C]/70 text-sm font-semibold">
                       {t("ops_subtitle")}
                     </p>
                   </div>
 
-                  {/* Sized-down glassmorphic input box */}
                   <div 
                     className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300"
                     style={{
