@@ -89,7 +89,7 @@ export default function ChatSidebar({
 
   return (
     <div 
-      className={`h-screen bg-white border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative ${
+      className={`h-screen bg-white border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-10 ${
         isOpen ? 'w-[330px]' : 'w-0 border-r-0'
       }`}
     >
