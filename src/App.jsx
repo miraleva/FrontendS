@@ -2,11 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 import ChatbotPage from './pages/ChatbotPage.jsx';
+import PastAppointments from './pages/PastAppointments.jsx';
+import SearchChats from './pages/SearchChats.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
 
-function ChatPagePlaceholder() {
-  return <ChatbotPage />;
-}
 function DocumentPagePlaceholder() {
   return <div className="p-6 text-text-secondary">Dokuman yonetimi (FE2 tarafindan doldurulacak)</div>;
 }
@@ -23,6 +22,8 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route element={<MainLayout />}>
           <Route path="/chat" element={<ChatbotPage />} />
+          <Route path="/chat/search" element={<SearchChats />} />
+          <Route path="/appointments" element={<PastAppointments />} />
           <Route path="/documents" element={<DocumentPagePlaceholder />} />
           <Route path="/history" element={<HistoryPagePlaceholder />} />
         </Route>
