@@ -4,13 +4,8 @@ export default {
   theme: {
     extend: {
       colors: {
-<<<<<<< HEAD
-        primary: '#0B5FFF',
-        'primary-dark': '#0A3FBF',
-=======
         primary: '#E36414',
         'primary-dark': '#C2510C',
->>>>>>> origin/main
         secondary: '#0F172A',
         accent: '#14B8A6',
         warning: '#F59E0B',

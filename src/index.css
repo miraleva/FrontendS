@@ -2,16 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-body { @apply font-sans text-text-primary bg-bg; }
-h1, h2, h3 { @apply font-display; }
-<<<<<<< HEAD
-=======
+body {
+  @apply font-sans text-text-primary bg-bg;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-display;
+}
 
 /* Phone input styling */
 .PhoneInputCountry {
   border-right: 1px solid rgba(255, 255, 255, 0.15);
   padding-right: 10px;
 }
+
 select.PhoneInputCountrySelect option {
   background-color: #1e293b !important;
   color: #ffffff !important;
@@ -24,4 +30,3 @@ select.PhoneInputCountrySelect option {
   position: absolute !important;
   z-index: 50 !important;
 }
->>>>>>> origin/main

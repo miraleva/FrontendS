@@ -4,7 +4,3 @@ dist/
 .env.local
 *.log
 .DS_Store
-<<<<<<< HEAD
-=======
-public/videos/background.mp4
->>>>>>> origin/main
