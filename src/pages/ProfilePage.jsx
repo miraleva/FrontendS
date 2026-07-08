@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
+    const navigate = useNavigate();
+
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         firstName: "",
@@ -13,6 +16,30 @@ export default function Profile() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+
+        if (name === "dateOfBirth") {
+            // Sadece sayıları al
+            const cleaned = value.replace(/\D/g, "");
+
+            // Maksimum 8 hane (DDMMYYYY) olabileceği için fazlasını kırp
+            const Limited = cleaned.slice(0, 8);
+
+            // Otomatik olarak aralara nokta yerleştir (DD.MM.YYYY)
+            let formatted = Limited;
+            if (Limited.length > 2 && Limited.length <= 4) {
+                formatted = `${Limited.slice(0, 2)}.${Limited.slice(2)}`;
+            } else if (Limited.length > 4) {
+                formatted = `${Limited.slice(0, 2)}.${Limited.slice(2, 4)}.${Limited.slice(4)}`;
+            }
+
+            setFormData((prev) => ({
+                ...prev,
+                [name]: formatted,
+            }));
+            return;
+        }
+
+        // Diğer tüm inputlar için normal akış
         setFormData((prev) => ({
             ...prev,
             [name]: value,
@@ -20,12 +47,23 @@ export default function Profile() {
     };
 
     const handleSave = () => {
+        // 2. EMAIL İÇİN @ İŞARETİ KONTROLÜ
+        // Eğer email doldurulmuşsa ve içinde @ işareti yoksa kaydetmeyi engelle
+        if (formData.email && !formData.email.includes("@")) {
+            alert("Lütfen geçerli bir e-posta adresi giriniz (@ işareti içermelidir).");
+            return; // Fonksiyonu durdur, isEditing(false) olmasın ve edit modunda kalsın
+        }
+
         setIsEditing(false);
-        // Handle save logic here
+        console.log("Veriler başarıyla kaydedildi:", formData);
+        // Backend entegrasyon lojiği buraya gelecek
     };
 
     const handleLogOut = () => {
         console.log("Logging out...");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
     };
 
     const handleDeleteAccount = () => {
@@ -35,45 +73,28 @@ export default function Profile() {
     };
 
     return (
-        // 1. Kapsayıcıyı 'relative' yaptık ki video ve içerik üst üste binebilsin
         <div className="relative min-h-screen overflow-hidden flex items-center justify-center py-12 px-4">
-
-            {/* 2. ARKA PLAN VİDEOSU */}
-            <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute top-0 left-0 w-full h-full object-cover z-0"
-            >
-                {/* video-linki-buraya kısmına kendi video yolunu (örn: "/background.mp4") yazmalısın */}
+            <video autoPlay loop muted playsInline className="absolute top-0 left-0 w-full h-full object-cover z-0">
                 <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
 
-            {/* Karartma Katmanı (Opsiyonel): Videonun form elementlerini okunmaz kılmasını engeller */}
             <div className="absolute top-0 left-0 w-full h-full bg-black/20 z-10" />
 
-            {/* 3. İÇERİK KATMANI (z-20 ile videonun üstüne çıkardık) */}
             <div className="w-full max-w-2xl z-20">
-                {/* Profile Card - Tasarımdaki cam efektini (Glassmorphism) yakalamak için bg-white yerine şeffaflık ekledik */}
-                <div className="bg-white/20 backdrop-blur-x1 rounded-2xl shadow-xl p-8 md:p-10 border border-white/20">
+                <div className="bg-white/20 backdrop-blur-xl rounded-2xl shadow-xl p-8 md:p-10 border border-white/20">
                     {/* Header Section */}
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-4">
-                            {/* Avatar */}
                             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-2xl font-bold shadow-md">
-
+                                {formData.firstName ? formData.firstName[0].toUpperCase() : "I"}
                             </div>
-
-                            {/* Name & Username */}
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">Irmak Özbay</h1>
                                 <p className="text-gray-500 text-sm">@irmakozbay</p>
                             </div>
                         </div>
 
-                        {/* Edit Button */}
                         <button
                             onClick={() => {
                                 if (isEditing) handleSave();
@@ -87,7 +108,6 @@ export default function Profile() {
 
                     {/* Form Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        {/* Name */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                             <input
@@ -101,7 +121,6 @@ export default function Profile() {
                             />
                         </div>
 
-                        {/* Last Name */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
                             <input
@@ -115,7 +134,6 @@ export default function Profile() {
                             />
                         </div>
 
-                        {/* Country */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
                             <input
@@ -129,7 +147,6 @@ export default function Profile() {
                             />
                         </div>
 
-                        {/* Gender */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
                             <input
@@ -151,7 +168,7 @@ export default function Profile() {
                                 name="dateOfBirth"
                                 value={formData.dateOfBirth}
                                 onChange={handleInputChange}
-                                placeholder="MM.DD.YY"
+                                placeholder="DD.MM.YYYY"
                                 disabled={!isEditing}
                                 className="w-full px-4 py-3 rounded-lg bg-gray-100/80 text-gray-700 placeholder-gray-400 border-2 border-transparent focus:outline-none focus:border-amber-400 transition-colors disabled:bg-gray-50/50 disabled:text-gray-400"
                             />
