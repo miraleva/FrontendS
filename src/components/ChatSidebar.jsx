@@ -1,20 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  PanelLeftClose, 
-  Plus, 
-  Search, 
-  MessageSquare, 
-  Clock, 
-  Settings, 
-  ChevronDown, 
+import {
+  PanelLeftClose,
+  Plus,
+  Search,
+  MessageSquare,
+  Clock,
+  Settings,
+  ChevronDown,
   Check,
   ListFilter
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
 
-export default function ChatSidebar({ 
-  isOpen, 
+export default function ChatSidebar({
+  isOpen,
   setIsOpen
 }) {
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ export default function ChatSidebar({
     .filter(session => {
       // Search text query
       const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       // Category dropdown filter
       if (activeFilter === 'Hotels') {
         return matchesSearch && session.category === 'Hotel';
@@ -88,19 +88,18 @@ export default function ChatSidebar({
   const displayUsername = username.includes('@') ? username.split('@')[0] : username;
 
   return (
-    <div 
-      className={`h-screen bg-white border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-10 ${
-        isOpen ? 'w-[330px]' : 'w-0 border-r-0'
-      }`}
+    <div
+      className={`h-screen bg-white border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-10 ${isOpen ? 'w-[330px]' : 'w-0 border-r-0'
+        }`}
     >
       {/* 1. Top Row */}
       <div className="p-4 flex items-center justify-between border-b border-transparent">
-        <SannyLogo 
-          className="flex items-center gap-1.5 select-none" 
-          imgClassName="w-8 h-8 object-contain" 
-          textClassName="font-display font-black text-[#f07c24] text-[22px] tracking-widest drop-shadow-[0_1.5px_6px_rgba(240,124,36,0.25)]" 
+        <SannyLogo
+          className="flex items-center gap-1.5 select-none"
+          imgClassName="w-8 h-8 object-contain"
+          textClassName="font-display font-black text-[#f07c24] text-[22px] tracking-widest drop-shadow-[0_1.5px_6px_rgba(240,124,36,0.25)]"
         />
-        <button 
+        <button
           onClick={() => setIsOpen(false)}
           className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary focus:outline-none"
           title="Collapse Sidebar"
@@ -111,7 +110,7 @@ export default function ChatSidebar({
 
       {/* 2. New Chat Button */}
       <div className="px-5 pt-4 flex justify-start">
-        <button 
+        <button
           onClick={() => navigate('/chat')}
           className="flex items-center gap-1.5 text-[#0B5FFF] hover:text-[#0B5FFF]/80 hover:underline text-sm font-semibold transition-all duration-150 focus:outline-none cursor-pointer"
         >
@@ -126,8 +125,8 @@ export default function ChatSidebar({
           <span className="absolute left-0 text-slate-400">
             <Search size={16} />
           </span>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search chats"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -145,23 +144,21 @@ export default function ChatSidebar({
         <nav className="flex flex-col gap-1 p-2">
           <button
             onClick={() => navigate('/chat')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${
-              isChatActive 
-                ? 'bg-slate-100 text-primary' 
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isChatActive
+                ? 'bg-slate-100 text-primary'
                 : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'
-            }`}
+              }`}
           >
             <MessageSquare size={16} />
             <span>Chats</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/appointments')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${
-              isAppointmentsActive 
-                ? 'bg-slate-100 text-primary' 
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isAppointmentsActive
+                ? 'bg-slate-100 text-primary'
                 : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'
-            }`}
+              }`}
           >
             <Clock size={16} />
             <span>Past Appointments</span>
@@ -173,7 +170,7 @@ export default function ChatSidebar({
       <div className="flex flex-col flex-1 min-h-0">
         <div className="bg-transparent text-[#0B5FFF] text-[11px] font-bold uppercase tracking-wider px-5 py-2 flex items-center justify-between">
           <span>Recent Chats</span>
-          
+
           {/* Dropdown Filter */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -208,7 +205,7 @@ export default function ChatSidebar({
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {filteredSessions.length > 0 ? (
             filteredSessions.map((session) => (
-              <div 
+              <div
                 key={session.id}
                 onClick={() => navigate('/chat')}
                 className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group"
@@ -237,12 +234,16 @@ export default function ChatSidebar({
 
       {/* 8. Bottom Footer */}
       <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-3 cursor-pointer hover:bg-slate-100/80 p-1.5 -m-1.5 rounded-lg transition-colors min-w-0 flex-1"
+          title="View Profile"
+        >
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-sm shadow-sm select-none">
             {displayUsername.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-text-primary truncate max-w-[140px]" title={username}>
+            <span className="text-sm font-semibold text-text-primary truncate max-w-[120px]" title={username}>
               {displayUsername}
             </span>
             <span className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">
@@ -250,9 +251,9 @@ export default function ChatSidebar({
             </span>
           </div>
         </div>
-        
-        <button 
-          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary hover:text-text-primary focus:outline-none"
+
+        <button
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary hover:text-text-primary focus:outline-none ml-2"
           title="Settings"
         >
           <Settings size={18} />
