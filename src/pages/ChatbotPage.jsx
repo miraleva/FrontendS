@@ -59,7 +59,7 @@ export default function Index() {
     let category = "General SOP";
     let refNum = "REF-PENDING";
     let docs = ["SOP_Manual.pdf"];
-    
+
     if (q.includes("titanic") || q.includes("hotel")) {
       category = t("hotel_sop");
       refNum = "HTL-PENDING";
@@ -77,7 +77,7 @@ export default function Index() {
       refNum = "VCH-PENDING";
       docs = ["Voucher_Directives_2026.pdf"];
     }
-    
+
     setContext({ category, refNum, docs });
   };
 
@@ -86,7 +86,7 @@ export default function Index() {
 
     const query = searchQuery;
     const userMsg = { id: Date.now(), text: query, sender: "user" };
-    
+
     setMessages(prev => [...prev, userMsg]);
     setSearchQuery("");
     if (textareaRef.current) {
@@ -97,7 +97,7 @@ export default function Index() {
 
     // Thinking states sequential flow
     setThinkingStep(t("thinking_sop"));
-    
+
     setTimeout(() => {
       setThinkingStep(t("thinking_res"));
     }, 1000);
@@ -131,16 +131,16 @@ export default function Index() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
       {/* Collapsible Chat Sidebar */}
-      <ChatSidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
+      <ChatSidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
         {/* Toggle open button when sidebar is collapsed */}
         {!isSidebarOpen && (
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(true)}
             className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
             title="Expand Sidebar"
@@ -157,9 +157,8 @@ export default function Index() {
           muted
           playsInline
           preload="auto"
-          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${
-            isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"
-          }`}
+          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"
+            }`}
         >
           <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
           Tarayıcınız video etiketini desteklemiyor.
@@ -175,11 +174,11 @@ export default function Index() {
                 // 1. Welcome operations screen (Centered)
                 <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center">
                   <div className="mb-8 text-center flex flex-col items-center">
-                    <div className="flex flex-row items-center justify-center gap-4 mb-2 select-none">
+                    <div className="flex flex-row items-center justify-center gap-2 mb-2 select-none">
                       <img
                         src="/logo.png"
                         alt="Sanny Logo"
-                        className="h-16 md:h-20 w-auto object-contain"
+                        className="h-15 md:h-20 w-auto object-contain"
                       />
                       <h1 className="text-3xl md:text-4xl font-extrabold text-[#1E232C] font-display">
                         {t(getGreetingKey(), { username })}
@@ -190,7 +189,7 @@ export default function Index() {
                     </p>
                   </div>
 
-                  <div 
+                  <div
                     className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300"
                     style={{
                       backgroundColor: "rgba(255, 255, 255, 0.08)",
@@ -215,7 +214,7 @@ export default function Index() {
                           <button type="button" className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
                             <Mic size={16} />
                           </button>
-                          <button 
+                          <button
                             onClick={handleSend}
                             disabled={!searchQuery.trim()}
                             className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
@@ -277,20 +276,23 @@ export default function Index() {
                     {messages.map((msg) => (
                       <div key={msg.id} className={`flex items-start gap-3 w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                         {msg.sender === "bot" && (
-                          <div className="w-8 h-8 rounded-full bg-[#ffb803] flex items-center justify-center text-white border border-[#ffb803]/40 shadow-sm flex-shrink-0 select-none">
-                            ☀️
+                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0 select-none overflow-hidden p-1">
+                            <img
+                              src="/logo.png"
+                              alt="Sanny Logo"
+                              className="w-full h-full object-contain"
+                            />
                           </div>
                         )}
                         <div className="flex flex-col max-w-[75%]">
                           {msg.sender === "bot" && (
                             <span className="text-[10px] text-slate-500 font-bold mb-1 ml-1">Sanny</span>
                           )}
-                          <div 
-                            className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${
-                              msg.sender === "user" 
-                                ? "bg-amber-500 text-white rounded-tr-none" 
-                                : "bg-white/90 border border-white/30 text-[#0F172A] rounded-tl-none backdrop-blur-md"
-                            }`}
+                          <div
+                            className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
+                              ? "bg-amber-500 text-white rounded-tr-none"
+                              : "bg-white/90 border border-white/30 text-[#0F172A] rounded-tl-none backdrop-blur-md"
+                              }`}
                           >
                             {msg.text}
                           </div>
@@ -301,8 +303,12 @@ export default function Index() {
                     {/* Sequential Thinking step indicator */}
                     {isThinking && (
                       <div className="flex items-start gap-3 justify-start">
-                        <div className="w-8 h-8 rounded-full bg-[#ffb803] flex items-center justify-center text-white border border-[#ffb803]/40 shadow-sm flex-shrink-0 select-none">
-                          ☀️
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0 select-none overflow-hidden p-1">
+                          <img
+                            src="/logo.png"
+                            alt="Sanny Logo"
+                            className="w-full h-full object-contain"
+                          />
                         </div>
                         <div className="space-y-1 max-w-[75%]">
                           <span className="text-[10px] text-slate-500 font-bold mb-1 ml-1">Sanny</span>
@@ -322,7 +328,7 @@ export default function Index() {
 
                   {/* Chat mode bottom fixed input area (strictly z-20 above video) */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 bg-transparent z-20">
-                    <div 
+                    <div
                       className="rounded-2xl shadow-xl border w-full transition-all duration-300"
                       style={{
                         backgroundColor: "rgba(255, 255, 255, 0.08)",
@@ -348,7 +354,7 @@ export default function Index() {
                             <button type="button" className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
                               <Mic size={16} />
                             </button>
-                            <button 
+                            <button
                               onClick={handleSend}
                               disabled={!searchQuery.trim()}
                               className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
