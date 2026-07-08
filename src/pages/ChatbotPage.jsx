@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState } from "react"
+//chatbot page
 
 export default function Index() {
     const [searchQuery, setSearchQuery] = useState("");
