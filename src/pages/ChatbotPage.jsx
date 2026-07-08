@@ -16,10 +16,10 @@ export default function Index() {
             <div className="w-full max-w-2xl">
                 {/* Welcome Section */}
                 <div className="mb-12 text-center md:mb-16">
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+                    <h1 className="text-4xl md:text-5xl font-bold text-[#1E232C] mb-2">
                         Good Morning, {username}
                     </h1>
-                    <p className="text-white/70 text-base md:text-lg">
+                    <p className="text-[#1E232C]/70 text-base md:text-lg">
                         How can we help you today?
                     </p>
                 </div>
@@ -86,7 +86,7 @@ export default function Index() {
                     <div className="border-t px-6 md:px-8 py-6 md:py-8" style={{
                         borderColor: "rgba(255, 255, 255, 0.1)",
                     }}>
-                        <p className="text-white/100 text-sm font-medium mb-4">
+                        <p className="text-[#1E232C]/60 text-sm font-medium mb-4">
                             Popular queries
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -99,7 +99,7 @@ export default function Index() {
                                 <button
                                     key={idx}
                                     onClick={() => setSearchQuery(query)}
-                                    className="p-3 rounded-lg text-left text-white/100 hover:text-white text-md transition-all hover:bg-white/10 font-semibold"
+                                    className="p-3 rounded-lg text-left text-[#1E232C]/70 hover:text-[#1E232C] text-sm transition-all hover:bg-white/10"
                                     style={{
                                         backgroundColor: "rgba(255, 255, 255, 0.05)",
                                     }}
@@ -112,7 +112,7 @@ export default function Index() {
                 </div>
 
                 {/* Footer Info */}
-                <div className="mt-12 text-center text-white/80 text-sm">
+                <div className="mt-12 text-center text-[#1E232C]/50 text-sm">
                     <p>Powered by SAN TSG</p>
                 </div>
             </div>
