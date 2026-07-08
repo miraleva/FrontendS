@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   PanelLeftOpen, 
@@ -11,6 +11,17 @@ export default function SearchChats() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(error => {
+        console.log("Video autoplay engeline takıldı:", error);
+      });
+    }
+  }, []);
 
   // Mock sessions
   const mockSessions = [
@@ -51,11 +62,11 @@ export default function SearchChats() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-slate-50">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent">
         {/* Toggle open button when sidebar is collapsed */}
         {!isSidebarOpen && (
           <button 
-            onClick={() => setIsOpen(true)}
+            onClick={() => setIsSidebarOpen(true)}
             className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
             title="Expand Sidebar"
           >
@@ -63,7 +74,21 @@ export default function SearchChats() {
           </button>
         )}
 
-        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in">
+        {/* Arka Plan Videosu - fixed ve z-0 ile en arkaya çiviliyoruz */}
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+        >
+          <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
+          Tarayıcınız video etiketini desteklemiyor.
+        </video>
+
+        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-10 relative">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#0F172A] font-display mb-2">
               Search Chats

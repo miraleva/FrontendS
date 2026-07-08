@@ -55,9 +55,8 @@ export default function Index() {
           Tarayıcınız video etiketini desteklemiyor.
         </video>
 
-        {/* CHAT VIEW - z-10 ve relative ile videonun üstünde kalmasını sağlıyoruz */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 z-10 relative">
-          <div className="w-full max-w-xl animate-fade-in">
+          <div className="w-full max-w-[850px] animate-fade-in">
             {/* Welcome Section */}
             <div className="mb-12 text-center md:mb-16">
               <h1 className="text-4xl md:text-5xl font-bold text-[#1E232C] mb-2 flex items-center justify-center gap-3 md:gap-4 flex-wrap">
@@ -121,7 +120,7 @@ export default function Index() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Let's plan together..."
-                    className="w-full pl-6 pr-14 py-4 rounded-full text-left text-black placeholder-black/40 focus:outline-none transition-all border-[2px] border-grey/50 bg-white/40 focus:bg-white/60 hover:shadow-[0_0_16px_rgba(255,255,255,0.4)] hover:border-white/40"
+                    className="w-full pl-6 pr-14 py-4 rounded-full text-left text-black placeholder-#9e9e9e/10 focus:outline-none transition-all border-[2px] border-#9e9e9e/50 bg-white/40 focus:bg-white/60 hover:shadow-[0_0_16px_rgba(255,255,255,0.4)] hover:border-white/40"
                   />
                   <button
                     type="button"
