@@ -1,58 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react"
+//chatbot page
 
 export default function Index() {
     const [searchQuery, setSearchQuery] = useState("");
-    const username = "User";
+    const email = localStorage.getItem('userId') || "";
+    const username = email ? email.split('@')[0] : "Guest";
+
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch(error => {
+                console.log("Video autoplay engeline takıldı:", error);
+            });
+        }
+    }, []);
 
     return (
-        <div
-            className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
-            style={{
-                background: `linear-gradient(135deg, #8ecae6 0%, #ffb8038c 100%)`,
-            }}
-        >
-            {/* Main Container */}
-            <div className="w-full max-w-2xl">
+        // bg-transparent ekleyerek olası beyaz arka plan baskılarını sıfırlıyoruz
+        <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 overflow-hidden bg-transparent">
+
+            {/* Arka Plan Videosu - fixed ve z-0 ile en arkaya çiviliyoruz */}
+            <video
+                ref={videoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+            >
+                <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
+                Tarayıcınız video etiketini desteklemiyor.
+            </video>
+
+            {/* Main Container - z-10 ve relative ile videonun üstünde kalmasını sağlıyoruz */}
+            <div className="w-full max-w-2xl z-10 relative">
                 {/* Welcome Section */}
                 <div className="mb-12 text-center md:mb-16">
-                    <h1 className="text-4xl md:text-5xl font-bold text-[#1E232C] mb-2">
-                        Good Morning, {username}
+                    <h1 className="text-4xl md:text-5xl font-bold text-[#1E232C] mb-2 flex items-center justify-center gap-3 md:gap-4 flex-wrap">
+                        <img
+                            src="/logo.png"
+                            alt="Sanny Logo"
+                            className="h-20 w-auto xl:h-25 object-contain"
+                        />
+                        <span>Good Morning, {username}</span>
                     </h1>
                     <p className="text-[#1E232C]/70 text-base md:text-lg">
                         How can we help you today?
                     </p>
-                </div>
-
-                {/* Action Badges */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 md:mb-16">
-                    <button
-                        className="px-6 py-3 rounded-full font-bold text-white transition-all transform hover:scale-105 shadow-lg"
-                        style={{
-                            backgroundColor: "#ffb8038c",
-                        }}
-                        onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#ffb80354")
-                        }
-                        onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#ffb8038c")
-                        }
-                    >
-                        Plane ticket
-                    </button>
-                    <button
-                        className="px-6 py-3 rounded-full font-bold text-white transition-all transform hover:scale-105 shadow-lg"
-                        style={{
-                            backgroundColor: "#ffb8038c",
-                        }}
-                        onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#ffb80354")
-                        }
-                        onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#ffb8038c")
-                        }
-                    >
-                        Hotel reservation
-                    </button>
                 </div>
 
                 {/* Glassmorphic Chat Container */}
@@ -81,6 +78,38 @@ export default function Index() {
                         />
                     </div>
 
+                    {/* Action Badges */}
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 md:mb-16">
+                        <button
+                            className="px-6 py-3 rounded-full font-bold text-white transition-all transform hover:scale-105 shadow-lg"
+                            style={{
+                                backgroundColor: "#ffb8038c",
+                            }}
+                            onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "#ffb80354")
+                            }
+                            onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor = "#ffb8038c")
+                            }
+                        >
+                            Plane ticket
+                        </button>
+                        <button
+                            className="px-6 py-3 rounded-full font-bold text-white transition-all transform hover:scale-105 shadow-lg"
+                            style={{
+                                backgroundColor: "#ffb8038c",
+                            }}
+                            onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = "#ffb80354")
+                            }
+                            onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor = "#ffb8038c")
+                            }
+                        >
+                            Hotel reservation
+                        </button>
+                    </div>
+
                     {/* Quick Actions Grid */}
                     <div className="border-t px-6 md:px-8 py-6 md:py-8" style={{
                         borderColor: "rgba(255, 255, 255, 0.1)",
@@ -93,6 +122,7 @@ export default function Index() {
                                 "Book a flight to Bali",
                                 "Find luxury hotels",
                                 "Travel itinerary",
+                                "Visa information",
                                 "Visa information",
                             ].map((query, idx) => (
                                 <button
