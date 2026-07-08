@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { PanelLeftOpen } from "lucide-react";
+import { PanelLeftOpen, Send } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
 
 export default function Index() {
@@ -23,16 +23,16 @@ export default function Index() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg font-sans">
       {/* Collapsible Chat Sidebar */}
-      <ChatSidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
+      <ChatSidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent">
         {/* Toggle open button when sidebar is collapsed */}
         {!isSidebarOpen && (
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(true)}
             className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
             title="Expand Sidebar"
@@ -57,7 +57,7 @@ export default function Index() {
 
         {/* CHAT VIEW - z-10 ve relative ile videonun üstünde kalmasını sağlıyoruz */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 z-10 relative">
-          <div className="w-full max-w-2xl animate-fade-in">
+          <div className="w-full max-w-xl animate-fade-in">
             {/* Welcome Section */}
             <div className="mb-12 text-center md:mb-16">
               <h1 className="text-4xl md:text-5xl font-bold text-[#1E232C] mb-2 flex items-center justify-center gap-3 md:gap-4 flex-wrap">
@@ -69,7 +69,7 @@ export default function Index() {
                 <span>Good Morning, {username}</span>
               </h1>
               <p className="text-[#1E232C]/70 text-base md:text-lg">
-                How can we help you today?
+                Let us help you find your next destination
               </p>
             </div>
 
@@ -115,30 +115,28 @@ export default function Index() {
             >
               {/* Input Section */}
               <div className="p-6 md:p-8">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="How can I help?"
-                  className="w-full px-6 py-4 rounded-full text-center text-black placeholder-black/40 focus:outline-none transition-colors border"
-                  style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.4)",
-                    borderColor: "rgba(255, 255, 255, 0.15)",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.4)";
-                  }}
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Let's plan together..."
+                    className="w-full pl-6 pr-14 py-4 rounded-full text-left text-black placeholder-black/40 focus:outline-none transition-all border-[2px] border-grey/50 bg-white/40 focus:bg-white/60 hover:shadow-[0_0_16px_rgba(255,255,255,0.4)] hover:border-white/40"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 p-2 text-[#3B82F6] hover:text-[#3B82F6]/80 transition-colors focus:outline-none cursor-pointer"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Quick Actions Grid */}
               <div className="border-t px-6 md:px-8 py-6 md:py-8" style={{
                 borderColor: "rgba(255, 255, 255, 0.1)",
               }}>
-                <p className="text-[#1E232C]/60 text-sm font-medium mb-4">
+                <p className="text-[#1E232C]/80 text-l font-medium mb-4">
                   Popular queries
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -151,9 +149,9 @@ export default function Index() {
                     <button
                       key={idx}
                       onClick={() => setSearchQuery(query)}
-                      className="p-3 rounded-lg text-left text-white/80 hover:text-white text-sm transition-all hover:bg-white/15 cursor-pointer"
+                      className="p-3 rounded-2xl text-left text-black/40 hover:text-black text-sm transition-all hover:bg-white/15 cursor-pointer hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-200"
                       style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        backgroundColor: "rgba(52, 52, 52, 0.05)",
                       }}
                     >
                       <span className="font-medium">{query}</span>
