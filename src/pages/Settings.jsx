@@ -25,13 +25,18 @@ export default function Settings() {
         bookingConfirmations: true,
     });
     const [securitySettings, setSecuritySettings] = useState({
-        savedCards: [
-            { id: "1", lastFour: "4321", cardType: "Visa" },
-            { id: "2", lastFour: "8765", cardType: "Mastercard" },
-        ],
+        savedCards: [],
         twoFactorEnabled: false,
     });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newCard, setNewCard] = useState({
+        cardType: "",
+        lastFour: "",
+        formattedNumber: "",
+        expiry: ""
+    });
     const [showPassword, setShowPassword] = useState(false);
+    const [cardToDelete, setCardToDelete] = useState(null);
 
     const tabs = [
         { id: "travel", label: "Travel Preferences", labelTr: "Seyahat Tercihleri" },
@@ -43,6 +48,16 @@ export default function Settings() {
 
     const handleSave = () => {
         console.log("Saving settings...");
+    };
+
+    const handleCloseModal = () => {
+        setNewCard({
+            cardType: "",
+            lastFour: "",
+            formattedNumber: "",
+            expiry: ""
+        });
+        setIsModalOpen(false);
     };
 
     return (
@@ -60,17 +75,17 @@ export default function Settings() {
                 Your browser does not support the video tag.
             </video>
 
-            {/* Yumuşak bir Karartma/Aydınlatma Katmanı (Videonun form elementlerini boğmaması için) */}
+            {/* Yumuşak bir Karartma/Aydınlatma Katmanı */}
             <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] z-10" />
 
             <div className="w-full max-w-6xl z-20 my-8">
-                {/* 2. ANA AYARLAR KARTI (Görseldeki gibi blurlu buzlu cam efekti) */}
+                {/* 2. ANA AYARLAR KARTI */}
                 <div className="bg-white/40 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-10 border border-white/30">
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">Settings</h1>
 
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
                         {/* Masaüstü Sol Menü Butonları */}
-                        <div className="hidden md:flex flex-col space-y-2">
+                        <div className="hidden md:flex flex-col space-y-2 sticky top-0 self-start">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
@@ -79,7 +94,6 @@ export default function Settings() {
                                         ? "bg-[#f07c24] text-white shadow-md shadow-orange-500/20"
                                         : "text-gray-800 hover:bg-white/30 backdrop-blur-sm"
                                         }`}
-                                    Mention
                                 >
                                     {tab.label}
                                 </button>
@@ -103,7 +117,7 @@ export default function Settings() {
                         </div>
 
                         {/* Sağ İçerik Alanı */}
-                        <div className="md:col-span-4">
+                        <div className="md:col-span-4 min-h-[600px]">
                             {/* Travel Preferences */}
                             {activeTab === "travel" && (
                                 <div className="space-y-8">
@@ -355,11 +369,19 @@ export default function Settings() {
                                                         <p className="font-semibold">{card.cardType}</p>
                                                         <p className="text-sm text-gray-300 mt-1">**** **** **** {card.lastFour}</p>
                                                     </div>
-                                                    <button className="text-orange-400 hover:text-orange-300 font-semibold">Remove</button>
+                                                    <button
+                                                        onClick={() => setCardToDelete(card.id)}
+                                                        className="text-orange-400 hover:text-orange-300 font-semibold transition-colors"
+                                                    >
+                                                        Remove
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
-                                        <button className="w-full flex items-center justify-center gap-2 bg-[#f07c24] hover:bg-[#e06d19] text-white font-semibold py-3 rounded-full transition-all shadow-md">
+                                        <button
+                                            onClick={() => setIsModalOpen(true)}
+                                            className="w-full flex items-center justify-center gap-2 bg-[#f07c24] hover:bg-[#e06d19] text-white font-semibold py-3 rounded-full transition-all shadow-md"
+                                        >
                                             <Plus className="w-5 h-5" /> Add New Card
                                         </button>
                                     </div>
@@ -420,6 +442,181 @@ export default function Settings() {
                     </div>
                 </div>
             </div>
+
+            {/* MODAL 1: KART EKLEME MODALI */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Karartma Arka Planı */}
+                    <div
+                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        onClick={handleCloseModal}
+                    />
+
+                    {/* Modal Kartı */}
+                    <div className="relative w-full max-w-md bg-white/70 backdrop-blur-2xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/40 z-10 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">Add New Payment Method</h3>
+
+                        <div className="space-y-4">
+                            {/* Kart Numarası */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-2">Card Number</label>
+                                <input
+                                    type="text"
+                                    maxLength="19"
+                                    placeholder="4111 2222 3333 4444"
+                                    value={newCard.formattedNumber}
+                                    onChange={(e) => {
+                                        let rawVal = e.target.value.replace(/\D/g, '');
+                                        let formattedVal = rawVal.match(/.{1,4}/g)?.join(' ') || '';
+
+                                        let detectedType = "";
+                                        if (rawVal.startsWith("5") || rawVal.startsWith("2")) {
+                                            detectedType = "Mastercard";
+                                        } else if (rawVal.startsWith("3")) {
+                                            detectedType = "American Express";
+                                        } else if (rawVal.startsWith("4")) {
+                                            detectedType = "Visa";
+                                        } else if (rawVal.length > 0) {
+                                            detectedType = "Credit Card";
+                                        }
+
+                                        setNewCard({
+                                            cardType: detectedType,
+                                            lastFour: rawVal.length >= 4 ? rawVal.slice(-4) : "",
+                                            formattedNumber: formattedVal,
+                                            expiry: newCard.expiry
+                                        });
+                                    }}
+                                    className="w-full rounded-full bg-white/60 px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium tracking-wider"
+                                />
+
+                                {newCard.cardType && (
+                                    <span className="text-xs text-gray-600 ml-4 mt-1 block">
+                                        Detected: <strong className="text-[#f07c24]">{newCard.cardType}</strong>
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Son Kullanma Tarihi & CVC */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-800 mb-2">Expiry Date</label>
+                                    <input
+                                        type="text"
+                                        maxLength="5"
+                                        placeholder="MM/YY"
+                                        value={newCard.expiry}
+                                        onChange={(e) => {
+                                            let rawVal = e.target.value.replace(/\D/g, '');
+                                            let formattedExpiry = "";
+
+                                            if (rawVal.length > 0) {
+                                                if (rawVal.length === 1 && parseInt(rawVal) > 1) {
+                                                    rawVal = "0" + rawVal;
+                                                }
+                                                if (rawVal.length >= 2) {
+                                                    let month = rawVal.slice(0, 2);
+                                                    if (parseInt(month) > 12) month = "12";
+                                                    if (parseInt(month) === 0) month = "01";
+                                                    formattedExpiry = month + (rawVal.length > 2 ? "/" + rawVal.slice(2, 4) : "");
+                                                } else {
+                                                    formattedExpiry = rawVal;
+                                                }
+                                            }
+
+                                            setNewCard({
+                                                ...newCard,
+                                                expiry: formattedExpiry
+                                            });
+                                        }}
+                                        className="w-full text-center rounded-full bg-white/60 px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium tracking-wider"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-800 mb-2">CVC</label>
+                                    <input
+                                        type="password"
+                                        placeholder="***"
+                                        maxLength="3"
+                                        className="w-full text-center rounded-full bg-white/60 px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Aksiyon Butonları */}
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button
+                                onClick={handleCloseModal}
+                                className="px-6 py-2.5 rounded-xl text-gray-800 font-bold hover:bg-white/40 transition-all border border-transparent hover:border-white/20"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!newCard.lastFour || newCard.lastFour.length < 4) {
+                                        alert("Please enter a valid card number.");
+                                        return;
+                                    }
+                                    setSecuritySettings({
+                                        ...securitySettings,
+                                        savedCards: [
+                                            ...securitySettings.savedCards,
+                                            { id: Date.now().toString(), cardType: newCard.cardType || "Credit Card", lastFour: newCard.lastFour }
+                                        ]
+                                    });
+                                    handleCloseModal();
+                                }}
+                                className="px-6 py-2.5 rounded-xl bg-[#f07c24] hover:bg-[#e06d19] text-white font-bold transition-all shadow-md"
+                            >
+                                Add Card
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 2: KART SİLME ONAY MODALI */}
+            {cardToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Arka Plan Karartma */}
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setCardToDelete(null)}
+                    />
+
+                    {/* Onay Kartı */}
+                    <div className="relative w-full max-w-sm bg-white/80 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/40 z-10 text-center animate-in fade-in zoom-in-95 duration-150">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Remove Card?</h3>
+                        <p className="text-sm text-gray-700 mb-6">
+                            Are you sure you want to delete this payment method? This action cannot be undone.
+                        </p>
+
+                        {/* Butonlar */}
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                onClick={() => setCardToDelete(null)}
+                                className="flex-1 px-5 py-2.5 rounded-xl text-gray-800 font-bold hover:bg-white/40 transition-all border border-transparent hover:border-white/20"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const updatedCards = securitySettings.savedCards.filter(c => c.id !== cardToDelete);
+                                    setSecuritySettings({
+                                        ...securitySettings,
+                                        savedCards: updatedCards
+                                    });
+                                    setCardToDelete(null);
+                                }}
+                                className="flex-1 px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-md shadow-red-500/10"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
