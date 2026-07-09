@@ -112,6 +112,15 @@ export default function SignupPage() {
     }
 
     // TODO: connect to backend register endpoint
+    localStorage.setItem('user', JSON.stringify({
+      firstName: formData.name,
+      lastName: formData.lastname,
+      email: formData.email,
+      phone: formData.phone,
+      country: '',
+      gender: '',
+      dateOfBirth: ''
+    }));
     navigate('/login');
   }
 

@@ -4,7 +4,7 @@ import Header from '../components/Header.jsx';
 
 export default function MainLayout() {
   const location = useLocation();
-  const hideGlobalLayout = location.pathname.startsWith('/chat') || location.pathname === '/appointments';
+  const hideGlobalLayout = location.pathname.startsWith('/chat') || location.pathname === '/appointments' || location.pathname === '/profile';
 
   return (
     <div className="min-h-screen flex bg-bg">
