@@ -22,14 +22,14 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/settings" element={<Settings />} />
         <Route element={<MainLayout />}>
           <Route path="/chat" element={<ChatbotPage />} />
           <Route path="/chat/search" element={<SearchChats />} />
           <Route path="/appointments" element={<PastAppointments />} />
           <Route path="/documents" element={<DocumentPagePlaceholder />} />
           <Route path="/history" element={<HistoryPagePlaceholder />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

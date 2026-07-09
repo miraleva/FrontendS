@@ -1,33 +1,72 @@
 import { useState } from "react";
-import { ChevronDown, Wifi, Dumbbell, Waves, Lock, Plus, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Plane, Hotel, Wifi, Dumbbell, Waves, Plus, Eye, EyeOff, PanelLeftOpen } from "lucide-react";
+import ChatSidebar from "../components/ChatSidebar";
 
 export default function Settings() {
+    const { t } = useTranslation();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState("travel");
-    const [flightPrefs, setFlightPrefs] = useState({
-        seat: "window",
-        meal: "standard",
+
+    const [flightPrefs, setFlightPrefs] = useState(() => {
+        try {
+            const stored = localStorage.getItem("flightPrefs");
+            return stored ? JSON.parse(stored) : { seat: "window", meal: "standard" };
+        } catch (e) {
+            return { seat: "window", meal: "standard" };
+        }
     });
-    const [hotelPrefs, setHotelPrefs] = useState({
-        roomType: ["double"],
-        amenities: ["wifi", "pool"],
+
+    const [hotelPrefs, setHotelPrefs] = useState(() => {
+        try {
+            const stored = localStorage.getItem("hotelPrefs");
+            return stored ? JSON.parse(stored) : { roomType: ["double"], amenities: ["wifi", "pool"] };
+        } catch (e) {
+            return { roomType: ["double"], amenities: ["wifi", "pool"] };
+        }
     });
-    const [chatbotSettings, setChatbotSettings] = useState({
-        language: "turkish",
-        tone: "friendly",
-        tts: true,
+
+    const [chatbotSettings, setChatbotSettings] = useState(() => {
+        try {
+            const stored = localStorage.getItem("chatbotSettings");
+            return stored ? JSON.parse(stored) : { tone: "friendly" };
+        } catch (e) {
+            return { tone: "friendly" };
+        }
     });
-    const [localizationSettings, setLocalizationSettings] = useState({
-        currency: "try",
-        timezone: "europe/istanbul",
+
+    const [aiResponseLang, setAiResponseLang] = useState(() => {
+        return localStorage.getItem("aiResponseLanguage") || "en";
     });
-    const [notificationSettings, setNotificationSettings] = useState({
-        priceAlerts: true,
-        bookingConfirmations: true,
+
+    const [localizationSettings, setLocalizationSettings] = useState(() => {
+        try {
+            const stored = localStorage.getItem("localizationSettings");
+            return stored ? JSON.parse(stored) : { currency: "usd", timezone: "europe/london" };
+        } catch (e) {
+            return { currency: "usd", timezone: "europe/london" };
+        }
     });
+
+    const [notificationSettings, setNotificationSettings] = useState(() => {
+        try {
+            const stored = localStorage.getItem("notificationSettings");
+            return stored ? JSON.parse(stored) : { priceAlerts: true, bookingConfirmations: true };
+        } catch (e) {
+            return { priceAlerts: true, bookingConfirmations: true };
+        }
+    });
+
     const [securitySettings, setSecuritySettings] = useState({
-        savedCards: [],
+        savedCards: [
+            { id: "1", cardType: "Visa", lastFour: "4242" },
+            { id: "2", cardType: "Mastercard", lastFour: "8888" },
+        ],
         twoFactorEnabled: false,
     });
+
+    const [newPassword, setNewPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newCard, setNewCard] = useState({
         cardType: "",
@@ -35,19 +74,52 @@ export default function Settings() {
         formattedNumber: "",
         expiry: ""
     });
-    const [showPassword, setShowPassword] = useState(false);
     const [cardToDelete, setCardToDelete] = useState(null);
 
     const tabs = [
-        { id: "travel", label: "Travel Preferences", labelTr: "Seyahat Tercihleri" },
-        { id: "chatbot", label: "AI & Chatbot", labelTr: "Yapay Zekâ Ayarları" },
-        { id: "localization", label: "Localization", labelTr: "Bölge ve Para Birimi" },
-        { id: "notifications", label: "Notifications", labelTr: "Bildirimler" },
-        { id: "security", label: "Security & Billing", labelTr: "Güvenlik ve Ödeme" },
+        { id: "travel" },
+        { id: "chatbot" },
+        { id: "localization" },
+        { id: "notifications" },
+        { id: "security" },
     ];
 
     const handleSave = () => {
-        console.log("Saving settings...");
+        localStorage.setItem("flightPrefs", JSON.stringify(flightPrefs));
+        localStorage.setItem("hotelPrefs", JSON.stringify(hotelPrefs));
+        localStorage.setItem("chatbotSettings", JSON.stringify(chatbotSettings));
+        localStorage.setItem("aiResponseLanguage", aiResponseLang);
+        localStorage.setItem("localizationSettings", JSON.stringify(localizationSettings));
+        localStorage.setItem("notificationSettings", JSON.stringify(notificationSettings));
+        alert(t("settings_save_changes"));
+    };
+
+    const handleCancel = () => {
+        const loadDefaults = () => {
+            try {
+                const stored = localStorage.getItem("flightPrefs");
+                setFlightPrefs(stored ? JSON.parse(stored) : { seat: "window", meal: "standard" });
+            } catch (e) {}
+            try {
+                const stored = localStorage.getItem("hotelPrefs");
+                setHotelPrefs(stored ? JSON.parse(stored) : { roomType: ["double"], amenities: ["wifi", "pool"] });
+            } catch (e) {}
+            try {
+                const stored = localStorage.getItem("chatbotSettings");
+                setChatbotSettings(stored ? JSON.parse(stored) : { tone: "friendly" });
+            } catch (e) {}
+            setAiResponseLang(localStorage.getItem("aiResponseLanguage") || "en");
+            try {
+                const stored = localStorage.getItem("localizationSettings");
+                setLocalizationSettings(stored ? JSON.parse(stored) : { currency: "usd", timezone: "europe/london" });
+            } catch (e) {}
+            try {
+                const stored = localStorage.getItem("notificationSettings");
+                setNotificationSettings(stored ? JSON.parse(stored) : { priceAlerts: true, bookingConfirmations: true });
+            } catch (e) {}
+        };
+        loadDefaults();
+        alert(t("settings_cancel"));
     };
 
     const handleCloseModal = () => {
@@ -61,405 +133,445 @@ export default function Settings() {
     };
 
     return (
-        <div className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 md:p-6">
+        <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
+            {/* Collapsible Chat Sidebar */}
+            <ChatSidebar
+                isOpen={isSidebarOpen}
+                setIsOpen={setIsSidebarOpen}
+            />
 
-            {/* 1. ARKA PLAN VİDEOSU */}
-            <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute top-0 left-0 w-full h-full object-cover z-0"
-            >
-                <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+                {/* Toggle open button when sidebar is collapsed */}
+                {!isSidebarOpen && (
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="absolute top-[16px] left-[16px] z-30 p-[8px] bg-white border border-slate-200 rounded-[12px] shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer"
+                        title="Expand Sidebar"
+                    >
+                        <PanelLeftOpen size={18} />
+                    </button>
+                )}
 
-            {/* Yumuşak bir Karartma/Aydınlatma Katmanı */}
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] z-10" />
+                {/* Background Video */}
+                <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+                >
+                    <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
 
-            <div className="w-full max-w-6xl z-20 my-8">
-                {/* 2. ANA AYARLAR KARTI */}
-                <div className="bg-white/40 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-10 border border-white/30">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">Settings</h1>
+                {/* Dark Overlay Layer */}
+                <div className="absolute top-0 left-0 w-full h-full bg-black/20 z-10 pointer-events-none" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
-                        {/* Masaüstü Sol Menü Butonları */}
-                        <div className="hidden md:flex flex-col space-y-2 sticky top-0 self-start">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`px-4 py-3 text-left rounded-xl transition-all font-semibold text-sm ${activeTab === tab.id
-                                        ? "bg-[#f07c24] text-white shadow-md shadow-orange-500/20"
-                                        : "text-gray-800 hover:bg-white/30 backdrop-blur-sm"
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+                {/* Scrollable Container holding the Glass Card */}
+                <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
+                    <div className="w-full max-w-[850px] mt-[16px] md:mt-[24px]">
+                        {/* Settings Main Glass Card */}
+                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-xl rounded-[20px] shadow-xl p-[24px] md:p-[40px] border border-white/20">
+                            <h1 className="text-[32px] font-bold text-slate-900 mb-[32px]">
+                                {t("settings_title")}
+                            </h1>
 
-                        {/* Mobil Üst Menü Butonları */}
-                        <div className="md:hidden flex overflow-x-auto gap-2 pb-2 -mx-6 px-6 mb-6">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-all ${activeTab === tab.id
-                                        ? "bg-[#f07c24] text-white shadow-md"
-                                        : "bg-white/30 text-gray-800 backdrop-blur-sm"
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Sağ İçerik Alanı */}
-                        <div className="md:col-span-4 min-h-[600px]">
-                            {/* Travel Preferences */}
-                            {activeTab === "travel" && (
-                                <div className="space-y-8">
-                                    <div>
-                                        <h2 className="text-xl font-bold text-gray-900 mb-6">Flight Preferences</h2>
-                                        <div className="space-y-5">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                                    Seat Selection
-                                                </label>
-                                                <div className="flex gap-3 flex-wrap">
-                                                    {["window", "aisle", "legroom"].map((seat) => (
-                                                        <button
-                                                            key={seat}
-                                                            onClick={() => setFlightPrefs({ ...flightPrefs, seat })}
-                                                            className={`px-6 py-3 rounded-full font-semibold transition-all backdrop-blur-md ${flightPrefs.seat === seat
-                                                                ? "bg-[#f07c24] text-white shadow-md"
-                                                                : "bg-white/50 text-gray-800 hover:bg-white/80 border border-white/20"
-                                                                }`}
-                                                        >
-                                                            {seat === "window" ? "Window" : seat === "aisle" ? "Aisle" : "Extra Legroom"}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                                    Meal Preferences
-                                                </label>
-                                                <div className="flex gap-3 flex-wrap">
-                                                    {["standard", "vegan", "glutenfree"].map((meal) => (
-                                                        <button
-                                                            key={meal}
-                                                            onClick={() => setFlightPrefs({ ...flightPrefs, meal })}
-                                                            className={`px-6 py-3 rounded-full font-semibold transition-all backdrop-blur-md ${flightPrefs.meal === meal
-                                                                ? "bg-[#f07c24] text-white shadow-md"
-                                                                : "bg-white/50 text-gray-800 hover:bg-white/80 border border-white/20"
-                                                                }`}
-                                                        >
-                                                            {meal === "standard" ? "Standard" : meal === "vegan" ? "Vegan" : "Gluten-Free"}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr className="border-white/30" />
-
-                                    <div>
-                                        <h2 className="text-xl font-bold text-gray-900 mb-6">Hotel Preferences</h2>
-                                        <div className="space-y-5">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                                    Room Type
-                                                </label>
-                                                <div className="flex gap-3 flex-wrap">
-                                                    {["single", "double", "suite"].map((room) => (
-                                                        <button
-                                                            key={room}
-                                                            onClick={() => setHotelPrefs({ ...hotelPrefs, roomType: [room] })}
-                                                            className={`px-6 py-3 rounded-full font-semibold transition-all backdrop-blur-md ${hotelPrefs.roomType.includes(room)
-                                                                ? "bg-[#f07c24] text-white shadow-md"
-                                                                : "bg-white/50 text-gray-800 hover:bg-white/80 border border-white/20"
-                                                                }`}
-                                                        >
-                                                            {room === "single" ? "Single" : room === "double" ? "Double" : "Suite"}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                                    Amenities
-                                                </label>
-                                                <div className="flex gap-4 flex-wrap">
-                                                    {[
-                                                        { id: "wifi", label: "Free Wi-Fi", icon: Wifi },
-                                                        { id: "pool", label: "Pool", icon: Waves },
-                                                        { id: "fitness", label: "Fitness Center", icon: Dumbbell },
-                                                    ].map(({ id, label, icon: Icon }) => (
-                                                        <button
-                                                            key={id}
-                                                            onClick={() => {
-                                                                setHotelPrefs({
-                                                                    ...hotelPrefs,
-                                                                    amenities: hotelPrefs.amenities.includes(id)
-                                                                        ? hotelPrefs.amenities.filter((a) => a !== id)
-                                                                        : [...hotelPrefs.amenities, id],
-                                                                });
-                                                            }}
-                                                            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all backdrop-blur-md ${hotelPrefs.amenities.includes(id)
-                                                                ? "bg-[#f07c24] text-white shadow-md"
-                                                                : "bg-white/50 text-gray-800 hover:bg-white/80 border border-white/20"
-                                                                }`}
-                                                        >
-                                                            <Icon className="w-5 h-5" />
-                                                            {label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* AI & Chatbot Settings */}
-                            {activeTab === "chatbot" && (
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                            Assistant Language
-                                        </label>
-                                        <select
-                                            value={chatbotSettings.language}
-                                            onChange={(e) => setChatbotSettings({ ...chatbotSettings, language: e.target.value })}
-                                            className="w-full rounded-full bg-white/50 backdrop-blur-md px-5 py-3 border border-white/30 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none cursor-pointer"
-                                        >
-                                            <option value="turkish">Turkish</option>
-                                            <option value="english">English</option>
-                                            <option value="german">German</option>
-                                            <option value="french">French</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                            Chatbot Tone
-                                        </label>
-                                        <div className="flex gap-3 flex-wrap">
-                                            {["professional", "friendly", "concise"].map((tone) => (
-                                                <button
-                                                    key={tone}
-                                                    onClick={() => setChatbotSettings({ ...chatbotSettings, tone })}
-                                                    className={`px-6 py-3 rounded-full font-semibold transition-all backdrop-blur-md ${chatbotSettings.tone === tone
-                                                        ? "bg-[#f07c24] text-white shadow-md"
-                                                        : "bg-white/50 text-gray-800 hover:bg-white/80 border border-white/20"
-                                                        }`}
-                                                >
-                                                    {tone === "professional" ? "Professional" : tone === "friendly" ? "Friendly" : "Concise"}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-800 mb-4">
-                                            Text-to-Speech
-                                        </label>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-[24px] md:gap-[32px]">
+                                {/* Desktop/Mobile Left Menu (Vertical Tab Navigation) */}
+                                <div className="md:col-span-1 flex flex-col gap-[10px]">
+                                    {tabs.map((tab) => (
                                         <button
-                                            onClick={() => setChatbotSettings({ ...chatbotSettings, tts: !chatbotSettings.tts })}
-                                            className={`relative inline-flex h-10 w-16 items-center rounded-full transition-all border border-white/20 backdrop-blur-md ${chatbotSettings.tts ? "bg-[#f07c24]" : "bg-white/40"
-                                                }`}
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`w-full px-[16px] py-[12px] text-left text-[14px] font-semibold rounded-[12px] transition-all border cursor-pointer focus:outline-none ${
+                                                activeTab === tab.id
+                                                    ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
+                                                    : "bg-white/20 text-slate-800 border-white/10 hover:bg-white/30 backdrop-blur-sm"
+                                            }`}
                                         >
-                                            <span
-                                                className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-lg transition-transform ${chatbotSettings.tts ? "translate-x-7" : "translate-x-1"
-                                                    }`}
-                                            />
+                                            {t(`settings_tab_${tab.id}`)}
                                         </button>
-                                    </div>
+                                    ))}
                                 </div>
-                            )}
 
-                            {/* Localization & Currency */}
-                            {activeTab === "localization" && (
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                            Preferred Currency
-                                        </label>
-                                        <select
-                                            value={localizationSettings.currency}
-                                            onChange={(e) => setLocalizationSettings({ ...localizationSettings, currency: e.target.value })}
-                                            className="w-full rounded-full bg-white/50 backdrop-blur-md px-5 py-3 border border-white/30 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer"
-                                        >
-                                            <option value="try">Turkish Lira (₺)</option>
-                                            <option value="usd">US Dollar ($)</option>
-                                            <option value="eur">Euro (€)</option>
-                                            <option value="gbp">British Pound (£)</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                            Time Zone & Region
-                                        </label>
-                                        <select
-                                            value={localizationSettings.timezone}
-                                            onChange={(e) => setLocalizationSettings({ ...localizationSettings, timezone: e.target.value })}
-                                            className="w-full rounded-full bg-white/50 backdrop-blur-md px-5 py-3 border border-white/30 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer"
-                                        >
-                                            <option value="europe/istanbul">Europe/Istanbul (GMT+3)</option>
-                                            <option value="europe/london">Europe/London (GMT+0)</option>
-                                            <option value="europe/berlin">Europe/Berlin (GMT+1)</option>
-                                            <option value="america/new_york">America/New_York (GMT-5)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Notifications */}
-                            {activeTab === "notifications" && (
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/20">
-                                        <div>
-                                            <h3 className="font-bold text-gray-900">Smart Price Alerts</h3>
-                                            <p className="text-sm text-gray-700 mt-0.5">Receive notifications when watched prices drop</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setNotificationSettings({ ...notificationSettings, priceAlerts: !notificationSettings.priceAlerts })}
-                                            className={`relative inline-flex h-10 w-16 items-center rounded-full transition-all border border-white/20 ${notificationSettings.priceAlerts ? "bg-[#f07c24]" : "bg-white/40"
-                                                }`}
-                                        >
-                                            <span className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.priceAlerts ? "translate-x-7" : "translate-x-1"}`} />
-                                        </button>
-                                    </div>
-
-                                    <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/20">
-                                        <div>
-                                            <h3 className="font-bold text-gray-900">Booking Confirmations</h3>
-                                            <p className="text-sm text-gray-700 mt-0.5">Email and SMS alerts for your bookings</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setNotificationSettings({ ...notificationSettings, bookingConfirmations: !notificationSettings.bookingConfirmations })}
-                                            className={`relative inline-flex h-10 w-16 items-center rounded-full transition-all border border-white/20 ${notificationSettings.bookingConfirmations ? "bg-[#f07c24]" : "bg-white/40"
-                                                }`}
-                                        >
-                                            <span className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.bookingConfirmations ? "translate-x-7" : "translate-x-1"}`} />
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Security & Billing */}
-                            {activeTab === "security" && (
-                                <div className="space-y-8">
-                                    <div>
-                                        <h2 className="text-xl font-bold text-gray-900 mb-4">Saved Payment Methods</h2>
-                                        <div className="space-y-3 mb-4">
-                                            {securitySettings.savedCards.map((card) => (
-                                                <div
-                                                    key={card.id}
-                                                    className="flex items-center justify-between bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-md text-white px-6 py-4 rounded-xl shadow-lg border border-white/10"
-                                                >
+                                {/* Right Content Panel */}
+                                <div className="md:col-span-3 min-h-[400px]">
+                                    {/* 1. Travel Preferences Tab */}
+                                    {activeTab === "travel" && (
+                                        <div className="space-y-[32px]">
+                                            <div>
+                                                <div className="flex items-center gap-[8px] mb-[24px]">
+                                                    <Plane className="w-[24px] h-[24px] text-[#F59E0B]" />
+                                                    <h2 className="text-[22px] font-extrabold text-slate-900">
+                                                        {t("settings_flight_prefs")}
+                                                    </h2>
+                                                </div>
+                                                <div className="space-y-[20px]">
                                                     <div>
-                                                        <p className="font-semibold">{card.cardType}</p>
-                                                        <p className="text-sm text-gray-300 mt-1">**** **** **** {card.lastFour}</p>
+                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                            {t("settings_seat_selection")}
+                                                        </label>
+                                                        <div className="flex gap-[12px] flex-wrap">
+                                                            {["window", "aisle", "legroom"].map((seat) => (
+                                                                <button
+                                                                    key={seat}
+                                                                    onClick={() => setFlightPrefs({ ...flightPrefs, seat })}
+                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
+                                                                        flightPrefs.seat === seat
+                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                    }`}
+                                                                >
+                                                                    {t(`settings_seat_${seat}`)}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => setCardToDelete(card.id)}
-                                                        className="text-orange-400 hover:text-orange-300 font-semibold transition-colors"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <button
-                                            onClick={() => setIsModalOpen(true)}
-                                            className="w-full flex items-center justify-center gap-2 bg-[#f07c24] hover:bg-[#e06d19] text-white font-semibold py-3 rounded-full transition-all shadow-md"
-                                        >
-                                            <Plus className="w-5 h-5" /> Add New Card
-                                        </button>
-                                    </div>
 
-                                    <hr className="border-white/30" />
-
-                                    <div>
-                                        <h2 className="text-xl font-bold text-gray-900 mb-6">Account Security</h2>
-                                        <div className="space-y-5">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-gray-800 mb-3">Change Password</label>
-                                                <div className="relative">
-                                                    <input
-                                                        type={showPassword ? "text" : "password"}
-                                                        placeholder="Enter new password"
-                                                        className="w-full rounded-full bg-white/50 backdrop-blur-md px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400 pr-12 font-medium"
-                                                    />
-                                                    <button
-                                                        onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700"
-                                                    >
-                                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                                    </button>
+                                                    <div>
+                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                            {t("settings_meal_prefs")}
+                                                        </label>
+                                                        <div className="flex gap-[12px] flex-wrap">
+                                                            {["standard", "vegan", "glutenfree"].map((meal) => (
+                                                                <button
+                                                                    key={meal}
+                                                                    onClick={() => setFlightPrefs({ ...flightPrefs, meal })}
+                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
+                                                                        flightPrefs.meal === meal
+                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                    }`}
+                                                                >
+                                                                    {t(`settings_meal_${meal}`)}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/20">
+                                            <hr className="border-t-2 border-white/20 my-[32px]" />
+
+                                            <div>
+                                                <div className="flex items-center gap-[8px] mb-[24px]">
+                                                    <Hotel className="w-[24px] h-[24px] text-[#F59E0B]" />
+                                                    <h2 className="text-[22px] font-extrabold text-slate-900">
+                                                        {t("settings_hotel_prefs")}
+                                                    </h2>
+                                                </div>
+                                                <div className="space-y-[20px]">
+                                                    <div>
+                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                            {t("settings_room_type")}
+                                                        </label>
+                                                        <div className="flex gap-[12px] flex-wrap">
+                                                            {["single", "double", "suite"].map((room) => (
+                                                                <button
+                                                                    key={room}
+                                                                    onClick={() => setHotelPrefs({ ...hotelPrefs, roomType: [room] })}
+                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
+                                                                        hotelPrefs.roomType.includes(room)
+                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                    }`}
+                                                                >
+                                                                    {t(`settings_room_${room}`)}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                            {t("settings_amenities")}
+                                                        </label>
+                                                        <div className="flex gap-[16px] flex-wrap">
+                                                            {[
+                                                                { id: "wifi", label: t("settings_amenity_wifi"), icon: Wifi },
+                                                                { id: "pool", label: t("settings_amenity_pool"), icon: Waves },
+                                                                { id: "fitness", label: t("settings_amenity_fitness"), icon: Dumbbell },
+                                                            ].map(({ id, label, icon: Icon }) => (
+                                                                <button
+                                                                    key={id}
+                                                                    onClick={() => {
+                                                                        setHotelPrefs({
+                                                                            ...hotelPrefs,
+                                                                            amenities: hotelPrefs.amenities.includes(id)
+                                                                                ? hotelPrefs.amenities.filter((a) => a !== id)
+                                                                                : [...hotelPrefs.amenities, id],
+                                                                        });
+                                                                    }}
+                                                                    className={`flex items-center gap-[8px] px-[20px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
+                                                                        hotelPrefs.amenities.includes(id)
+                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                    }`}
+                                                                >
+                                                                    <Icon className="w-[20px] h-[20px]" />
+                                                                    {label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 2. AI & Chatbot Settings Tab */}
+                                    {activeTab === "chatbot" && (
+                                        <div className="space-y-[24px]">
+                                            <div>
+                                                <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                    {t("settings_ai_response_language")}
+                                                </label>
+                                                <select
+                                                    value={aiResponseLang}
+                                                    onChange={(e) => setAiResponseLang(e.target.value)}
+                                                    className="w-full rounded-[12px] bg-white/50 backdrop-blur-md px-[16px] py-[12px] border border-white/30 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 cursor-pointer text-[14px]"
+                                                >
+                                                    <option value="en" className="bg-slate-800 text-white">English</option>
+                                                    <option value="tr" className="bg-slate-800 text-white">Türkçe</option>
+                                                    <option value="de" className="bg-slate-800 text-white">Deutsch</option>
+                                                    <option value="ru" className="bg-slate-800 text-white">Русский</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                    {t("settings_chatbot_tone")}
+                                                </label>
+                                                <div className="flex gap-[12px] flex-wrap">
+                                                    {["professional", "friendly", "concise"].map((tone) => (
+                                                        <button
+                                                            key={tone}
+                                                            onClick={() => setChatbotSettings({ ...chatbotSettings, tone })}
+                                                            className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
+                                                                chatbotSettings.tone === tone
+                                                                    ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                    : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                            }`}
+                                                        >
+                                                            {t(`settings_tone_${tone}`)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 3. Localization Settings Tab */}
+                                    {activeTab === "localization" && (
+                                        <div className="space-y-[24px]">
+                                            <div>
+                                                <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                    {t("settings_preferred_currency")}
+                                                </label>
+                                                <select
+                                                    value={localizationSettings.currency}
+                                                    onChange={(e) => setLocalizationSettings({ ...localizationSettings, currency: e.target.value })}
+                                                    className="w-full rounded-[12px] bg-white/50 backdrop-blur-md px-[16px] py-[12px] border border-white/30 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 cursor-pointer text-[14px]"
+                                                >
+                                                    <option value="try" className="bg-slate-800 text-white">Turkish Lira (₺)</option>
+                                                    <option value="usd" className="bg-slate-800 text-white">US Dollar ($)</option>
+                                                    <option value="eur" className="bg-slate-800 text-white">Euro (€)</option>
+                                                    <option value="gbp" className="bg-slate-800 text-white">British Pound (£)</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                    {t("settings_timezone")}
+                                                </label>
+                                                <select
+                                                    value={localizationSettings.timezone}
+                                                    onChange={(e) => setLocalizationSettings({ ...localizationSettings, timezone: e.target.value })}
+                                                    className="w-full rounded-[12px] bg-white/50 backdrop-blur-md px-[16px] py-[12px] border border-white/30 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 cursor-pointer text-[14px]"
+                                                >
+                                                    <option value="europe/istanbul" className="bg-slate-800 text-white">Europe/Istanbul (GMT+3)</option>
+                                                    <option value="europe/london" className="bg-slate-800 text-white">Europe/London (GMT+0)</option>
+                                                    <option value="europe/berlin" className="bg-slate-800 text-white">Europe/Berlin (GMT+1)</option>
+                                                    <option value="america/new_york" className="bg-slate-800 text-white">America/New_York (GMT-5)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 4. Notifications Tab */}
+                                    {activeTab === "notifications" && (
+                                        <div className="space-y-[24px]">
+                                            <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-[16px] rounded-[12px] border border-white/20">
                                                 <div>
-                                                    <h3 className="font-bold text-gray-900">Two-Factor Authentication (2FA)</h3>
-                                                    <p className="text-sm text-gray-700 mt-0.5">Secure your account with an additional verification step</p>
+                                                    <h3 className="font-bold text-slate-900 text-[16px]">
+                                                        {t("settings_price_alerts")}
+                                                    </h3>
+                                                    <p className="text-[12px] text-slate-700 mt-[2px]">
+                                                        {t("settings_price_alerts_desc")}
+                                                    </p>
                                                 </div>
                                                 <button
-                                                    onClick={() => setSecuritySettings({ ...securitySettings, twoFactorEnabled: !securitySettings.twoFactorEnabled })}
-                                                    className={`relative inline-flex h-10 w-16 items-center rounded-full transition-all border border-white/20 ${securitySettings.twoFactorEnabled ? "bg-[#f07c24]" : "bg-white/40"
-                                                        }`}
+                                                    onClick={() => setNotificationSettings({ ...notificationSettings, priceAlerts: !notificationSettings.priceAlerts })}
+                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${
+                                                        notificationSettings.priceAlerts ? "bg-[#F59E0B]" : "bg-white/40"
+                                                    }`}
                                                 >
-                                                    <span className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-lg transition-transform ${securitySettings.twoFactorEnabled ? "translate-x-7" : "translate-x-1"}`} />
+                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${
+                                                        notificationSettings.priceAlerts ? "translate-x-[28px]" : "translate-x-[2px]"
+                                                    }`} />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-[16px] rounded-[12px] border border-white/20">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-900 text-[16px]">
+                                                        {t("settings_booking_confirmations")}
+                                                    </h3>
+                                                    <p className="text-[12px] text-slate-700 mt-[2px]">
+                                                        {t("settings_booking_confirmations_desc")}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setNotificationSettings({ ...notificationSettings, bookingConfirmations: !notificationSettings.bookingConfirmations })}
+                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${
+                                                        notificationSettings.bookingConfirmations ? "bg-[#F59E0B]" : "bg-white/40"
+                                                    }`}
+                                                >
+                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${
+                                                        notificationSettings.bookingConfirmations ? "translate-x-[28px]" : "translate-x-[2px]"
+                                                    }`} />
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                                    )}
 
-                    {/* Alt Kaydet/İptal Butonları */}
-                    <div className="mt-12 flex justify-end gap-4">
-                        <button className="px-8 py-3 rounded-xl text-gray-800 font-bold hover:bg-white/20 transition-all border border-transparent hover:border-white/20 backdrop-blur-sm">
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            className="px-8 py-3 rounded-xl bg-[#f07c24] hover:bg-[#e06d19] text-white font-bold transition-all shadow-md shadow-orange-500/10"
-                        >
-                            Save Changes
-                        </button>
+                                    {/* 5. Security & Billing Tab */}
+                                    {activeTab === "security" && (
+                                        <div className="space-y-[32px]">
+                                            <div>
+                                                <h2 className="text-[20px] font-bold text-slate-900 mb-[16px]">
+                                                    {t("settings_saved_cards")}
+                                                </h2>
+                                                <div className="space-y-[12px] mb-[16px]">
+                                                    {securitySettings.savedCards.map((card) => (
+                                                        <div
+                                                            key={card.id}
+                                                            className="flex items-center justify-between bg-gradient-to-r from-slate-900/90 to-slate-800/90 backdrop-blur-md text-white px-[24px] py-[16px] rounded-[12px] shadow-lg border border-white/10"
+                                                        >
+                                                            <div>
+                                                                <p className="font-semibold text-[15px]">{card.cardType}</p>
+                                                                <p className="text-[13px] text-slate-300 mt-[4px]">**** **** **** {card.lastFour}</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setCardToDelete(card.id)}
+                                                                className="text-red-400 hover:text-red-300 font-semibold transition-colors text-[14px] cursor-pointer"
+                                                            >
+                                                                {t("settings_remove_card")}
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                    onClick={() => setIsModalOpen(true)}
+                                                    className="w-full flex items-center justify-center gap-[8px] bg-[#F59E0B] hover:bg-[#F59E0B]/90 text-white font-semibold py-[12px] rounded-[12px] transition-all shadow-md text-[14px] cursor-pointer"
+                                                >
+                                                    <Plus className="w-[20px] h-[20px]" /> {t("settings_add_card")}
+                                                </button>
+                                            </div>
+
+                                            <hr className="border-white/10" />
+
+                                            <div>
+                                                <h2 className="text-[20px] font-bold text-slate-900 mb-[24px]">
+                                                    {t("settings_account_security")}
+                                                </h2>
+                                                <div className="space-y-[20px]">
+                                                    <div>
+                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                            {t("settings_change_password")}
+                                                        </label>
+                                                        <div className="relative">
+                                                            <input
+                                                                type={showPassword ? "text" : "password"}
+                                                                value={newPassword}
+                                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                                placeholder={t("settings_change_password_placeholder")}
+                                                                className="w-full rounded-[12px] bg-white/50 backdrop-blur-md px-[16px] py-[12px] border border-white/30 text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 pr-[48px] font-medium text-[14px]"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowPassword(!showPassword)}
+                                                                className="absolute right-[16px] top-1/2 -translate-y-1/2 text-slate-700 cursor-pointer"
+                                                            >
+                                                                {showPassword ? (
+                                                                    <Eye className="w-[20px] h-[20px]" />
+                                                                ) : (
+                                                                    <EyeOff className="w-[20px] h-[20px]" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-[16px] rounded-[12px] border border-white/20">
+                                                        <div>
+                                                            <h3 className="font-bold text-slate-900 text-[16px]">{t("settings_two_factor")}</h3>
+                                                            <p className="text-[12px] text-slate-700 mt-[2px]">{t("settings_two_factor_desc")}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSecuritySettings({ ...securitySettings, twoFactorEnabled: !securitySettings.twoFactorEnabled })}
+                                                            className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${
+                                                                securitySettings.twoFactorEnabled ? "bg-[#F59E0B]" : "bg-white/40"
+                                                            }`}
+                                                        >
+                                                            <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${
+                                                                securitySettings.twoFactorEnabled ? "translate-x-[28px]" : "translate-x-[2px]"
+                                                            }`} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Save / Cancel actions */}
+                            <div className="mt-[48px] flex justify-end gap-[16px]">
+                                <button
+                                    onClick={handleCancel}
+                                    className="px-[32px] py-[12px] rounded-[12px] text-slate-800 font-bold hover:bg-white/20 transition-all border border-transparent hover:border-white/20 backdrop-blur-sm text-[14px] cursor-pointer"
+                                >
+                                    {t("settings_cancel")}
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    className="px-[32px] py-[12px] rounded-[12px] bg-[#0B5FFF] hover:bg-[#0B5FFF]/90 text-white font-bold transition-all shadow-md shadow-[#0B5FFF]/10 text-[14px] cursor-pointer"
+                                >
+                                    {t("settings_save_changes")}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* MODAL 1: KART EKLEME MODALI */}
+            {/* Modal: Add card */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Karartma Arka Planı */}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px]">
                     <div
                         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                         onClick={handleCloseModal}
                     />
 
-                    {/* Modal Kartı */}
-                    <div className="relative w-full max-w-md bg-white/70 backdrop-blur-2xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/40 z-10 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6">Add New Payment Method</h3>
+                    <div className="relative w-full max-w-[448px] bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-2xl rounded-[20px] p-[24px] md:p-[32px] shadow-2xl border border-white/20 z-10 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-[20px] font-bold text-slate-900 mb-[24px]">
+                            {t("settings_add_card_title")}
+                        </h3>
 
-                        <div className="space-y-4">
-                            {/* Kart Numarası */}
+                        <div className="space-y-[16px]">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-800 mb-2">Card Number</label>
+                                <label className="block text-[14px] font-semibold text-slate-800 mb-[8px]">{t("settings_card_number")}</label>
                                 <input
                                     type="text"
                                     maxLength="19"
@@ -487,20 +599,13 @@ export default function Settings() {
                                             expiry: newCard.expiry
                                         });
                                     }}
-                                    className="w-full rounded-full bg-white/60 px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium tracking-wider"
+                                    className="w-full rounded-[12px] bg-white/60 px-[16px] py-[12px] border border-white/30 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 font-medium tracking-wider text-[14px]"
                                 />
-
-                                {newCard.cardType && (
-                                    <span className="text-xs text-gray-600 ml-4 mt-1 block">
-                                        Detected: <strong className="text-[#f07c24]">{newCard.cardType}</strong>
-                                    </span>
-                                )}
                             </div>
 
-                            {/* Son Kullanma Tarihi & CVC */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-[16px]">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-800 mb-2">Expiry Date</label>
+                                    <label className="block text-[14px] font-semibold text-slate-800 mb-[8px]">{t("settings_expiry_date")}</label>
                                     <input
                                         type="text"
                                         maxLength="5"
@@ -529,28 +634,27 @@ export default function Settings() {
                                                 expiry: formattedExpiry
                                             });
                                         }}
-                                        className="w-full text-center rounded-full bg-white/60 px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium tracking-wider"
+                                        className="w-full text-center rounded-[12px] bg-white/60 px-[16px] py-[12px] border border-white/30 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 font-medium tracking-wider text-[14px]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-800 mb-2">CVC</label>
+                                    <label className="block text-[14px] font-semibold text-slate-800 mb-[8px]">{t("settings_cvc")}</label>
                                     <input
                                         type="password"
                                         placeholder="***"
                                         maxLength="3"
-                                        className="w-full text-center rounded-full bg-white/60 px-5 py-3 border border-white/30 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium"
+                                        className="w-full text-center rounded-[12px] bg-white/60 px-[16px] py-[12px] border border-white/30 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 font-medium text-[14px]"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Modal Aksiyon Butonları */}
-                        <div className="mt-8 flex justify-end gap-3">
+                        <div className="mt-[32px] flex justify-end gap-[12px]">
                             <button
                                 onClick={handleCloseModal}
-                                className="px-6 py-2.5 rounded-xl text-gray-800 font-bold hover:bg-white/40 transition-all border border-transparent hover:border-white/20"
+                                className="px-[20px] py-[10px] rounded-[12px] text-slate-800 font-bold hover:bg-white/40 transition-all border border-transparent hover:border-white/20 text-[14px]"
                             >
-                                Cancel
+                                {t("settings_cancel")}
                             </button>
                             <button
                                 onClick={() => {
@@ -567,38 +671,37 @@ export default function Settings() {
                                     });
                                     handleCloseModal();
                                 }}
-                                className="px-6 py-2.5 rounded-xl bg-[#f07c24] hover:bg-[#e06d19] text-white font-bold transition-all shadow-md"
+                                className="px-[20px] py-[10px] rounded-[12px] bg-[#F59E0B] hover:bg-[#F59E0B]/90 text-white font-bold transition-all shadow-md text-[14px] cursor-pointer"
                             >
-                                Add Card
+                                {t("settings_add_card_btn")}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* MODAL 2: KART SİLME ONAY MODALI */}
+            {/* Modal: Delete card */}
             {cardToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Arka Plan Karartma */}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px]">
                     <div
                         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                         onClick={() => setCardToDelete(null)}
                     />
 
-                    {/* Onay Kartı */}
-                    <div className="relative w-full max-w-sm bg-white/80 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/40 z-10 text-center animate-in fade-in zoom-in-95 duration-150">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Remove Card?</h3>
-                        <p className="text-sm text-gray-700 mb-6">
-                            Are you sure you want to delete this payment method? This action cannot be undone.
+                    <div className="relative w-full max-w-[384px] bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-2xl rounded-[20px] p-[24px] shadow-2xl border border-white/20 z-10 text-center animate-in fade-in zoom-in-95 duration-150">
+                        <h3 className="text-[20px] font-bold text-slate-900 mb-[8px]">
+                            {t("settings_remove_card_title")}
+                        </h3>
+                        <p className="text-[14px] text-slate-700 mb-[24px]">
+                            {t("settings_remove_card_desc")}
                         </p>
 
-                        {/* Butonlar */}
-                        <div className="flex gap-3 justify-center">
+                        <div className="flex gap-[12px] justify-center">
                             <button
                                 onClick={() => setCardToDelete(null)}
-                                className="flex-1 px-5 py-2.5 rounded-xl text-gray-800 font-bold hover:bg-white/40 transition-all border border-transparent hover:border-white/20"
+                                className="flex-1 px-[20px] py-[10px] rounded-[12px] text-slate-800 font-bold hover:bg-white/40 transition-all border border-transparent hover:border-white/20 text-[14px] cursor-pointer"
                             >
-                                Cancel
+                                {t("settings_cancel")}
                             </button>
                             <button
                                 onClick={() => {
@@ -609,9 +712,9 @@ export default function Settings() {
                                     });
                                     setCardToDelete(null);
                                 }}
-                                className="flex-1 px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-md shadow-red-500/10"
+                                className="flex-1 px-[20px] py-[10px] rounded-[12px] bg-[#EF4444] hover:bg-[#EF4444]/90 text-white font-bold transition-all shadow-md text-[14px] cursor-pointer"
                             >
-                                Delete
+                                {t("settings_delete_btn")}
                             </button>
                         </div>
                     </div>
