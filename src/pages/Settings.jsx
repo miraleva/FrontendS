@@ -58,10 +58,7 @@ export default function Settings() {
     });
 
     const [securitySettings, setSecuritySettings] = useState({
-        savedCards: [
-            { id: "1", cardType: "Visa", lastFour: "4242" },
-            { id: "2", cardType: "Mastercard", lastFour: "8888" },
-        ],
+        savedCards: [],
         twoFactorEnabled: false,
     });
 
@@ -99,24 +96,24 @@ export default function Settings() {
             try {
                 const stored = localStorage.getItem("flightPrefs");
                 setFlightPrefs(stored ? JSON.parse(stored) : { seat: "window", meal: "standard" });
-            } catch (e) {}
+            } catch (e) { }
             try {
                 const stored = localStorage.getItem("hotelPrefs");
                 setHotelPrefs(stored ? JSON.parse(stored) : { roomType: ["double"], amenities: ["wifi", "pool"] });
-            } catch (e) {}
+            } catch (e) { }
             try {
                 const stored = localStorage.getItem("chatbotSettings");
                 setChatbotSettings(stored ? JSON.parse(stored) : { tone: "friendly" });
-            } catch (e) {}
+            } catch (e) { }
             setAiResponseLang(localStorage.getItem("aiResponseLanguage") || "en");
             try {
                 const stored = localStorage.getItem("localizationSettings");
                 setLocalizationSettings(stored ? JSON.parse(stored) : { currency: "usd", timezone: "europe/london" });
-            } catch (e) {}
+            } catch (e) { }
             try {
                 const stored = localStorage.getItem("notificationSettings");
                 setNotificationSettings(stored ? JSON.parse(stored) : { priceAlerts: true, bookingConfirmations: true });
-            } catch (e) {}
+            } catch (e) { }
         };
         loadDefaults();
         alert(t("settings_cancel"));
@@ -184,11 +181,10 @@ export default function Settings() {
                                         <button
                                             key={tab.id}
                                             onClick={() => setActiveTab(tab.id)}
-                                            className={`w-full px-[16px] py-[12px] text-left text-[14px] font-semibold rounded-[12px] transition-all border cursor-pointer focus:outline-none ${
-                                                activeTab === tab.id
-                                                    ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
-                                                    : "bg-white/20 text-slate-800 border-white/10 hover:bg-white/30 backdrop-blur-sm"
-                                            }`}
+                                            className={`w-full px-[16px] py-[12px] text-left text-[14px] font-semibold rounded-[12px] transition-all border cursor-pointer focus:outline-none ${activeTab === tab.id
+                                                ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
+                                                : "bg-white/20 text-slate-800 border-white/10 hover:bg-white/30 backdrop-blur-sm"
+                                                }`}
                                         >
                                             {t(`settings_tab_${tab.id}`)}
                                         </button>
@@ -217,11 +213,10 @@ export default function Settings() {
                                                                 <button
                                                                     key={seat}
                                                                     onClick={() => setFlightPrefs({ ...flightPrefs, seat })}
-                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
-                                                                        flightPrefs.seat === seat
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
-                                                                    }`}
+                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${flightPrefs.seat === seat
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        }`}
                                                                 >
                                                                     {t(`settings_seat_${seat}`)}
                                                                 </button>
@@ -238,11 +233,10 @@ export default function Settings() {
                                                                 <button
                                                                     key={meal}
                                                                     onClick={() => setFlightPrefs({ ...flightPrefs, meal })}
-                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
-                                                                        flightPrefs.meal === meal
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
-                                                                    }`}
+                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${flightPrefs.meal === meal
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        }`}
                                                                 >
                                                                     {t(`settings_meal_${meal}`)}
                                                                 </button>
@@ -271,11 +265,10 @@ export default function Settings() {
                                                                 <button
                                                                     key={room}
                                                                     onClick={() => setHotelPrefs({ ...hotelPrefs, roomType: [room] })}
-                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
-                                                                        hotelPrefs.roomType.includes(room)
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
-                                                                    }`}
+                                                                    className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${hotelPrefs.roomType.includes(room)
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        }`}
                                                                 >
                                                                     {t(`settings_room_${room}`)}
                                                                 </button>
@@ -303,11 +296,10 @@ export default function Settings() {
                                                                                 : [...hotelPrefs.amenities, id],
                                                                         });
                                                                     }}
-                                                                    className={`flex items-center gap-[8px] px-[20px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
-                                                                        hotelPrefs.amenities.includes(id)
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
-                                                                    }`}
+                                                                    className={`flex items-center gap-[8px] px-[20px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${hotelPrefs.amenities.includes(id)
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        }`}
                                                                 >
                                                                     <Icon className="w-[20px] h-[20px]" />
                                                                     {label}
@@ -348,11 +340,10 @@ export default function Settings() {
                                                         <button
                                                             key={tone}
                                                             onClick={() => setChatbotSettings({ ...chatbotSettings, tone })}
-                                                            className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${
-                                                                chatbotSettings.tone === tone
-                                                                    ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                    : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
-                                                            }`}
+                                                            className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${chatbotSettings.tone === tone
+                                                                ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                }`}
                                                         >
                                                             {t(`settings_tone_${tone}`)}
                                                         </button>
@@ -413,13 +404,11 @@ export default function Settings() {
                                                 </div>
                                                 <button
                                                     onClick={() => setNotificationSettings({ ...notificationSettings, priceAlerts: !notificationSettings.priceAlerts })}
-                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${
-                                                        notificationSettings.priceAlerts ? "bg-[#F59E0B]" : "bg-white/40"
-                                                    }`}
+                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${notificationSettings.priceAlerts ? "bg-[#F59E0B]" : "bg-white/40"
+                                                        }`}
                                                 >
-                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${
-                                                        notificationSettings.priceAlerts ? "translate-x-[28px]" : "translate-x-[2px]"
-                                                    }`} />
+                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.priceAlerts ? "translate-x-[28px]" : "translate-x-[2px]"
+                                                        }`} />
                                                 </button>
                                             </div>
 
@@ -434,13 +423,11 @@ export default function Settings() {
                                                 </div>
                                                 <button
                                                     onClick={() => setNotificationSettings({ ...notificationSettings, bookingConfirmations: !notificationSettings.bookingConfirmations })}
-                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${
-                                                        notificationSettings.bookingConfirmations ? "bg-[#F59E0B]" : "bg-white/40"
-                                                    }`}
+                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${notificationSettings.bookingConfirmations ? "bg-[#F59E0B]" : "bg-white/40"
+                                                        }`}
                                                 >
-                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${
-                                                        notificationSettings.bookingConfirmations ? "translate-x-[28px]" : "translate-x-[2px]"
-                                                    }`} />
+                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.bookingConfirmations ? "translate-x-[28px]" : "translate-x-[2px]"
+                                                        }`} />
                                                 </button>
                                             </div>
                                         </div>
@@ -520,13 +507,11 @@ export default function Settings() {
                                                         </div>
                                                         <button
                                                             onClick={() => setSecuritySettings({ ...securitySettings, twoFactorEnabled: !securitySettings.twoFactorEnabled })}
-                                                            className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${
-                                                                securitySettings.twoFactorEnabled ? "bg-[#F59E0B]" : "bg-white/40"
-                                                            }`}
+                                                            className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${securitySettings.twoFactorEnabled ? "bg-[#F59E0B]" : "bg-white/40"
+                                                                }`}
                                                         >
-                                                            <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${
-                                                                securitySettings.twoFactorEnabled ? "translate-x-[28px]" : "translate-x-[2px]"
-                                                            }`} />
+                                                            <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${securitySettings.twoFactorEnabled ? "translate-x-[28px]" : "translate-x-[2px]"
+                                                                }`} />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -546,7 +531,7 @@ export default function Settings() {
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="px-[32px] py-[12px] rounded-[12px] bg-[#0B5FFF] hover:bg-[#0B5FFF]/90 text-white font-bold transition-all shadow-md shadow-[#0B5FFF]/10 text-[14px] cursor-pointer"
+                                    className="px-[32px] py-[12px] rounded-[12px] bg-[#219ebc] hover:bg-[#1a7e96] text-white font-bold transition-all shadow-md shadow-[#219ebc]/10 text-[14px] cursor-pointer"
                                 >
                                     {t("settings_save_changes")}
                                 </button>
