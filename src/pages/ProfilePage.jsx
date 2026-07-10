@@ -1,3 +1,6 @@
+import { getCountryCallingCode } from "react-phone-number-input";
+import metadata from "libphonenumber-js/metadata.full.json";
+import { getCountryCallingCode as getCode, parsePhoneNumberFromString } from "libphonenumber-js";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -12,7 +15,11 @@ export default function Profile() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    
+
+    // Modal görünürlükleri için state'ler
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false); // Yeni eklenen state
+
     // Load initial user details from localStorage 'user' object or defaults
     const [formData, setFormData] = useState(() => {
         const email = localStorage.getItem('userId') || '';
@@ -44,8 +51,18 @@ export default function Profile() {
         };
     });
 
+    const [activeCountry, setActiveCountry] = useState(() => {
+        if (formData.phone) {
+            const parsed = parsePhoneNumberFromString(formData.phone);
+            if (parsed && parsed.country) {
+                return parsed.country;
+            }
+        }
+        return "TR";
+    });
+
     const [backupData, setBackupData] = useState({});
-    
+
     const [errors, setErrors] = useState({
         firstName: "",
         lastName: "",
@@ -59,12 +76,12 @@ export default function Profile() {
     const userId = localStorage.getItem('userId') || 'user';
     const displayHandle = userId.includes('@') ? userId.split('@')[0] : userId;
 
-    const avatarLetter = formData.firstName 
-        ? formData.firstName[0].toUpperCase() 
+    const avatarLetter = formData.firstName
+        ? formData.firstName[0].toUpperCase()
         : (formData.email ? formData.email[0].toUpperCase() : "U");
 
-    const fullName = (formData.firstName || formData.lastName) 
-        ? `${formData.firstName} ${formData.lastName}`.trim() 
+    const fullName = (formData.firstName || formData.lastName)
+        ? `${formData.firstName} ${formData.lastName}`.trim()
         : displayHandle;
 
     const handleInputChange = (e) => {
@@ -95,9 +112,40 @@ export default function Profile() {
     };
 
     const handlePhoneChange = (value) => {
+        if (!value) {
+            setFormData((prev) => ({
+                ...prev,
+                phone: "",
+            }));
+            setErrors((prev) => ({
+                ...prev,
+                phone: "",
+            }));
+            return;
+        }
+
+        // Country-specific E.164 character limits including '+' and calling code
+        const countryLimits = {
+            TR: 13, // +90 + 10 digits
+            GB: 13, // +44 + 10 digits
+            DE: 15, // +49 + 12 digits (variable length)
+            RU: 12, // +7  + 10 digits
+        };
+
+        const limit = countryLimits[activeCountry] || 16;
+        let truncatedValue = value;
+        if (value.length > limit) {
+            truncatedValue = value.slice(0, limit);
+        }
+
         setFormData((prev) => ({
             ...prev,
-            phone: value || "",
+            phone: truncatedValue,
+        }));
+
+        setErrors((prev) => ({
+            ...prev,
+            phone: "",
         }));
     };
 
@@ -106,14 +154,14 @@ export default function Profile() {
         const regex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
         const match = dob.match(regex);
         if (!match) return t("profile_dob_invalid_format");
-        
+
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10) - 1;
         const year = parseInt(match[3], 10);
-        
+
         const date = new Date(year, month, day);
         const now = new Date();
-        
+
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
             return t("profile_dob_invalid_date");
         }
@@ -203,28 +251,36 @@ export default function Profile() {
             return;
         }
 
-        // Save updated data back to localStorage
         localStorage.setItem("user", JSON.stringify(formData));
         setIsEditing(false);
         console.log("Veriler başarıyla kaydedildi:", formData);
-        // TODO: connect to backend update endpoint
     };
 
-    const handleLogOut = () => {
-        console.log("Logging out...");
+    // Gerçek çıkış işlemini yapan fonksiyon
+    const handleConfirmLogOut = () => {
+        console.log("Logging out permanently...");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
+        setShowLogoutModal(false);
         navigate("/login");
     };
 
-    const handleDeleteAccount = () => {
-        if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-            console.log("Deleting account...");
-            localStorage.clear();
-            navigate("/login");
-        }
+    // Gerçek silme işlemini yapan fonksiyon
+    const handleConfirmDelete = () => {
+        console.log("Deleting account permanently...");
+        localStorage.clear();
+        setShowDeleteModal(false);
+        navigate("/login");
     };
+
+    const countryFormattedLimits = {
+        TR: 17, // +90 555 444 33 22
+        GB: 16, // +44 342 342 3432 (or mobile: +44 7911 123456)
+        DE: 18, // +49 176 12345678 (16) or up to 18 for longer landlines
+        RU: 16, // +7 912 345-67-89
+    };
+    const inputMaxLength = countryFormattedLimits[activeCountry] || 16;
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
@@ -272,7 +328,7 @@ export default function Profile() {
                                             {fullName}
                                         </h1>
                                         <div className="flex flex-col mt-[2px]">
-                                            <p className="text-slate-500 text-[14px] font-medium leading-none">@displayHandle</p>
+                                            <p className="text-slate-500 text-[14px] font-medium leading-none">@{displayHandle}</p>
                                             <p className="text-slate-600 text-[11px] font-medium mt-[6px] leading-none">
                                                 {t("profile_member_since")}: May 2024
                                             </p>
@@ -298,7 +354,7 @@ export default function Profile() {
                                         </button>
                                         <button
                                             onClick={handleSave}
-                                            className="px-[16px] py-[8px] bg-[#0B5FFF] hover:bg-[#0B5FFF]/90 text-white font-semibold rounded-[12px] transition-all duration-200 text-[14px] focus:outline-none cursor-pointer"
+                                            className="px-[16px] py-[8px] bg-[#219ebc] hover:bg-[#1a7f98] text-white font-semibold rounded-[12px] transition-all duration-200 text-[14px] focus:outline-none cursor-pointer"
                                         >
                                             {t("profile_save_changes")}
                                         </button>
@@ -402,13 +458,35 @@ export default function Profile() {
                                             <PhoneInput
                                                 international
                                                 defaultCountry="TR"
+                                                countries={["TR", "GB", "DE", "RU"]}
                                                 value={formData.phone}
                                                 onChange={handlePhoneChange}
+                                                onCountryChange={(country) => {
+                                                    if (country) {
+                                                        setActiveCountry(country);
+                                                        const countryLimits = {
+                                                            TR: 13,
+                                                            GB: 13,
+                                                            DE: 15,
+                                                            RU: 12,
+                                                        };
+                                                        const limit = countryLimits[country] || 16;
+                                                        if (formData.phone && formData.phone.length > limit) {
+                                                            setFormData((prev) => ({
+                                                                ...prev,
+                                                                phone: prev.phone.slice(0, limit),
+                                                            }));
+                                                        }
+                                                    }
+                                                }}
                                                 onBlur={() => handleBlur("phone")}
-                                                className="flex items-center w-full bg-white/50 border border-white/20 rounded-[12px] px-[16px] py-[12px] text-slate-900 text-[15px] focus-within:ring-2 focus-within:ring-[#0B5FFF]/40 focus-within:bg-white/70 transition-all duration-200"
+                                                smartCaret={false}
+                                                className="flex items-center w-full bg-white/50 border border-white/20 rounded-[12px] px-[16px] py-[12px] text-slate-900 text-[15px] focus-within:ring-2 focus-within:ring-[#219ebc]/40 focus-within:bg-white/70 transition-all duration-200"
                                                 numberInputProps={{
-                                                    className: 'bg-transparent border-0 outline-none w-full text-[15px] text-slate-900 placeholder-slate-400 focus:ring-0 focus:outline-none ml-[12px]',
+                                                    className:
+                                                        "bg-transparent border-0 outline-none w-full text-[15px] text-slate-900 placeholder-slate-400 focus:ring-0 focus:outline-none ml-[12px]",
                                                     placeholder: t("phone_placeholder"),
+                                                    maxLength: inputMaxLength,
                                                 }}
                                             />
                                             {errors.phone && (
@@ -528,13 +606,13 @@ export default function Profile() {
                                 </div>
                                 <div className="flex items-center gap-[12px] shrink-0">
                                     <button
-                                        onClick={handleLogOut}
+                                        onClick={() => setShowLogoutModal(true)} // Modal'ı açar
                                         className="px-[16px] py-[8px] border border-slate-700 hover:bg-slate-700/10 text-slate-700 font-semibold rounded-[12px] transition-colors duration-200 text-[12px] focus:outline-none cursor-pointer"
                                     >
                                         {t("profile_logout")}
                                     </button>
                                     <button
-                                        onClick={handleDeleteAccount}
+                                        onClick={() => setShowDeleteModal(true)}
                                         className="px-[16px] py-[8px] bg-[#EF4444] hover:bg-[#EF4444]/90 text-white font-semibold rounded-[12px] transition-colors duration-200 text-[12px] focus:outline-none cursor-pointer"
                                     >
                                         {t("profile_delete_account")}
@@ -545,6 +623,68 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
+
+            {/* --- GLASSMORPHIC LOG OUT CONFIRMATION MODAL PENCERESI --- */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] backdrop-blur-md bg-black/10 animate-fade-in">
+                    <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.25] to-white/[0.08] backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
+
+                        <h3 className="text-[22px] font-bold text-slate-900 tracking-tight mb-[12px]">
+                            Log Out?
+                        </h3>
+
+                        <p className="text-[14px] font-medium text-slate-600/90 leading-relaxed max-w-[320px] mb-[32px]">
+                            Are you sure you want to log out of your current session?
+                        </p>
+
+                        {/* Buton Yapısı (Onay butonu temanın ana rengine sadık kalınarak #0B5FFF yapıldı) */}
+                        <div className="flex items-center justify-center gap-[40px] w-full">
+                            <button
+                                onClick={() => setShowLogoutModal(false)}
+                                className="text-[15px] font-bold text-slate-700 hover:text-slate-900 transition-colors duration-150 focus:outline-none cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmLogOut}
+                                className="px-[36px] py-[12px] bg-[#219ebc] hover:bg-[#1a7f98] text-white font-bold text-[15px] rounded-[14px] shadow-[0_4px_12px_rgba(33,158,188,0.25)] transition-all duration-150 focus:outline-none cursor-pointer"                            >
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- GLASSMORPHIC DELETE ACCOUNT CONFIRMATION MODAL PENCERESI --- */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] backdrop-blur-md bg-black/10 animate-fade-in">
+                    <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.25] to-white/[0.08] backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
+
+                        <h3 className="text-[22px] font-bold text-slate-900 tracking-tight mb-[12px]">
+                            Remove Account?
+                        </h3>
+
+                        <p className="text-[14px] font-medium text-slate-600/90 leading-relaxed max-w-[320px] mb-[32px]">
+                            Are you sure you want to delete your account? This action cannot be undone.
+                        </p>
+
+                        <div className="flex items-center justify-center gap-[40px] w-full">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="text-[15px] font-bold text-slate-700 hover:text-slate-900 transition-colors duration-150 focus:outline-none cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="px-[36px] py-[12px] bg-[#FF4B4B] hover:bg-[#E03F3F] text-white font-bold text-[15px] rounded-[14px] shadow-[0_4px_12px_rgba(255,75,75,0.25)] transition-all duration-150 focus:outline-none cursor-pointer"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
