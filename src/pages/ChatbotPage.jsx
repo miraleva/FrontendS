@@ -174,13 +174,13 @@ export default function Index() {
                 // 1. Welcome operations screen (Centered)
                 <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center">
                   <div className="mb-8 text-center flex flex-col items-center">
-                    <div className="flex flex-row items-center justify-center gap-2 mb-2 select-none">
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-2 select-none text-center md:text-left">
                       <img
                         src="/logo.png"
                         alt="Sanny Logo"
-                        className="h-15 md:h-20 w-auto object-contain"
+                        className="h-16 md:h-20 w-auto object-contain flex-shrink-0"
                       />
-                      <h1 className="text-3xl md:text-4xl font-extrabold text-[#1E232C] font-display">
+                      <h1 className="text-2xl md:text-4xl font-extrabold text-[#1E232C] font-display">
                         {t(getGreetingKey(), { username })}
                       </h1>
                     </div>
