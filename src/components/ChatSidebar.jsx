@@ -84,7 +84,6 @@ export default function ChatSidebar({
   // Filtering logic
   const filteredSessions = sessions
     .filter(session => {
-      const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase());
       const title = session.title || 'Chat Session';
       const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
       const category = getVisualCategory(title);
