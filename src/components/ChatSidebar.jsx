@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // 1. i18n hook'unu import ediyoruz
 import {
   PanelLeftClose,
   Plus,
@@ -18,6 +19,7 @@ export default function ChatSidebar({
   setIsOpen,
   onNewChat
 }) {
+  const { t } = useTranslation(); // 2. t fonksiyonumuzu tanımlıyoruz
   const navigate = useNavigate();
   const location = useLocation();
   const isChatActive = location.pathname.startsWith('/chat');
@@ -50,17 +52,13 @@ export default function ChatSidebar({
   // Filtering logic
   const filteredSessions = initialSessions
     .filter(session => {
-      // Search text query
       const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Category dropdown filter
       if (activeFilter === 'Hotels') {
         return matchesSearch && session.category === 'Hotel';
       }
       if (activeFilter === 'Flights') {
         return matchesSearch && session.category === 'Flight';
       }
-      // None/Date shows all, we handle sorting/filtering below
       return matchesSearch;
     })
     .sort((a, b) => {
@@ -98,10 +96,10 @@ export default function ChatSidebar({
         <button
           onClick={() => {
             navigate('/chat');
-            if (onNewChat) onNewChat(); // Eğer fonksiyon varsa tetikle
+            if (onNewChat) onNewChat();
           }}
           className="flex items-center gap-1.5 select-none focus:outline-none cursor-pointer text-left hover:opacity-90 active:scale-95 transition-all"
-          title="Start New Chat"
+          title={t('sidebar_new_chat')}
         >
           <SannyLogo
             className="flex items-center gap-1.5"
@@ -123,12 +121,12 @@ export default function ChatSidebar({
         <button
           onClick={() => {
             navigate('/chat');
-            if (onNewChat) onNewChat(); // Eğer fonksiyon varsa tetikle
+            if (onNewChat) onNewChat();
           }}
           className="flex items-center gap-1.5 text-[#0B5FFF] hover:text-[#0B5FFF]/80 hover:underline text-sm font-semibold transition-all duration-150 focus:outline-none cursor-pointer"
         >
           <Plus size={16} />
-          <span>New Chat</span>
+          <span>{t('sidebar_new_chat')}</span>
         </button>
       </div>
 
@@ -140,7 +138,7 @@ export default function ChatSidebar({
           </span>
           <input
             type="text"
-            placeholder="Search chats"
+            placeholder={t('sidebar_search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => navigate('/chat/search')}
@@ -152,7 +150,7 @@ export default function ChatSidebar({
       {/* 4. Main Nav Section */}
       <div className="flex flex-col">
         <div className="bg-transparent text-[#0B5FFF] text-[11px] font-bold uppercase tracking-wider px-5 py-2">
-          Maın Navıgatıon
+          {t('sidebar_main_navigation')}
         </div>
         <nav className="flex flex-col gap-1 p-2">
           <button
@@ -163,7 +161,7 @@ export default function ChatSidebar({
               }`}
           >
             <MessageSquare size={16} />
-            <span>Chats</span>
+            <span>{t('sidebar_chats')}</span>
           </button>
 
           <button
@@ -174,7 +172,7 @@ export default function ChatSidebar({
               }`}
           >
             <Clock size={16} />
-            <span>Past Appointments</span>
+            <span>{t('sidebar_appointments')}</span>
           </button>
         </nav>
       </div>
@@ -182,7 +180,7 @@ export default function ChatSidebar({
       {/* 5. Recent Chats Section Header */}
       <div className="flex flex-col flex-1 min-h-0">
         <div className="bg-transparent text-[#0B5FFF] text-[11px] font-bold uppercase tracking-wider px-5 py-2 flex items-center justify-between">
-          <span>Recent Chats</span>
+          <span>{t('sidebar_recent_chats')}</span>
 
           {/* Dropdown Filter */}
           <div className="relative" ref={dropdownRef}>
@@ -237,7 +235,7 @@ export default function ChatSidebar({
               </div>
             ))
           ) : (
-            <p className="text-xs text-text-secondary text-center py-6">No recent chats match</p>
+            <p className="text-xs text-text-secondary text-center py-6">{t('sidebar_no_matches')}</p>
           )}
         </div>
       </div>
@@ -260,17 +258,13 @@ export default function ChatSidebar({
             <span className="text-sm font-semibold text-text-primary truncate max-w-[120px]" title={username}>
               {displayUsername}
             </span>
-            <span className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">
-              Agent
-            </span>
           </div>
         </div>
 
-        {/* Ayarlar Butonu Güncellemesi */}
         <button
-          onClick={() => navigate('/settings')} // Tıklanınca /settings rotasına gider
+          onClick={() => navigate('/settings')}
           className={`p-2 rounded-lg transition-colors focus:outline-none ml-2 ${location.pathname === '/settings'
-            ? 'bg-slate-100 text-primary' // Eğer ayarlar sayfasındaysak aktif stili uygula
+            ? 'bg-slate-100 text-primary'
             : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
             }`}
           title="Settings"

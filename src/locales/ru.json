@@ -134,5 +134,15 @@
   "settings_remove_card": "Удалить",
   "settings_remove_card_title": "Удалить карту?",
   "settings_remove_card_desc": "Вы уверены, что хотите удалить этот способ оплаты? Это действие нельзя отменить.",
-  "settings_delete_btn": "Удалить"
+  "settings_delete_btn": "Удалить",
+  "sidebar_chat": "Чат",
+  "sidebar_documents": "Управление документами",
+  "sidebar_history": "Прошлые операции",
+  "sidebar_new_chat": "Новый чат",
+  "sidebar_search": "Поиск чатов...",
+  "sidebar_main_navigation": "ГЛАВНОЕ МЕНЮ",
+  "sidebar_chats": "Чаты",
+  "sidebar_appointments": "Прошедшие встречи",
+  "sidebar_recent_chats": "ПОСЛЕДНИЕ ЧАТЫ",
+  "sidebar_no_matches": "Совпадающих чатов не найдено"
 }

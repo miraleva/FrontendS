@@ -134,5 +134,12 @@
   "settings_remove_card": "Entfernen",
   "settings_remove_card_title": "Karte entfernen?",
   "settings_remove_card_desc": "Sind Sie sicher, dass Sie diese Zahlungsmethode löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
-  "settings_delete_btn": "Löschen"
+  "settings_delete_btn": "Löschen",
+  "sidebar_new_chat": "Neuer Chat",
+  "sidebar_search": "Chats durchsuchen...",
+  "sidebar_main_navigation": "HAUPTNAVIGATION",
+  "sidebar_chats": "Chats",
+  "sidebar_appointments": "Vergangene Termine",
+  "sidebar_recent_chats": "AKTUELLE CHATS",
+  "sidebar_no_matches": "Keine aktuellen Chats gefunden"
 }
