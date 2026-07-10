@@ -716,25 +716,24 @@ export default function Profile() {
                     <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.25] to-white/[0.08] backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
 
                         <h3 className="text-[22px] font-bold text-slate-900 tracking-tight mb-[12px]">
-                            Log Out?
+                            {t("profile_logout_title", "Log Out?")}
                         </h3>
 
                         <p className="text-[14px] font-medium text-slate-600/90 leading-relaxed max-w-[320px] mb-[32px]">
-                            Are you sure you want to log out of your current session?
+                            {t("profile_logout_confirm", "Are you sure you want to log out of your current session?")}
                         </p>
 
-                        {/* Buton Yapısı (Onay butonu temanın ana rengine sadık kalınarak #0B5FFF yapıldı) */}
                         <div className="flex items-center justify-center gap-[40px] w-full">
                             <button
                                 onClick={() => setShowLogoutModal(false)}
                                 className="text-[15px] font-bold text-slate-700 hover:text-slate-900 transition-colors duration-150 focus:outline-none cursor-pointer"
                             >
-                                Cancel
+                                {t("profile_cancel", "Cancel")}
                             </button>
                             <button
                                 onClick={handleConfirmLogOut}
                                 className="px-[36px] py-[12px] bg-[#219ebc] hover:bg-[#1a7f98] text-white font-bold text-[15px] rounded-[14px] shadow-[0_4px_12px_rgba(33,158,188,0.25)] transition-all duration-150 focus:outline-none cursor-pointer"                            >
-                                Log Out
+                                {t("profile_logout", "Log Out")}
                             </button>
                         </div>
                     </div>
@@ -747,11 +746,11 @@ export default function Profile() {
                     <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.25] to-white/[0.08] backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
 
                         <h3 className="text-[22px] font-bold text-slate-900 tracking-tight mb-[12px]">
-                            Remove Account?
+                            {t("profile_delete_title", "Remove Account?")}
                         </h3>
 
                         <p className="text-[14px] font-medium text-slate-600/90 leading-relaxed max-w-[320px] mb-[32px]">
-                            Are you sure you want to delete your account? This action cannot be undone.
+                            {t("profile_delete_confirm", "Are you sure you want to delete your account? This action cannot be undone.")}
                         </p>
 
                         <div className="flex items-center justify-center gap-[40px] w-full">
@@ -759,13 +758,13 @@ export default function Profile() {
                                 onClick={() => setShowDeleteModal(false)}
                                 className="text-[15px] font-bold text-slate-700 hover:text-slate-900 transition-colors duration-150 focus:outline-none cursor-pointer"
                             >
-                                Cancel
+                                {t("profile_cancel", "Cancel")}
                             </button>
                             <button
                                 onClick={handleConfirmDelete}
                                 className="px-[36px] py-[12px] bg-[#FF4B4B] hover:bg-[#E03F3F] text-white font-bold text-[15px] rounded-[14px] shadow-[0_4px_12px_rgba(255,75,75,0.25)] transition-all duration-150 focus:outline-none cursor-pointer"
                             >
-                                Delete
+                                {t("profile_delete_btn", "Delete")}
                             </button>
                         </div>
                     </div>
