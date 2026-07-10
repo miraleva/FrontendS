@@ -51,6 +51,16 @@ export default function Profile() {
         };
     });
 
+    const [activeCountry, setActiveCountry] = useState(() => {
+        if (formData.phone) {
+            const parsed = parsePhoneNumberFromString(formData.phone);
+            if (parsed && parsed.country) {
+                return parsed.country;
+            }
+        }
+        return "TR";
+    });
+
     const [backupData, setBackupData] = useState({});
 
     const [errors, setErrors] = useState({
@@ -103,68 +113,42 @@ export default function Profile() {
 
     const handlePhoneChange = (value) => {
         if (!value) {
-            setFormData((prev) => ({ ...prev, phone: "" }));
+            setFormData((prev) => ({
+                ...prev,
+                phone: "",
+            }));
+            setErrors((prev) => ({
+                ...prev,
+                phone: "",
+            }));
             return;
         }
 
-        // Telefon numarasını kütüphane ile ayrıştırıyoruz
-        const phoneNumber = parsePhoneNumberFromString(value);
+        // Country-specific E.164 character limits including '+' and calling code
+        const countryLimits = {
+            TR: 13, // +90 + 10 digits
+            GB: 13, // +44 + 10 digits
+            DE: 15, // +49 + 12 digits (variable length)
+            RU: 12, // +7  + 10 digits
+        };
 
-        if (phoneNumber && phoneNumber.country) {
-            const countryMetadata = metadata.countries[phoneNumber.country];
-
-            if (countryMetadata && countryMetadata[2]) {
-                const possibleLengths = countryMetadata[2];
-                const maxNationalLength = Array.isArray(possibleLengths)
-                    ? Math.max(...possibleLengths)
-                    : possibleLengths;
-
-                let currentNational = phoneNumber.nationalNumber || "";
-
-                // Ön ek temizliği (TR için 0, RU için 8 gibi yerel alışkanlıklar)
-                if (phoneNumber.country === "TR" && currentNational.startsWith("0")) {
-                    currentNational = currentNational.slice(1);
-                } else if (phoneNumber.country === "RU" && currentNational.startsWith("8")) {
-                    currentNational = currentNational.slice(1);
-                }
-
-                // Eğer girilen saf numara uzunluğu sınırları aşıyorsa, state'i güncelleme (yazılmasına izin verme)
-                if (currentNational.length > maxNationalLength) {
-                    return; // Fonksiyondan çık, girdi iptal olsun
-                }
-            }
+        const limit = countryLimits[activeCountry] || 16;
+        let truncatedValue = value;
+        if (value.length > limit) {
+            truncatedValue = value.slice(0, limit);
         }
 
-        // Sınırlar dahilindeyse state'i güncelle
         setFormData((prev) => ({
             ...prev,
-            phone: value,
+            phone: truncatedValue,
+        }));
+
+        setErrors((prev) => ({
+            ...prev,
+            phone: "",
         }));
     };
-    const getMaxInputLength = (phoneValue) => {
-        if (!phoneValue) return 25; // Başlangıçta esnek bırakıyoruz
 
-        const phoneNumber = parsePhoneNumberFromString(phoneValue);
-        if (phoneNumber && phoneNumber.country) {
-            switch (phoneNumber.country) {
-                case "TR":
-                    // Örn: +90 555 123 45 67 -> Toplam 17 karakter (boşluklar dahil)
-                    return 17;
-                case "RU":
-                    // Örn: +7 999 123 45 67 -> Toplam 16 karakter
-                    return 16;
-                case "GB":
-                    // Örn: +44 7911 123456 -> En uzun Birleşik Krallık formatı boşluklarla ~16-17 karakter
-                    return 17;
-                case "DE":
-                    // Almanya'da iç numaralar değişkendir ama maksimum formatlı hali ~18 karakteri bulabilir
-                    return 18;
-                default:
-                    return 25;
-            }
-        }
-        return 25;
-    };
     const validateDateOfBirth = (dob) => {
         if (!dob) return "";
         const regex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
@@ -289,6 +273,14 @@ export default function Profile() {
         setShowDeleteModal(false);
         navigate("/login");
     };
+
+    const countryFormattedLimits = {
+        TR: 17, // +90 555 444 33 22
+        GB: 16, // +44 342 342 3432 (or mobile: +44 7911 123456)
+        DE: 18, // +49 176 12345678 (16) or up to 18 for longer landlines
+        RU: 16, // +7 912 345-67-89
+    };
+    const inputMaxLength = countryFormattedLimits[activeCountry] || 16;
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
@@ -469,54 +461,32 @@ export default function Profile() {
                                                 countries={["TR", "GB", "DE", "RU"]}
                                                 value={formData.phone}
                                                 onChange={handlePhoneChange}
+                                                onCountryChange={(country) => {
+                                                    if (country) {
+                                                        setActiveCountry(country);
+                                                        const countryLimits = {
+                                                            TR: 13,
+                                                            GB: 13,
+                                                            DE: 15,
+                                                            RU: 12,
+                                                        };
+                                                        const limit = countryLimits[country] || 16;
+                                                        if (formData.phone && formData.phone.length > limit) {
+                                                            setFormData((prev) => ({
+                                                                ...prev,
+                                                                phone: prev.phone.slice(0, limit),
+                                                            }));
+                                                        }
+                                                    }
+                                                }}
                                                 onBlur={() => handleBlur("phone")}
                                                 smartCaret={false}
                                                 className="flex items-center w-full bg-white/50 border border-white/20 rounded-[12px] px-[16px] py-[12px] text-slate-900 text-[15px] focus-within:ring-2 focus-within:ring-[#219ebc]/40 focus-within:bg-white/70 transition-all duration-200"
                                                 numberInputProps={{
-                                                    className: 'bg-transparent border-0 outline-none w-full text-[15px] text-slate-900 placeholder-slate-400 focus:ring-0 focus:outline-none ml-[12px]',
+                                                    className:
+                                                        "bg-transparent border-0 outline-none w-full text-[15px] text-slate-900 placeholder-slate-400 focus:ring-0 focus:outline-none ml-[12px]",
                                                     placeholder: t("phone_placeholder"),
-                                                    // Dinamik olarak o ülkenin izin verdiği maksimum karakter sınırını uyguluyoruz
-                                                    maxLength: getMaxInputLength(formData.phone),
-                                                    onKeyDown: (e) => {
-                                                        const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Control", "v", "c", "a"];
-
-                                                        // Rakam girilmeye çalışılıyorsa
-                                                        if (/^\d$/.test(e.key)) {
-                                                            const phoneNumber = parsePhoneNumberFromString(formData.phone || "");
-
-                                                            if (phoneNumber && phoneNumber.country) {
-                                                                const countryMetadata = metadata.countries[phoneNumber.country];
-
-                                                                if (countryMetadata && countryMetadata[2]) {
-                                                                    const possibleLengths = countryMetadata[2];
-                                                                    const maxNationalLength = Array.isArray(possibleLengths)
-                                                                        ? Math.max(...possibleLengths)
-                                                                        : possibleLengths;
-
-                                                                    let currentNational = phoneNumber.nationalNumber || "";
-
-                                                                    // Yerel başlangıç kodlarının uzunluğu saptırmasını engelliyoruz
-                                                                    if (phoneNumber.country === "TR" && currentNational.startsWith("0")) {
-                                                                        currentNational = currentNational.slice(1);
-                                                                    } else if (phoneNumber.country === "RU" && currentNational.startsWith("8")) {
-                                                                        currentNational = currentNational.slice(1);
-                                                                    }
-
-                                                                    // ÖNEMLİ: State henüz güncellenmediği için >= yerine > kontrolü yapıyoruz 
-                                                                    // veya formatlı string sınırına dayandıysa doğrudan bloke ediyoruz.
-                                                                    if (currentNational.length >= maxNationalLength) {
-                                                                        e.preventDefault();
-                                                                        return;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-
-                                                        // Sayılar ve sistem tuşları dışındakileri engelle
-                                                        if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
-                                                            e.preventDefault();
-                                                        }
-                                                    }
+                                                    maxLength: inputMaxLength,
                                                 }}
                                             />
                                             {errors.phone && (
