@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
+import api from '../services/api';
+
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -47,7 +49,7 @@ export default function LoginPage() {
     setFieldErrors((prev) => ({ ...prev, [field]: err }));
   };
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const emailErr = validateEmail(email);
     const passwordErr = validatePassword(password);
@@ -57,8 +59,26 @@ export default function LoginPage() {
       return;
     }
 
-    localStorage.setItem('userId', email.trim());
-    navigate('/chat');
+    try {
+      const response = await api.post('/api/auth/login', { email, password });
+      const data = response.data;
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('userId', data.user.email);
+      navigate('/chat');
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        setFieldErrors({
+          email: "Invalid email or password",
+          password: "Invalid email or password"
+        });
+      } else {
+        setFieldErrors({
+          email: "An error occurred during login. Please try again.",
+          password: ""
+        });
+      }
+    }
   }
 
   const handleTimeUpdate = (e) => {

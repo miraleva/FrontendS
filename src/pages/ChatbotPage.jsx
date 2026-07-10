@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from 'react-router-dom';
+import api from '../services/api';
 import { PanelLeftOpen, Send, Paperclip, Mic, ArrowUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
@@ -12,6 +14,8 @@ export default function Index() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
   const [context, setContext] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId') || '';
 
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -28,6 +32,33 @@ export default function Index() {
       });
     }
   }, []);
+
+  useEffect(() => {
+    if (sessionId) {
+      const loadHistory = async () => {
+        try {
+          setIsThinking(true);
+          setThinkingStep("Loading history...");
+          const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+          const history = response.data.map((msg, idx) => ({
+            id: idx,
+            text: msg.text,
+            sender: msg.sender
+          }));
+          setMessages(history);
+          setIsChatActive(history.length > 0);
+        } catch (err) {
+          console.error("Failed to load message history for session", sessionId, err);
+        } finally {
+          setIsThinking(false);
+        }
+      };
+      loadHistory();
+    } else {
+      setMessages([]);
+      setIsChatActive(false);
+    }
+  }, [sessionId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -81,7 +112,7 @@ export default function Index() {
     setContext({ category, refNum, docs });
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!searchQuery.trim()) return;
 
     const query = searchQuery;
@@ -94,24 +125,56 @@ export default function Index() {
     }
     setIsChatActive(true);
     setIsThinking(true);
+    setThinkingStep(t("thinking_sop") || "Checking SOP manuals...");
 
-    // Thinking states sequential flow
-    setThinkingStep(t("thinking_sop"));
+    console.log("[ChatbotPage] handleSend: sending message with sessionId =", sessionId || "null (new session)");
 
-    setTimeout(() => {
-      setThinkingStep(t("thinking_res"));
-    }, 1000);
+    let userCountry = "Turkey";
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.country) userCountry = user.country;
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
-    setTimeout(() => {
-      setThinkingStep(t("thinking_preparing"));
-    }, 2000);
+    try {
+      const response = await api.post('/api/chat/message', {
+        message: query,
+        sessionId: sessionId || null,
+        country: userCountry,
+        currencySymbol: "TRY",
+        currencyName: "Turkish Lira"
+      });
 
-    setTimeout(() => {
-      const botMsg = { id: Date.now() + 1, text: t("placeholder_reply", { query }), sender: "bot" };
+      const data = response.data;
+      const botMsg = {
+        id: Date.now() + 1,
+        text: data.reply,
+        sender: "bot",
+        results: data.results
+      };
+
       setMessages(prev => [...prev, botMsg]);
-      setIsThinking(false);
+
+      if (data.sessionId && data.sessionId !== sessionId) {
+        setSearchParams({ sessionId: data.sessionId });
+      }
+
       updateOperationContext(query);
-    }, 3000);
+    } catch (err) {
+      console.error("Failed to send message", err);
+      const errorMsg = {
+        id: Date.now() + 1,
+        text: "Sorry, I couldn't reach the chat assistant. Please check your connection.",
+        sender: "bot"
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -296,6 +359,44 @@ export default function Index() {
                           >
                             {msg.text}
                           </div>
+                          {msg.results && msg.results.length > 0 && (
+                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                              {msg.results.map((result, idx) => {
+                                const isFlight = result.airline !== undefined;
+                                if (isFlight) {
+                                  return (
+                                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
+                                      <div className="flex justify-between items-center">
+                                        <span className="font-bold text-[#1E232C] text-sm">✈️ {result.airline}</span>
+                                        <span className="text-[#3B82F6] font-bold text-sm">{result.price} {result.currency}</span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                                        <div><strong>Departure:</strong> {result.departureTime}</div>
+                                        <div><strong>Arrival:</strong> {result.arrivalTime}</div>
+                                        <div><strong>Transfers:</strong> {result.transfers}</div>
+                                        <div><strong>Baggage:</strong> {result.baggage}</div>
+                                      </div>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex flex-col">
+                                          <span className="font-bold text-[#1E232C] text-sm">🏨 {result.name || result.hotelId}</span>
+                                          <span className="text-xs text-slate-500">{result.region} • {result.stars}★</span>
+                                        </div>
+                                        <span className="text-[#3B82F6] font-bold text-sm">{result.price} {result.currency}</span>
+                                      </div>
+                                      <div className="text-xs text-slate-600">
+                                        <strong>Board/Pension:</strong> {result.boardType || result.pensionType || "N/A"}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
