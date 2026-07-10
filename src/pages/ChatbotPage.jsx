@@ -12,10 +12,15 @@ export default function Index() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
   const [context, setContext] = useState(null);
+  const [isListening, setIsListening] = useState(false);
 
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Karşılama ve aktif sohbet ekranları için ayrı ayrı dosya input referansları
+  const welcomeFileInputRef = useRef(null);
+  const chatFileInputRef = useRef(null);
 
   const email = localStorage.getItem('userId') || "";
   const username = email ? (email.includes('@') ? email.split('@')[0] : email) : "User";
@@ -95,7 +100,6 @@ export default function Index() {
     setIsChatActive(true);
     setIsThinking(true);
 
-    // Thinking states sequential flow
     setThinkingStep(t("thinking_sop"));
 
     setTimeout(() => {
@@ -128,21 +132,109 @@ export default function Index() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    console.log("Seçilen dosya başarıyla yakalandı:", file.name);
+    // Buraya dosya yükleme (upload) servis mantığını ekleyebilirsin
+  };
+
+  const recognitionRef = useRef(null);
+
+  const startVoiceRecognition = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Eğer zaten dinliyorsa ve tekrar basıldıysa (veya stop fonksiyonu gibi çalışacaksa) durdur
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+        return;
+      } catch (err) {
+        console.log("Oturum durdurulamadı:", err);
+      }
+    }
+
+    console.log("Ses tanıma tetiklendi...");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert("Tarayıcınız ses tanıma özelliğini desteklemiyor.");
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+
+      recognition.lang = "tr-TR";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        console.log("Ses kaydı AKTİF.");
+        setIsListening(true); // Arayüzü ses dalgası moduna geçirir
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech API Hatası:", event.error);
+        if (event.error !== 'aborted') {
+          alert(`Tarayıcı Ses Hatası: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onresult = (event) => {
+        const speechToText = event.results[0][0].transcript;
+        setSearchQuery(prev => prev ? `${prev} ${speechToText}` : speechToText);
+
+        if (textareaRef.current) {
+          setTimeout(() => {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+          }, 0);
+        }
+      };
+
+      recognition.onend = () => {
+        console.log("Ses tanıma bitti.");
+        stream.getTracks().forEach(track => track.stop());
+        recognitionRef.current = null;
+        setIsListening(false); // Arayüzü normal textarea moduna geri döndürür
+      };
+
+      recognition.start();
+
+    } catch (err) {
+      console.error("Donanım hatası:", err);
+      setIsListening(false);
+    }
+  };
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
-      {/* Collapsible Chat Sidebar */}
+      {/* Sol Sidebar */}
       <ChatSidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        onNewChat={() => {
+          setIsChatActive(false);
+          setMessages([]);
+          setSearchQuery("");
+        }}
       />
 
-      {/* Main Content Area */}
+      {/* Ana İçerik Alanı */}
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
-        {/* Toggle open button when sidebar is collapsed */}
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
+            className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
             title="Expand Sidebar"
           >
             <PanelLeftOpen size={18} />
@@ -157,22 +249,19 @@ export default function Index() {
           muted
           playsInline
           preload="auto"
-          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"
-            }`}
+          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"}`}
         >
           <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
           Tarayıcınız video etiketini desteklemiyor.
         </video>
 
-        {/* Flex layout holding main chat area + dynamic right side context panel */}
         <div className="flex-1 flex h-full relative z-10 w-full">
-          {/* Main Chat Screen Area */}
           <div className="flex-1 flex flex-col h-full relative min-w-0">
-            {/* Scrollable messages or Centered Hero */}
             <div className="flex-1 overflow-y-auto px-4 py-8 flex flex-col items-center justify-between h-full">
+
               {!isChatActive ? (
-                // 1. Welcome operations screen (Centered)
-                <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center">
+                // ==================== 1. KARŞILAMA EKRANI LAYOUT'U ====================
+                <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center relative z-20">
                   <div className="mb-8 text-center flex flex-col items-center">
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-2 select-none text-center md:text-left">
                       <img
@@ -190,43 +279,105 @@ export default function Index() {
                   </div>
 
                   <div
-                    className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300"
+                    className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300 relative z-30"
                     style={{
                       backgroundColor: "rgba(255, 255, 255, 0.08)",
                       borderColor: "rgba(255, 255, 255, 0.15)",
                     }}
                   >
                     <div className="p-3">
-                      <div className="relative flex items-center">
-                        <textarea
-                          ref={textareaRef}
-                          rows={1}
-                          value={searchQuery}
-                          onChange={handleTextareaChange}
-                          onKeyDown={handleKeyDown}
-                          placeholder={t("input_placeholder_welcome")}
-                          className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
-                        />
-                        <div className="absolute right-2 flex items-center gap-1.5">
-                          <button type="button" className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
-                            <Paperclip size={16} />
-                          </button>
-                          <button type="button" className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
-                            <Mic size={16} />
-                          </button>
-                          <button
-                            onClick={handleSend}
-                            disabled={!searchQuery.trim()}
-                            className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
-                          >
-                            <ArrowUp size={14} />
-                          </button>
-                        </div>
+                      <div className="relative flex items-center w-full min-h-[40px]">
+
+                        {!isListening ? (
+                          // ================= MOD 1: NORMAL TEXTAREA MODU =================
+                          <>
+                            <textarea
+                              ref={textareaRef}
+                              rows={1}
+                              value={searchQuery}
+                              onChange={handleTextareaChange}
+                              onKeyDown={handleKeyDown}
+                              placeholder={t("input_placeholder_welcome")} // Aktif chat için placeholder_chat yapın
+                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                            />
+                            <div className="absolute right-2 flex items-center gap-1.5 z-40">
+                              <input
+                                type="file"
+                                ref={welcomeFileInputRef} // Veya chatFileInputRef
+                                onChange={handleFileChange}
+                                className="hidden"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => welcomeFileInputRef.current?.click()}
+                                className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
+                              >
+                                <Paperclip size={16} className="pointer-events-none" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={startVoiceRecognition}
+                                className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
+                              >
+                                <Mic size={16} className="pointer-events-none" />
+                              </button>
+                              <button
+                                onClick={handleSend}
+                                disabled={!searchQuery.trim()}
+                                className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm relative z-50"
+                              >
+                                <ArrowUp size={14} className="pointer-events-none" />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          // ================= MOD 2: SES DALGASI VE DURDURMA MODU =================
+                          <div className="flex items-center justify-between w-full px-2 animate-fade-in">
+                            {/* Sol taraftaki artı / ataç görsel simgesi */}
+                            <span className="text-xl text-slate-400 font-light select-none cursor-not-allowed opacity-50">＋</span>
+
+                            {/* CSS Animasyonlu Ses Dalgaları Yapısı */}
+                            <div className="flex items-center gap-[3px] h-6 flex-1 justify-center max-w-[60%]">
+                              {[...Array(24)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="w-[3px] bg-amber-500 rounded-full animate-pulse"
+                                  style={{
+                                    height: `${Math.floor(Math.random() * 16) + 6}px`,
+                                    animationDelay: `${i * 0.05}s`,
+                                    animationDuration: `${Math.random() * 0.4 + 0.4}s`
+                                  }}
+                                />
+                              ))}
+                            </div>
+
+                            {/* Sağ taraftaki Kırmızı/Gri Kare Durdurma Butonu */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  recognitionRef.current?.stop();
+                                  setIsListening(false);
+                                }}
+                                className="w-8 h-8 rounded-full bg-slate-200 hover:bg-red-100 flex items-center justify-center transition-all cursor-pointer group"
+                                title="Durdur"
+                              >
+                                <div className="w-2.5 h-2.5 bg-slate-800 group-hover:bg-red-500 rounded-sm transition-colors" />
+                              </button>
+
+                              {/* Gönder butonu pasif (dinleme esnasında) */}
+                              <button disabled className="p-1.5 rounded-lg bg-gray-200 text-gray-400 opacity-50 cursor-not-allowed">
+                                <ArrowUp size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   </div>
 
-                  {/* Quick Action Operations Cards */}
+                  {/* Hızlı Aksiyonlar */}
                   <div className="w-full max-w-[700px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
                     {[
                       { key: "hotel_sop" },
@@ -246,7 +397,7 @@ export default function Index() {
                     ))}
                   </div>
 
-                  {/* Try asking Chips */}
+                  {/* Örnek Soru Çipleri */}
                   <div className="w-full max-w-[700px] flex flex-col items-center gap-2">
                     <span className="text-[11px] text-[#1E232C]/60 font-semibold uppercase tracking-wider">
                       {t("try_asking")}
@@ -270,13 +421,13 @@ export default function Index() {
                   </div>
                 </div>
               ) : (
-                // 2. Active Chat Screen Layout
-                <div className="w-full max-w-[850px] flex-1 flex flex-col h-full relative justify-between overflow-hidden">
+                // ==================== 2. AKTİF SOHBET LAYOUT'U ====================
+                <div className="w-full max-w-[850px] flex-1 flex flex-col h-full relative justify-between overflow-hidden relative z-20">
                   <div className="flex-1 overflow-y-auto p-2 space-y-4 pb-28 w-full">
                     {messages.map((msg) => (
                       <div key={msg.id} className={`flex items-start gap-3 w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                         {msg.sender === "bot" && (
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0 select-none overflow-hidden p-1">
+                          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 select-none overflow-hidden p-1">
                             <img
                               src="/logo.png"
                               alt="Sanny Logo"
@@ -285,9 +436,6 @@ export default function Index() {
                           </div>
                         )}
                         <div className="flex flex-col max-w-[75%]">
-                          {msg.sender === "bot" && (
-                            <span className="text-[10px] text-slate-500 font-bold mb-1 ml-1">Sanny</span>
-                          )}
                           <div
                             className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
                               ? "bg-amber-500 text-white rounded-tr-none"
@@ -300,10 +448,9 @@ export default function Index() {
                       </div>
                     ))}
 
-                    {/* Sequential Thinking step indicator */}
                     {isThinking && (
                       <div className="flex items-start gap-3 justify-start">
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0 select-none overflow-hidden p-1">
+                        <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 select-none overflow-hidden p-1">
                           <img
                             src="/logo.png"
                             alt="Sanny Logo"
@@ -311,7 +458,6 @@ export default function Index() {
                           />
                         </div>
                         <div className="space-y-1 max-w-[75%]">
-                          <span className="text-[10px] text-slate-500 font-bold mb-1 ml-1">Sanny</span>
                           <div className="bg-white/90 border border-white/30 text-[#0F172A] rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3 backdrop-blur-md">
                             <div className="flex gap-1 flex-shrink-0">
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" />
@@ -326,10 +472,10 @@ export default function Index() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Chat mode bottom fixed input area (strictly z-20 above video) */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-transparent z-20">
+                  {/* Alt Sabit Sohbet Giriş Alanı */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-transparent z-30">
                     <div
-                      className="rounded-2xl shadow-xl border w-full transition-all duration-300"
+                      className="rounded-2xl shadow-xl border w-full transition-all duration-300 relative z-30"
                       style={{
                         backgroundColor: "rgba(255, 255, 255, 0.08)",
                         borderColor: "rgba(255, 255, 255, 0.15)",
@@ -347,19 +493,35 @@ export default function Index() {
                             placeholder={t("input_placeholder_chat")}
                             className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                           />
-                          <div className="absolute right-2 flex items-center gap-1.5">
-                            <button type="button" className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
-                              <Paperclip size={16} />
+                          <div className="absolute right-2 flex items-center gap-1.5 z-40">
+                            {/* Gizli Dosya Girişi - Sohbet Modu */}
+                            <input
+                              type="file"
+                              ref={chatFileInputRef}
+                              onChange={handleFileChange}
+                              className="hidden"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => chatFileInputRef.current?.click()}
+                              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
+                            >
+                              <Paperclip size={16} className="pointer-events-none" />
                             </button>
-                            <button type="button" className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
-                              <Mic size={16} />
+                            <button
+                              type="button"
+                              onClick={startVoiceRecognition}
+                              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
+                            >
+                              <Mic size={16} className="pointer-events-none" />
                             </button>
                             <button
                               onClick={handleSend}
                               disabled={!searchQuery.trim()}
-                              className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
+                              className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm relative z-50"
                             >
-                              <ArrowUp size={14} />
+                              <ArrowUp size={14} className="pointer-events-none" />
                             </button>
                           </div>
                         </div>
@@ -371,7 +533,7 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Dynamic Operation Context Panel */}
+          {/* Dinamik Sağ Context Paneli */}
           {isChatActive && context && (
             <div className="w-[280px] hidden xl:flex flex-col bg-white/20 border-l border-white/20 backdrop-blur-xl p-5 gap-5 animate-fade-in relative z-20 overflow-y-auto">
               <div className="space-y-1">

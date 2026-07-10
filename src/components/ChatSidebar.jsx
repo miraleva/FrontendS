@@ -15,7 +15,8 @@ import SannyLogo from './SannyLogo';
 
 export default function ChatSidebar({
   isOpen,
-  setIsOpen
+  setIsOpen,
+  onNewChat
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,16 +93,25 @@ export default function ChatSidebar({
       className={`h-screen bg-white border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-10 ${isOpen ? 'w-[330px]' : 'w-0 border-r-0'
         }`}
     >
-      {/* 1. Top Row */}
+      {/* 1. Top Row (Logo Alanı) */}
       <div className="p-4 flex items-center justify-between border-b border-transparent">
-        <SannyLogo
-          className="flex items-center gap-1.5 select-none"
-          imgClassName="w-8 h-8 object-contain"
-          textClassName="font-display font-black text-[#f07c24] text-[22px] tracking-widest drop-shadow-[0_1.5px_6px_rgba(240,124,36,0.25)]"
-        />
+        <button
+          onClick={() => {
+            navigate('/chat');
+            if (onNewChat) onNewChat(); // Eğer fonksiyon varsa tetikle
+          }}
+          className="flex items-center gap-1.5 select-none focus:outline-none cursor-pointer text-left hover:opacity-90 active:scale-95 transition-all"
+          title="Start New Chat"
+        >
+          <SannyLogo
+            className="flex items-center gap-1.5"
+            imgClassName="w-8 h-8 object-contain"
+            textClassName="font-display font-black text-[#f07c24] text-[22px] tracking-widest drop-shadow-[0_1.5px_6px_rgba(240,124,36,0.25)]"
+          />
+        </button>
         <button
           onClick={() => setIsOpen(false)}
-          className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary focus:outline-none"
+          className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 hover:text-slate-800 focus:outline-none cursor-pointer"
           title="Collapse Sidebar"
         >
           <PanelLeftClose size={18} />
@@ -111,7 +121,10 @@ export default function ChatSidebar({
       {/* 2. New Chat Button */}
       <div className="px-5 pt-4 flex justify-start">
         <button
-          onClick={() => navigate('/chat')}
+          onClick={() => {
+            navigate('/chat');
+            if (onNewChat) onNewChat(); // Eğer fonksiyon varsa tetikle
+          }}
           className="flex items-center gap-1.5 text-[#0B5FFF] hover:text-[#0B5FFF]/80 hover:underline text-sm font-semibold transition-all duration-150 focus:outline-none cursor-pointer"
         >
           <Plus size={16} />
