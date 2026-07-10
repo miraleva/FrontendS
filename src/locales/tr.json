@@ -134,5 +134,12 @@
   "settings_remove_card": "Kaldır",
   "settings_remove_card_title": "Kartı Kaldır?",
   "settings_remove_card_desc": "Bu ödeme yöntemini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
-  "settings_delete_btn": "Sil"
+  "settings_delete_btn": "Sil",
+  "sidebar_new_chat": "Yeni Sohbet",
+  "sidebar_search": "Sohbetlerde ara...",
+  "sidebar_main_navigation": "ANA MENÜ",
+  "sidebar_chats": "Sohbetler",
+  "sidebar_appointments": "Geçmiş Randevular",
+  "sidebar_recent_chats": "SON SOHBETLER",
+  "sidebar_no_matches": "Eşleşen son sohbet bulunamadı"
 }

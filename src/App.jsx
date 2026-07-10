@@ -8,6 +8,7 @@ import MainLayout from './layouts/MainLayout.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import Settings from './pages/Settings.jsx';
 import Reservation from './pages/ReservationPage.jsx';
+import LanguageSelector from './components/LanguageSelector.jsx';
 
 function DocumentPagePlaceholder() {
   return <div className="p-6 text-text-secondary">Dokuman yonetimi (FE2 tarafindan doldurulacak)</div>;
@@ -19,23 +20,35 @@ function HistoryPagePlaceholder() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route element={<MainLayout />}>
-          <Route path="/chat" element={<ChatbotPage />} />
-          <Route path="/chat/search" element={<SearchChats />} />
-          <Route path="/appointments" element={<PastAppointments />} />
-          <Route path="/documents" element={<DocumentPagePlaceholder />} />
-          <Route path="/history" element={<HistoryPagePlaceholder />} />
+      {/* Tüm ekranları kaplayan relative bir sarmalayıcı ekliyoruz.
+        Böylece dil seçici absolute CSS ile hep sağ üstte sabit kalacak.
+      */}
+      <div className="relative min-h-screen w-full">
+        <div className="absolute top-4 right-4 z-[9999]">
+          <LanguageSelector />
+        </div>
+
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/reservation" element={<Reservation />} />
-        </Route>
-      </Routes>
+          {/* İhtiyacınız yoksa /language rotasını kaldırabilirsiniz, çünkü artık her yerde global */}
+          <Route path="/language" element={<LanguageSelector />} />
+
+          <Route element={<MainLayout />}>
+            <Route path="/chat" element={<ChatbotPage />} />
+            <Route path="/chat/search" element={<SearchChats />} />
+            <Route path="/appointments" element={<PastAppointments />} />
+            <Route path="/documents" element={<DocumentPagePlaceholder />} />
+            <Route path="/history" element={<HistoryPagePlaceholder />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/reservation" element={<Reservation />} />
+          </Route>
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }

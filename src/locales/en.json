@@ -134,5 +134,15 @@
   "settings_remove_card": "Remove",
   "settings_remove_card_title": "Remove Card?",
   "settings_remove_card_desc": "Are you sure you want to delete this payment method? This action cannot be undone.",
-  "settings_delete_btn": "Delete"
+  "settings_delete_btn": "Delete",
+  "sidebar_chat": "Chat",
+  "sidebar_documents": "Document Management",
+  "sidebar_history": "Past Operations",
+  "sidebar_new_chat": "New Chat",
+  "sidebar_search": "Search chats...",
+  "sidebar_main_navigation": "MAIN NAVIGATION",
+  "sidebar_chats": "Chats",
+  "sidebar_appointments": "Past Appointments",
+  "sidebar_recent_chats": "RECENT CHATS",
+  "sidebar_no_matches": "No recent chats match"
 }
