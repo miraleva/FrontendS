@@ -1,13 +1,36 @@
 import { getCountryCallingCode } from "react-phone-number-input";
 import metadata from "libphonenumber-js/metadata.full.json";
 import { getCountryCallingCode as getCode, parsePhoneNumberFromString } from "libphonenumber-js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import api from "../services/api";
 import "react-phone-number-input/style.css";
 import ChatSidebar from "../components/ChatSidebar";
 import { PanelLeftOpen } from "lucide-react";
+
+// Helper to convert "DD.MM.YYYY" to "YYYY-MM-DD" for the backend API
+const toISODate = (ddmmyyyy) => {
+    if (!ddmmyyyy) return null;
+    const parts = ddmmyyyy.split('.');
+    if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return `${year}-${month}-${day}`;
+    }
+    return null;
+};
+
+// Helper to convert "YYYY-MM-DD" to "DD.MM.YYYY" for the frontend display
+const toDisplayDate = (isoDate) => {
+    if (!isoDate) return "";
+    const parts = isoDate.split('-');
+    if (parts.length === 3) {
+        const [year, month, day] = parts;
+        return `${day}.${month}.${year}`;
+    }
+    return "";
+};
 
 export default function Profile() {
     const { t } = useTranslation();
@@ -72,6 +95,38 @@ export default function Profile() {
         gender: "",
         dateOfBirth: "",
     });
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchProfile = async () => {
+            try {
+                const response = await api.get('/api/profile');
+                if (isMounted) {
+                    const data = response.data;
+                    const updatedUser = {
+                        firstName: data.firstName || '',
+                        lastName: data.lastName || '',
+                        email: data.email || '',
+                        phone: data.phone || '',
+                        country: data.country || '',
+                        gender: data.gender || '',
+                        dateOfBirth: toDisplayDate(data.dateOfBirth),
+                    };
+                    setFormData(updatedUser);
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                    if (data.email) {
+                        localStorage.setItem('userId', data.email);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch profile from API, using fallback from localStorage", err);
+            }
+        };
+        fetchProfile();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const userId = localStorage.getItem('userId') || 'user';
     const displayHandle = userId.includes('@') ? userId.split('@')[0] : userId;
@@ -232,7 +287,7 @@ export default function Profile() {
         setIsEditing(false);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const newErrors = {};
         let hasErrors = false;
 
@@ -251,9 +306,40 @@ export default function Profile() {
             return;
         }
 
-        localStorage.setItem("user", JSON.stringify(formData));
-        setIsEditing(false);
-        console.log("Veriler başarıyla kaydedildi:", formData);
+        try {
+            const payload = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                phone: formData.phone,
+                country: formData.country,
+                gender: formData.gender,
+                dateOfBirth: toISODate(formData.dateOfBirth)
+            };
+            const response = await api.put('/api/profile', payload);
+            const data = response.data;
+            const updatedUser = {
+                firstName: data.firstName || '',
+                lastName: data.lastName || '',
+                email: data.email || formData.email,
+                phone: data.phone || '',
+                country: data.country || '',
+                gender: data.gender || '',
+                dateOfBirth: toDisplayDate(data.dateOfBirth),
+            };
+            setFormData(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+            if (updatedUser.email) {
+                localStorage.setItem('userId', updatedUser.email);
+            }
+            setIsEditing(false);
+            console.log("Veriler başarıyla kaydedildi:", updatedUser);
+        } catch (err) {
+            console.error("Profil güncellenemedi", err);
+            setErrors((prev) => ({
+                ...prev,
+                firstName: "Failed to update profile. Please try again."
+            }));
+        }
     };
 
     // Gerçek çıkış işlemini yapan fonksiyon

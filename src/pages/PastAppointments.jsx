@@ -19,23 +19,16 @@ import {
   Ticket
 } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
+import api from "../services/api";
 
 export default function PastAppointments() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [appointments, setAppointments] = useState([]);
 
   const videoRef = useRef(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(error => {
-        console.log("Video autoplay engeline takıldı:", error);
-      });
-    }
-  }, []);
 
   const mockAppointments = [
     { 
@@ -98,6 +91,44 @@ export default function PastAppointments() {
       price: "$380"
     }
   ];
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(error => {
+        console.log("Video autoplay engeline takıldı:", error);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        const response = await api.get('/api/reservations');
+        const mapped = response.data.map(res => ({
+          id: res.id,
+          title: res.itemName,
+          type: res.type === 'HOTEL' ? 'Hotel' : (res.type === 'FLIGHT' ? 'Flight' : 'Transfer'),
+          date: `${res.startDate} - ${res.endDate}`,
+          status: 'Completed',
+          hotelName: res.type === 'HOTEL' ? res.itemName : undefined,
+          checkIn: res.startDate,
+          checkOut: res.endDate,
+          nights: 1,
+          guests: res.passengers ? res.passengers.length : 1,
+          resNumber: res.reservationNumber,
+          paymentStatus: `Paid (${res.totalPrice} ${res.currency})`,
+          price: `${res.totalPrice} ${res.currency}`,
+          passengers: res.passengers
+        }));
+        setAppointments(mapped);
+      } catch (err) {
+        console.error("Failed to load appointments from backend, showing mocks", err);
+        setAppointments(mockAppointments);
+      }
+    };
+    fetchReservations();
+  }, []);
 
   const handleOpenDrawer = (appt) => {
     setSelectedAppt(appt);
@@ -252,7 +283,7 @@ export default function PastAppointments() {
 
           {/* Stepper Timeline list container */}
           <div className="relative border-l-[2px] border-slate-200 ml-6 pl-8 space-y-6 py-2">
-            {mockAppointments.map((appt) => (
+            {(appointments.length > 0 ? appointments : mockAppointments).map((appt) => (
               <div key={appt.id} className="relative group">
                 {/* 44px timeline bullet */}
                 <div className="absolute -left-[54px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center shadow-sm z-10 transition-all duration-200 group-hover:border-[#0B5FFF]/40 group-hover:scale-105">

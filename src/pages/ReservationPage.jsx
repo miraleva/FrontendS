@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import api from '../services/api';
 import {
     ChevronLeft,
     Calendar,
@@ -66,8 +67,33 @@ export default function Reservation() {
         setGuests(updatedGuests);
     };
 
-    const handleCreateReservation = () => {
-        setStep('success');
+    const handleCreateReservation = async () => {
+        try {
+            const passengers = guests.map(g => ({
+                firstName: g.ad || "Guest",
+                lastName: g.soyad || "User",
+                email: email || "user@example.com",
+                phoneNumber: phone || "+905550000000",
+                identityNumber: g.kimlikNo || "11111111111"
+            }));
+
+            const payload = {
+                type: "HOTEL",
+                itemName: "Antalya Şehir Turu",
+                destination: "Antalya",
+                startDate: "2026-07-15",
+                endDate: "2026-07-16",
+                totalPrice: 2400.0,
+                currency: "TRY",
+                passengers: passengers
+            };
+
+            await api.post('/api/reservations', payload);
+            setStep('success');
+        } catch (err) {
+            console.error("Failed to create reservation", err);
+            alert("Failed to submit reservation to database.");
+        }
     };
 
     const handleRetry = () => {

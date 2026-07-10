@@ -13,6 +13,7 @@ import {
   ListFilter
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
+import api from '../services/api';
 
 export default function ChatSidebar({
   isOpen,
@@ -41,31 +42,65 @@ export default function ChatSidebar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mock sessions
-  const initialSessions = [
-    { id: 1, title: 'Cancellation & Refund Procedures', category: 'General SOP', date: '2026-07-07' },
-    { id: 2, title: 'Titanic Hotel Reservation Cancellation', category: 'Hotel', date: '2026-07-06' },
-    { id: 3, title: 'THY Ticket Change Rules', category: 'Flight', date: '2026-07-05' },
-    { id: 4, title: 'VIP Transfer Voucher Delay', category: 'Transfer', date: '2026-07-04' }
-  ];
+  const [sessions, setSessions] = useState([]);
+
+  const fetchSessions = async () => {
+    try {
+      const response = await api.get('/api/chat/sessions');
+      setSessions(response.data);
+    } catch (err) {
+      console.error("Failed to fetch chat sessions", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, [location.key]);
+
+  useEffect(() => {
+    const interval = setInterval(fetchSessions, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getVisualCategory = (title) => {
+    if (!title) return 'General SOP';
+    const t = title.toLowerCase();
+    if (t.includes('hotel') || t.includes('titanic') || t.includes('stay')) return 'Hotel';
+    if (t.includes('flight') || t.includes('ticket') || t.includes('thy')) return 'Flight';
+    if (t.includes('transfer') || t.includes('airport')) return 'Transfer';
+    return 'General SOP';
+  };
+
+  const formatTimestamp = (ts) => {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleDateString();
+    } catch (e) {
+      return '';
+    }
+  };
 
   // Filtering logic
-  const filteredSessions = initialSessions
+  const filteredSessions = sessions
     .filter(session => {
       const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const title = session.title || 'Chat Session';
+      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
+      const category = getVisualCategory(title);
+
       if (activeFilter === 'Hotels') {
-        return matchesSearch && session.category === 'Hotel';
+        return matchesSearch && category === 'Hotel';
       }
       if (activeFilter === 'Flights') {
-        return matchesSearch && session.category === 'Flight';
+        return matchesSearch && category === 'Flight';
       }
       return matchesSearch;
     })
     .sort((a, b) => {
-      if (activeFilter === 'Date') {
-        return new Date(b.date) - new Date(a.date);
-      }
-      return 0;
+      const tA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : 0;
+      const tB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : 0;
+      return tB - tA; // Newest first
     });
 
   const getBadgeStyle = (category) => {
@@ -215,25 +250,28 @@ export default function ChatSidebar({
         {/* 6. Recent Chats Session List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {filteredSessions.length > 0 ? (
-            filteredSessions.map((session) => (
-              <div
-                key={session.id}
-                onClick={() => navigate('/chat')}
-                className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group"
-              >
-                <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate" title={session.title}>
-                  {session.title}
-                </p>
-                <div className="mt-1.5 flex items-center justify-between">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getBadgeStyle(session.category)}`}>
-                    {session.category}
-                  </span>
-                  <span className="text-[10px] text-text-secondary font-medium">
-                    {session.date}
-                  </span>
+            filteredSessions.map((session) => {
+              const category = getVisualCategory(session.title);
+              return (
+                <div
+                  key={session.id}
+                  onClick={() => navigate(`/chat?sessionId=${session.id}`)}
+                  className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group"
+                >
+                  <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate" title={session.title}>
+                    {session.title || 'Chat Session'}
+                  </p>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getBadgeStyle(category)}`}>
+                      {category}
+                    </span>
+                    <span className="text-[10px] text-text-secondary font-medium">
+                      {formatTimestamp(session.lastMessageTimestamp)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="text-xs text-text-secondary text-center py-6">{t('sidebar_no_matches')}</p>
           )}
