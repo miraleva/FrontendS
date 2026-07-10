@@ -144,5 +144,10 @@
   "sidebar_chats": "Чаты",
   "sidebar_appointments": "Прошедшие встречи",
   "sidebar_recent_chats": "ПОСЛЕДНИЕ ЧАТЫ",
-  "sidebar_no_matches": "Совпадающих чатов не найдено"
+  "sidebar_no_matches": "Совпадающих чатов не найдено",
+  "profile_logout_title": "Выйти из системы?",
+  "profile_logout_confirm": "Вы уверены, что хотите выйти из текущего сеанса?",
+  "profile_delete_title": "Удалить аккаунт?",
+  "profile_delete_confirm": "Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.",
+  "profile_delete_btn": "Удалить"
 }

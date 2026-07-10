@@ -141,5 +141,10 @@
   "sidebar_chats": "Sohbetler",
   "sidebar_appointments": "Geçmiş Randevular",
   "sidebar_recent_chats": "SON SOHBETLER",
-  "sidebar_no_matches": "Eşleşen son sohbet bulunamadı"
+  "sidebar_no_matches": "Eşleşen son sohbet bulunamadı",
+  "profile_logout_title": "Çıkış Yapılsın mı?",
+  "profile_logout_confirm": "Mevcut oturumunuzu kapatmak istediğinize emin misiniz?",
+  "profile_delete_title": "Hesabı Sil?",
+  "profile_delete_confirm": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+  "profile_delete_btn": "Sil"
 }

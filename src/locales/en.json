@@ -144,5 +144,10 @@
   "sidebar_chats": "Chats",
   "sidebar_appointments": "Past Appointments",
   "sidebar_recent_chats": "RECENT CHATS",
-  "sidebar_no_matches": "No recent chats match"
+  "sidebar_no_matches": "No recent chats match",
+  "profile_logout_title": "Log Out?",
+  "profile_logout_confirm": "Are you sure you want to log out of your current session?",
+  "profile_delete_title": "Delete Account?",
+  "profile_delete_confirm": "Are you sure you want to delete your account? This action cannot be undone.",
+  "profile_delete_btn": "Delete"
 }

@@ -141,5 +141,10 @@
   "sidebar_chats": "Chats",
   "sidebar_appointments": "Vergangene Termine",
   "sidebar_recent_chats": "AKTUELLE CHATS",
-  "sidebar_no_matches": "Keine aktuellen Chats gefunden"
+  "sidebar_no_matches": "Keine aktuellen Chats gefunden",
+  "profile_logout_title": "Abmelden?",
+  "profile_logout_confirm": "Sind Sie sicher, dass Sie sich von Ihrer aktuellen Sitzung abmelden möchten?",
+  "profile_delete_title": "Konto löschen?",
+  "profile_delete_confirm": "Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+  "profile_delete_btn": "Löschen"
 }
