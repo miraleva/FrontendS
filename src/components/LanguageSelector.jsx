@@ -23,7 +23,7 @@ export default function LanguageSelector() {
       <button
         type="button"
         onClick={() => setIsLangOpen(!isLangOpen)}
-        className="bg-[#F0F4F8]/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-1.5 text-[#f07c24] text-[16px] font-semibold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-[#F0F4F8]/30 focus:outline-none"
+        className="bg-[#F0F4F8]/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-1.5 text-[#f07c24] text-[16px] font-bold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-[#F0F4F8]/30 focus:outline-none"
       >
         <span>{currentLangLabel}</span>
         <svg
@@ -45,13 +45,14 @@ export default function LanguageSelector() {
               type="button"
               onClick={() => {
                 i18n.changeLanguage(lang);
+                // Çift dikiş: Tarayıcı hafızasını manuel olarak da besliyoruz
+                localStorage.setItem('i18nextLng', lang);
                 setIsLangOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 text-[15px] transition-colors duration-150 ${
-                i18n.language.startsWith(lang)
-                  ? 'bg-[#0096C7] text-white font-bold'
-                  : 'text-[#023E8A] hover:bg-[#0096C7]/10'
-              }`}
+              className={`w-full text-left px-4 py-2 text-[15px] transition-colors duration-150 ${i18n.language?.startsWith(lang)
+                ? 'bg-[#0096C7] text-white font-bold'
+                : 'text-[#023E8A] hover:bg-[#0096C7]/10'
+                }`}
             >
               {lang.toUpperCase()}
             </button>

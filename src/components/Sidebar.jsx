@@ -1,12 +1,16 @@
 import { NavLink } from 'react-router-dom';
-
-const navItems = [
-  { to: '/chat', label: 'Chat' },
-  { to: '/documents', label: 'Dokuman Yonetimi' },
-  { to: '/history', label: 'Gecmis Operasyonlar' }
-];
+import { useTranslation } from 'react-i18next'; // 1. i18n hook'unu import ediyoruz
 
 export default function Sidebar() {
+  const { t } = useTranslation(); // 2. Çeviri fonksiyonunu tanımlıyoruz
+
+  // 3. Menü elemanlarını yeni dil anahtarlarıyla bağlıyoruz
+  const navItems = [
+    { to: '/chat', label: t('sidebar_chat') },
+    { to: '/documents', label: t('sidebar_documents') },
+    { to: '/history', label: t('sidebar_history') }
+  ];
+
   return (
     <aside className="w-[240px] bg-secondary text-white flex-shrink-0 hidden lg:flex lg:flex-col">
       <div className="px-6 py-5 font-display font-semibold text-lg border-b border-white/10">

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // 1. i18n hook'unu import ediyoruz
 import {
   PanelLeftClose,
   Plus,
@@ -12,11 +13,14 @@ import {
   ListFilter
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
+import api from '../services/api';
 
 export default function ChatSidebar({
   isOpen,
-  setIsOpen
+  setIsOpen,
+  onNewChat
 }) {
+  const { t } = useTranslation(); // 2. t fonksiyonumuzu tanımlıyoruz
   const navigate = useNavigate();
   const location = useLocation();
   const isChatActive = location.pathname.startsWith('/chat');
@@ -38,35 +42,64 @@ export default function ChatSidebar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mock sessions
-  const initialSessions = [
-    { id: 1, title: 'Cancellation & Refund Procedures', category: 'General SOP', date: '2026-07-07' },
-    { id: 2, title: 'Titanic Hotel Reservation Cancellation', category: 'Hotel', date: '2026-07-06' },
-    { id: 3, title: 'THY Ticket Change Rules', category: 'Flight', date: '2026-07-05' },
-    { id: 4, title: 'VIP Transfer Voucher Delay', category: 'Transfer', date: '2026-07-04' }
-  ];
+  const [sessions, setSessions] = useState([]);
+
+  const fetchSessions = async () => {
+    try {
+      const response = await api.get('/api/chat/sessions');
+      setSessions(response.data);
+    } catch (err) {
+      console.error("Failed to fetch chat sessions", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, [location.key]);
+
+  useEffect(() => {
+    const interval = setInterval(fetchSessions, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getVisualCategory = (title) => {
+    if (!title) return 'General SOP';
+    const t = title.toLowerCase();
+    if (t.includes('hotel') || t.includes('titanic') || t.includes('stay')) return 'Hotel';
+    if (t.includes('flight') || t.includes('ticket') || t.includes('thy')) return 'Flight';
+    if (t.includes('transfer') || t.includes('airport')) return 'Transfer';
+    return 'General SOP';
+  };
+
+  const formatTimestamp = (ts) => {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleDateString();
+    } catch (e) {
+      return '';
+    }
+  };
 
   // Filtering logic
-  const filteredSessions = initialSessions
+  const filteredSessions = sessions
     .filter(session => {
-      // Search text query
-      const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const title = session.title || 'Chat Session';
+      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
+      const category = getVisualCategory(title);
 
-      // Category dropdown filter
       if (activeFilter === 'Hotels') {
-        return matchesSearch && session.category === 'Hotel';
+        return matchesSearch && category === 'Hotel';
       }
       if (activeFilter === 'Flights') {
-        return matchesSearch && session.category === 'Flight';
+        return matchesSearch && category === 'Flight';
       }
-      // None/Date shows all, we handle sorting/filtering below
       return matchesSearch;
     })
     .sort((a, b) => {
-      if (activeFilter === 'Date') {
-        return new Date(b.date) - new Date(a.date);
-      }
-      return 0;
+      const tA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : 0;
+      const tB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : 0;
+      return tB - tA; // Newest first
     });
 
   const getBadgeStyle = (category) => {
@@ -92,16 +125,25 @@ export default function ChatSidebar({
       className={`h-screen bg-white border-r border-border flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-10 ${isOpen ? 'w-[330px]' : 'w-0 border-r-0'
         }`}
     >
-      {/* 1. Top Row */}
+      {/* 1. Top Row (Logo Alanı) */}
       <div className="p-4 flex items-center justify-between border-b border-transparent">
-        <SannyLogo
-          className="flex items-center gap-1.5 select-none"
-          imgClassName="w-8 h-8 object-contain"
-          textClassName="font-display font-black text-[#f07c24] text-[22px] tracking-widest drop-shadow-[0_1.5px_6px_rgba(240,124,36,0.25)]"
-        />
+        <button
+          onClick={() => {
+            navigate('/chat');
+            if (onNewChat) onNewChat();
+          }}
+          className="flex items-center gap-1.5 select-none focus:outline-none cursor-pointer text-left hover:opacity-90 active:scale-95 transition-all"
+          title={t('sidebar_new_chat')}
+        >
+          <SannyLogo
+            className="flex items-center gap-1.5"
+            imgClassName="w-8 h-8 object-contain"
+            textClassName="font-display font-black text-[#f07c24] text-[22px] tracking-widest drop-shadow-[0_1.5px_6px_rgba(240,124,36,0.25)]"
+          />
+        </button>
         <button
           onClick={() => setIsOpen(false)}
-          className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-text-secondary focus:outline-none"
+          className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 hover:text-slate-800 focus:outline-none cursor-pointer"
           title="Collapse Sidebar"
         >
           <PanelLeftClose size={18} />
@@ -111,11 +153,14 @@ export default function ChatSidebar({
       {/* 2. New Chat Button */}
       <div className="px-5 pt-4 flex justify-start">
         <button
-          onClick={() => navigate('/chat')}
+          onClick={() => {
+            navigate('/chat');
+            if (onNewChat) onNewChat();
+          }}
           className="flex items-center gap-1.5 text-[#0B5FFF] hover:text-[#0B5FFF]/80 hover:underline text-sm font-semibold transition-all duration-150 focus:outline-none cursor-pointer"
         >
           <Plus size={16} />
-          <span>New Chat</span>
+          <span>{t('sidebar_new_chat')}</span>
         </button>
       </div>
 
@@ -127,7 +172,7 @@ export default function ChatSidebar({
           </span>
           <input
             type="text"
-            placeholder="Search chats"
+            placeholder={t('sidebar_search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => navigate('/chat/search')}
@@ -139,7 +184,7 @@ export default function ChatSidebar({
       {/* 4. Main Nav Section */}
       <div className="flex flex-col">
         <div className="bg-transparent text-[#0B5FFF] text-[11px] font-bold uppercase tracking-wider px-5 py-2">
-          Maın Navıgatıon
+          {t('sidebar_main_navigation')}
         </div>
         <nav className="flex flex-col gap-1 p-2">
           <button
@@ -150,7 +195,7 @@ export default function ChatSidebar({
               }`}
           >
             <MessageSquare size={16} />
-            <span>Chats</span>
+            <span>{t('sidebar_chats')}</span>
           </button>
 
           <button
@@ -161,7 +206,7 @@ export default function ChatSidebar({
               }`}
           >
             <Clock size={16} />
-            <span>Past Appointments</span>
+            <span>{t('sidebar_appointments')}</span>
           </button>
         </nav>
       </div>
@@ -169,7 +214,7 @@ export default function ChatSidebar({
       {/* 5. Recent Chats Section Header */}
       <div className="flex flex-col flex-1 min-h-0">
         <div className="bg-transparent text-[#0B5FFF] text-[11px] font-bold uppercase tracking-wider px-5 py-2 flex items-center justify-between">
-          <span>Recent Chats</span>
+          <span>{t('sidebar_recent_chats')}</span>
 
           {/* Dropdown Filter */}
           <div className="relative" ref={dropdownRef}>
@@ -204,27 +249,30 @@ export default function ChatSidebar({
         {/* 6. Recent Chats Session List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {filteredSessions.length > 0 ? (
-            filteredSessions.map((session) => (
-              <div
-                key={session.id}
-                onClick={() => navigate('/chat')}
-                className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group"
-              >
-                <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate" title={session.title}>
-                  {session.title}
-                </p>
-                <div className="mt-1.5 flex items-center justify-between">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getBadgeStyle(session.category)}`}>
-                    {session.category}
-                  </span>
-                  <span className="text-[10px] text-text-secondary font-medium">
-                    {session.date}
-                  </span>
+            filteredSessions.map((session) => {
+              const category = getVisualCategory(session.title);
+              return (
+                <div
+                  key={session.id}
+                  onClick={() => navigate(`/chat?sessionId=${session.id}`)}
+                  className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group"
+                >
+                  <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate" title={session.title}>
+                    {session.title || 'Chat Session'}
+                  </p>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getBadgeStyle(category)}`}>
+                      {category}
+                    </span>
+                    <span className="text-[10px] text-text-secondary font-medium">
+                      {formatTimestamp(session.lastMessageTimestamp)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
-            <p className="text-xs text-text-secondary text-center py-6">No recent chats match</p>
+            <p className="text-xs text-text-secondary text-center py-6">{t('sidebar_no_matches')}</p>
           )}
         </div>
       </div>
@@ -247,17 +295,13 @@ export default function ChatSidebar({
             <span className="text-sm font-semibold text-text-primary truncate max-w-[120px]" title={username}>
               {displayUsername}
             </span>
-            <span className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">
-              Agent
-            </span>
           </div>
         </div>
 
-        {/* Ayarlar Butonu Güncellemesi */}
         <button
-          onClick={() => navigate('/settings')} // Tıklanınca /settings rotasına gider
+          onClick={() => navigate('/settings')}
           className={`p-2 rounded-lg transition-colors focus:outline-none ml-2 ${location.pathname === '/settings'
-            ? 'bg-slate-100 text-primary' // Eğer ayarlar sayfasındaysak aktif stili uygula
+            ? 'bg-slate-100 text-primary'
             : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
             }`}
           title="Settings"

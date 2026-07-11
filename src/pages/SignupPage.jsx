@@ -5,6 +5,8 @@ import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
 import 'react-phone-number-input/style.css';
+import api from '../services/api';
+
 
 export default function SignupPage() {
   const { t } = useTranslation();
@@ -92,7 +94,7 @@ export default function SignupPage() {
     setFieldErrors((prev) => ({ ...prev, [field]: err }));
   };
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     const errors = {};
@@ -111,17 +113,41 @@ export default function SignupPage() {
       return;
     }
 
-    // TODO: connect to backend register endpoint
-    localStorage.setItem('user', JSON.stringify({
-      firstName: formData.name,
-      lastName: formData.lastname,
-      email: formData.email,
-      phone: formData.phone,
-      country: '',
-      gender: '',
-      dateOfBirth: ''
-    }));
-    navigate('/login');
+    try {
+      await api.post('/api/auth/signup', {
+        name: formData.name,
+        lastname: formData.lastname,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword
+      });
+      navigate('/login');
+    } catch (err) {
+      if (err.response) {
+        if (err.response.status === 409) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            email: "Email already exists"
+          }));
+        } else if (err.response.status === 400) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            confirmPassword: "Passwords do not match or invalid request parameters."
+          }));
+        } else {
+          setFieldErrors((prev) => ({
+            ...prev,
+            confirmPassword: "An unexpected error occurred. Please try again."
+          }));
+        }
+      } else {
+        setFieldErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Network error. Please try again later."
+        }));
+      }
+    }
   }
 
   const handleTimeUpdate = (e) => {
