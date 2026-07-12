@@ -8,13 +8,11 @@ import MainLayout from './layouts/MainLayout.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import Settings from './pages/Settings.jsx';
 import Reservation from './pages/ReservationPage.jsx';
-<<<<<<< HEAD
 import AdminLayout from "./admin/AdminLayout.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
 
-=======
+
 import LanguageSelector from './components/LanguageSelector.jsx';
->>>>>>> d90180791ca350548fe649c83b0063b86f8b0125
 
 function DocumentPagePlaceholder() {
   return <div className="p-6 text-text-secondary">Dokuman yonetimi (FE2 tarafindan doldurulacak)</div>;
@@ -40,16 +38,14 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<Settings />} />
-<<<<<<< HEAD
+
           <Route path="/reservation" element={<Reservation />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
           </Route>
-        </Route>
-      </Routes>
-=======
+
           {/* İhtiyacınız yoksa /language rotasını kaldırabilirsiniz, çünkü artık her yerde global */}
-          <Route path="/language" element={<LanguageSelector />} />
+          {/* <Route path="/language" element={<LanguageSelector />} />*/}
 
           <Route element={<MainLayout />}>
             <Route path="/chat" element={<ChatbotPage />} />
@@ -62,8 +58,7 @@ export default function App() {
             <Route path="/reservation" element={<Reservation />} />
           </Route>
         </Routes>
-      </div>
->>>>>>> d90180791ca350548fe649c83b0063b86f8b0125
-    </BrowserRouter>
+      </div >
+    </BrowserRouter >
   );
 }

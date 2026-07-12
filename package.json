@@ -11,12 +11,8 @@
   "dependencies": {
     "axios": "^1.18.1",
     "i18next": "^26.3.4",
-<<<<<<< HEAD
-    "lucide-react": "^1.24.0",
-=======
     "i18next-browser-languagedetector": "^8.2.1",
-    "lucide-react": "^1.23.0",
->>>>>>> d90180791ca350548fe649c83b0063b86f8b0125
+    "lucide-react": "^1.24.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^17.0.8",
