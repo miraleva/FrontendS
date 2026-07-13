@@ -39,7 +39,16 @@ export default function Index() {
   const chatFileInputRef = useRef(null);
 
   const email = localStorage.getItem('userId') || "";
-  const username = email ? (email.includes('@') ? email.split('@')[0] : email) : "User";
+  let storedUserForGreeting = null;
+  try {
+    storedUserForGreeting = JSON.parse(localStorage.getItem('user') || 'null');
+  } catch (e) {
+    storedUserForGreeting = null;
+  }
+  const profileFullNameForGreeting = storedUserForGreeting && (storedUserForGreeting.firstName || storedUserForGreeting.lastName)
+    ? `${storedUserForGreeting.firstName || ''} ${storedUserForGreeting.lastName || ''}`.trim()
+    : null;
+  const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
   useEffect(() => {
     if (videoRef.current) {
