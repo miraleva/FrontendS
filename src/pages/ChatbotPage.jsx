@@ -1,7 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
-import { PanelLeftOpen, Send, Paperclip, Mic, ArrowUp, Star, Heart, ChevronRight, Hotel as HotelIcon, X } from "lucide-react";
+import {
+  PanelLeftOpen,
+  Send,
+  Paperclip,
+  Mic,
+  ArrowUp,
+  Star,
+  Heart,
+  ChevronRight,
+  X,
+  PanelRightOpen,  // Yeni eklenen ikon
+  PanelRightClose  // Yeni eklenen ikon
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
 
@@ -329,6 +341,17 @@ export default function Index() {
           </button>
         )}
 
+        {/* SAĞ SİDEBAR KAPALIYSA ÇIKAN AÇMA BUTONU (Görseldeki Sol Buton Stiliyle Tam Simetrik) */}
+        {!isRightPanelOpen && (
+          <button
+            onClick={() => setIsRightPanelOpen(true)}
+            className="absolute top-4 right-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center animate-fade-in"
+            title="Open Context Panel"
+          >
+            <PanelRightOpen size={18} />
+          </button>
+        )}
+
         {/* Arka Plan Videosu */}
         <video
           ref={videoRef}
@@ -345,17 +368,11 @@ export default function Index() {
         <div className="flex-1 flex h-full relative z-10 w-full overflow-hidden">
 
           {/* CHAT ALANI (Sol Taraf) */}
-          <div
-            className={cn(
-              "flex flex-col h-full relative min-w-0 flex-1 transition-all duration-300 ease-in-out",
-              isRightPanelOpen && (activeResults.length > 0 || context) ? "w-full lg:w-3/5" : "w-full"
-            )}
-          >
-            {/* DÜZELTME: İçerik alanı koşullara göre esnetildi */}
+          <div className="flex flex-col h-full relative min-w-0 flex-1 transition-all duration-300 ease-in-out w-full">
             <div className="flex-1 overflow-y-auto px-4 py-8 flex flex-col items-center justify-center h-full relative">
 
               {!isChatActive ? (
-                // ==================== 1. SADECE KARŞILAMA EKRANI VE ORTAKDAKİ INPUT ====================
+                // ==================== 1. KARŞILAMA EKRANI VE ORTAKDAKİ INPUT ====================
                 <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center relative z-20">
                   <div className="mb-8 text-center flex flex-col items-center">
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-2 select-none text-center md:text-left">
@@ -506,7 +523,7 @@ export default function Index() {
                   </div>
                 </div>
               ) : (
-                // ==================== 2. AKTİF SOHBET LAYOUT'U (MESAJLAR + ALTTAKİ INPUT) ====================
+                // ==================== 2. AKTİF SOHBET LAYOUT'U ====================
                 <div className="w-full max-w-[850px] flex-1 flex flex-col h-full relative justify-between overflow-hidden">
                   <div className="flex-1 overflow-y-auto p-2 space-y-4 pb-28 w-full">
                     {messages.map((msg) => (
@@ -596,7 +613,7 @@ export default function Index() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Alt Sabit Sohbet Giriş Alanı (Sadece Chat Aktifken Görünür) */}
+                  {/* Alt Sabit Sohbet Giriş Alanı */}
                   <div className="w-full p-4 bg-transparent z-30 mt-auto">
                     <div
                       className="rounded-2xl shadow-xl border w-full transition-all duration-300 relative z-30"
@@ -615,7 +632,7 @@ export default function Index() {
                             onChange={handleTextareaChange}
                             onKeyDown={handleKeyDown}
                             placeholder={t("input_placeholder_chat")}
-                            className="w-full pl-3 pr-40 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                           />
                           <div className="absolute right-2 flex items-center gap-1.5 z-40">
                             <input
@@ -646,17 +663,6 @@ export default function Index() {
                             >
                               <ArrowUp size={14} className="pointer-events-none" />
                             </button>
-
-                            {!isRightPanelOpen && (activeResults.length > 0 || context) && (
-                              <button
-                                type="button"
-                                onClick={() => setIsRightPanelOpen(true)}
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200/60"
-                                title="Paneli Aç"
-                              >
-                                <HotelIcon size={14} />
-                              </button>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -668,131 +674,137 @@ export default function Index() {
             </div>
           </div>
 
-          {/* DİNAMİK SAĞ PANEL */}
-          {isRightPanelOpen && (activeResults.length > 0 || context) && (
-            <div className="w-full lg:w-[380px] xl:w-[400px] flex flex-col bg-white/95 border-l border-slate-200/80 backdrop-blur-xl shadow-2xl h-full relative z-20 overflow-hidden animate-in slide-in-from-right duration-300">
-
-              {/* Ortak Panel Başlığı */}
-              <div className="p-5 border-b border-slate-200/60 flex items-center justify-between bg-white">
-                <div>
-                  <h3 className="text-base font-bold text-[#0F172A]">
-                    {activeResults.length > 0 ? "Önerilen Seçenekler" : "Active Context"}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {activeResults.length > 0
-                      ? `Asistanın listelediği ${activeResults.length} sonuç`
-                      : t("ops_panel_title") || "Operasyon Bağlamı"
-                    }
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsRightPanelOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center"
-                >
-                  <X size={16} />
-                </button>
+          {/* SAĞ PANEL: SOL TARAFIN SİMETRİĞİ PANEL BUTONU KULLANILAN YAPI */}
+          <div
+            className={cn(
+              "flex-shrink-0 flex flex-col bg-white/95 border-l border-slate-200/80 backdrop-blur-xl shadow-2xl h-full relative z-20 overflow-hidden transition-all duration-300 ease-in-out",
+              isRightPanelOpen
+                ? "w-[300px] xl:w-[320px] opacity-100"
+                : "w-0 opacity-0 pointer-events-none border-l-0"
+            )}
+          >
+            {/* Panel Başlığı */}
+            <div className="p-5 border-b border-slate-200/60 flex items-center justify-between bg-white whitespace-nowrap">
+              <div>
+                <h3 className="text-base font-bold text-[#0F172A]">
+                  {activeResults.length > 0 ? "Önerilen Seçenekler" : "Active Context"}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {activeResults.length > 0
+                    ? `Asistanın listelediği ${activeResults.length} sonuç`
+                    : t("ops_panel_title") || "Operasyon Bağlamı"}
+                </p>
               </div>
 
-              {/* Panel İçerik Alanı */}
-              <div className="flex-1 overflow-y-auto p-5 bg-slate-50/50 space-y-4">
+              {/* Görseldeki gibi Sol Butonun Tam Simetriği Kapatma İkonu */}
+              <button
+                onClick={() => setIsRightPanelOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center cursor-pointer"
+                title="Collapse Sidebar"
+              >
+                <PanelRightClose size={18} />
+              </button>
+            </div>
 
-                {activeResults.length > 0 ? (
-                  activeResults.map((result, idx) => {
-                    const isFlight = result.airline !== undefined;
-                    return (
-                      <div
-                        key={idx}
-                        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-slate-100 group"
-                      >
-                        <div className="relative h-36 bg-slate-100 overflow-hidden">
-                          <img
-                            src={result.image || (isFlight
-                              ? "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&fit=crop"
-                              : "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&fit=crop"
-                            )}
-                            alt={result.name || result.airline}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 cursor-pointer shadow-sm">
-                            <Heart size={14} className="text-slate-400 hover:text-red-500 transition-colors" />
-                          </div>
+            {/* Panel İçerik Alanı */}
+            <div className="flex-1 overflow-y-auto p-5 bg-slate-50/50 space-y-4 min-w-[300px]">
+              {activeResults.length > 0 ? (
+                activeResults.map((result, idx) => {
+                  const isFlight = result.airline !== undefined;
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-slate-100 group"
+                    >
+                      <div className="relative h-36 bg-slate-100 overflow-hidden">
+                        <img
+                          src={result.image || (isFlight
+                            ? "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&fit=crop"
+                            : "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&fit=crop"
+                          )}
+                          alt={result.name || result.airline}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 cursor-pointer shadow-sm">
+                          <Heart size={14} className="text-slate-400 hover:text-red-500 transition-colors" />
                         </div>
+                      </div>
 
-                        <div className="p-4 space-y-2.5">
-                          <h4 className="font-bold text-slate-900 text-sm leading-tight line-clamp-1">
-                            {isFlight ? `✈️ ${result.airline}` : `🏨 ${result.name || result.hotelId}`}
-                          </h4>
+                      <div className="p-4 space-y-2.5">
+                        <h4 className="font-bold text-slate-900 text-sm leading-tight line-clamp-1">
+                          {isFlight ? `✈️ ${result.airline}` : `🏨 ${result.name || result.hotelId}`}
+                        </h4>
 
-                          {!isFlight && (
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                              <span className="font-semibold text-amber-500">★ {result.stars || "4"}</span>
-                              <span>•</span>
-                              <span className="truncate">{result.region || "Antalya"}</span>
+                        {!isFlight && (
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <span className="font-semibold text-amber-500">★ {result.stars || "4"}</span>
+                            <span>•</span>
+                            <span className="truncate">{result.region || "Antalya"}</span>
+                          </div>
+                        )}
+
+                        {isFlight && (
+                          <div className="grid grid-cols-2 gap-1 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg">
+                            <div><strong>Kalkış:</strong> {result.departureTime}</div>
+                            <div><strong>Varış:</strong> {result.arrivalTime}</div>
+                            <div className="col-span-2 mt-1 border-t pt-1 border-slate-200/60 text-[11px]">
+                              <strong>Bagaj:</strong> {result.baggage || "20 KG"}
                             </div>
-                          )}
+                          </div>
+                        )}
 
-                          {isFlight && (
-                            <div className="grid grid-cols-2 gap-1 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg">
-                              <div><strong>Kalkış:</strong> {result.departureTime}</div>
-                              <div><strong>Varış:</strong> {result.arrivalTime}</div>
-                              <div className="col-span-2 mt-1 border-t pt-1 border-slate-200/60 text-[11px]">
-                                <strong>Bagaj:</strong> {result.baggage || "20 KG"}
-                              </div>
-                            </div>
-                          )}
+                        {!isFlight && (result.boardType || result.pensionType) && (
+                          <span className="inline-block bg-orange-50 text-orange-600 text-[11px] font-medium px-2 py-0.5 rounded border border-orange-100/50">
+                            {result.boardType || result.pensionType}
+                          </span>
+                        )}
 
-                          {!isFlight && (result.boardType || result.pensionType) && (
-                            <span className="inline-block bg-orange-50 text-orange-600 text-[11px] font-medium px-2 py-0.5 rounded border border-orange-100/50">
-                              {result.boardType || result.pensionType}
+                        <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-lg font-extrabold text-orange-500">
+                              {result.price}
                             </span>
-                          )}
-
-                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                            <div className="flex items-baseline gap-0.5">
-                              <span className="text-lg font-extrabold text-orange-500">
-                                {result.price}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-medium">
-                                {result.currency || "TRY"} {!isFlight && "/gece"}
-                              </span>
-                            </div>
-                            <button className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs flex items-center gap-0.5 shadow-sm">
-                              Seç
-                              <ChevronRight size={12} />
-                            </button>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              {result.currency || "TRY"} {!isFlight && "/gece"}
+                            </span>
                           </div>
+                          <button className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs flex items-center gap-0.5 shadow-sm">
+                            Seç
+                            <ChevronRight size={12} />
+                          </button>
                         </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="space-y-4">
-                    <div className="space-y-1 bg-white/60 p-3 rounded-xl border border-slate-200/60 shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">{t("ops_category") || "KATEGORİ"}</span>
-                      <span className="text-sm font-semibold text-slate-800 block">{context.category}</span>
                     </div>
+                  );
+                })
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-1 bg-white/60 p-3 rounded-xl border border-slate-200/60 shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">{t("ops_category") || "KATEGORİ"}</span>
+                    <span className="text-sm font-semibold text-slate-800 block">{context.category}</span>
+                  </div>
 
-                    <div className="space-y-1 bg-white/60 p-3 rounded-xl border border-slate-200/60 shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">{t("ops_ref_num") || "REFERANS NUMARASI"}</span>
-                      <span className="text-sm font-mono font-bold text-[#0F172A] block">{context.refNum}</span>
-                    </div>
+                  <div className="space-y-1 bg-white/60 p-3 rounded-xl border border-slate-200/60 shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">{t("ops_ref_num") || "REFERANS NUMARASI"}</span>
+                    <span className="text-sm font-mono font-bold text-[#0F172A] block">{context.refNum}</span>
+                  </div>
 
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block">{t("ops_related_docs") || "İLGİLİ BELGELER"}</span>
-                      <div className="space-y-1.5">
-                        {context.docs.map((doc, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-2.5 bg-white border border-slate-200/60 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
-                            <span>📄</span>
-                            <span className="truncate flex-1" title={doc}>{doc}</span>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">{t("ops_related_docs") || "İLGİLİ BELGELER"}</span>
+                    <div className="space-y-1.5">
+                      {context.docs.map((doc, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2.5 bg-white border border-slate-200/60 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                          <span>📄</span>
+                          <span className="truncate flex-1" title={doc}>{doc}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
         </div>
       </div>
     </div>
