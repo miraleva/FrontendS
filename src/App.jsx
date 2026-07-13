@@ -8,6 +8,10 @@ import MainLayout from './layouts/MainLayout.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import Settings from './pages/Settings.jsx';
 import Reservation from './pages/ReservationPage.jsx';
+import AdminLayout from "./admin/AdminLayout.jsx";
+import Dashboard from "./admin/pages/Dashboard.jsx";
+
+
 import LanguageSelector from './components/LanguageSelector.jsx';
 
 function DocumentPagePlaceholder() {
@@ -34,8 +38,14 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<Settings />} />
+
+          <Route path="/reservation" element={<Reservation />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+          </Route>
+
           {/* İhtiyacınız yoksa /language rotasını kaldırabilirsiniz, çünkü artık her yerde global */}
-          <Route path="/language" element={<LanguageSelector />} />
+          {/* <Route path="/language" element={<LanguageSelector />} />*/}
 
           <Route element={<MainLayout />}>
             <Route path="/chat" element={<ChatbotPage />} />
@@ -48,7 +58,7 @@ export default function App() {
             <Route path="/reservation" element={<Reservation />} />
           </Route>
         </Routes>
-      </div>
-    </BrowserRouter>
+      </div >
+    </BrowserRouter >
   );
 }
