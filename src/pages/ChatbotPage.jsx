@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
-import { PanelLeftOpen, Send, Paperclip, Mic, ArrowUp } from "lucide-react";
+import { PanelLeftOpen, Send, Paperclip, Mic, ArrowUp, Star, Heart, ChevronRight, Hotel as HotelIcon, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
+
+function cn(...inputs) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 export default function Index() {
   const { t } = useTranslation();
@@ -13,16 +17,24 @@ export default function Index() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
-  const [context, setContext] = useState(null);
+
+  const [context, setContext] = useState({
+    category: "General SOP",
+    refNum: "REF-PENDING",
+    docs: ["SOP_Manual.pdf"]
+  });
+
   const [searchParams, setSearchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId') || '';
   const [isListening, setIsListening] = useState(false);
+
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [activeResults, setActiveResults] = useState([]);
 
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Karşılama ve aktif sohbet ekranları için ayrı ayrı dosya input referansları
   const welcomeFileInputRef = useRef(null);
   const chatFileInputRef = useRef(null);
 
@@ -48,10 +60,17 @@ export default function Index() {
           const history = response.data.map((msg, idx) => ({
             id: idx,
             text: msg.text,
-            sender: msg.sender
+            sender: msg.sender,
+            results: msg.results || null
           }));
           setMessages(history);
           setIsChatActive(history.length > 0);
+
+          const lastBotMsg = [...history].reverse().find(m => m.sender === "bot" && m.results);
+          if (lastBotMsg) {
+            setActiveResults(lastBotMsg.results);
+            setIsRightPanelOpen(true);
+          }
         } catch (err) {
           console.error("Failed to load message history for session", sessionId, err);
         } finally {
@@ -62,6 +81,7 @@ export default function Index() {
     } else {
       setMessages([]);
       setIsChatActive(false);
+      setActiveResults([]);
     }
   }, [sessionId]);
 
@@ -81,13 +101,9 @@ export default function Index() {
 
   const getGreetingKey = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-      return "greeting_morning";
-    } else if (hour >= 12 && hour < 18) {
-      return "greeting_afternoon";
-    } else {
-      return "greeting_night";
-    }
+    if (hour >= 5 && hour < 12) return "greeting_morning";
+    if (hour >= 12 && hour < 18) return "greeting_afternoon";
+    return "greeting_night";
   };
 
   const updateOperationContext = (query) => {
@@ -97,19 +113,19 @@ export default function Index() {
     let docs = ["SOP_Manual.pdf"];
 
     if (q.includes("titanic") || q.includes("hotel")) {
-      category = t("hotel_sop");
+      category = t("hotel_sop") || "Hotel SOP";
       refNum = "HTL-PENDING";
       docs = ["Titanic_Lara_SOP_v2.pdf"];
     } else if (q.includes("thy") || q.includes("flight")) {
-      category = t("flight_sop");
+      category = t("flight_sop") || "Flight SOP";
       refNum = "FLT-PENDING";
       docs = ["THY_Baggage_Ops_Guide.pdf"];
     } else if (q.includes("transfer")) {
-      category = t("transfer_sop");
+      category = t("transfer_sop") || "Transfer SOP";
       refNum = "TRF-PENDING";
       docs = ["Airport_Transfer_Dispatch.pdf"];
     } else if (q.includes("voucher")) {
-      category = t("voucher");
+      category = t("voucher") || "Voucher";
       refNum = "VCH-PENDING";
       docs = ["Voucher_Directives_2026.pdf"];
     }
@@ -131,8 +147,6 @@ export default function Index() {
     setIsChatActive(true);
     setIsThinking(true);
     setThinkingStep(t("thinking_sop") || "Checking SOP manuals...");
-
-    console.log("[ChatbotPage] handleSend: sending message with sessionId =", sessionId || "null (new session)");
 
     let userCountry = "Turkey";
     try {
@@ -163,6 +177,11 @@ export default function Index() {
       };
 
       setMessages(prev => [...prev, botMsg]);
+
+      if (data.results && data.results.length > 0) {
+        setActiveResults(data.results);
+        setIsRightPanelOpen(true);
+      }
 
       if (data.sessionId && data.sessionId !== sessionId) {
         setSearchParams({ sessionId: data.sessionId });
@@ -200,7 +219,6 @@ export default function Index() {
     const file = e.target.files[0];
     if (!file) return;
     console.log("Seçilen dosya başarıyla yakalandı:", file.name);
-    // Buraya dosya yükleme (upload) servis mantığını ekleyebilirsin
   };
 
   const recognitionRef = useRef(null);
@@ -211,7 +229,6 @@ export default function Index() {
       e.stopPropagation();
     }
 
-    // Eğer zaten dinliyorsa ve tekrar basıldıysa (veya stop fonksiyonu gibi çalışacaksa) durdur
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -221,8 +238,6 @@ export default function Index() {
         console.log("Oturum durdurulamadı:", err);
       }
     }
-
-    console.log("Ses tanıma tetiklendi...");
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -242,8 +257,7 @@ export default function Index() {
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
-        console.log("Ses kaydı AKTİF.");
-        setIsListening(true); // Arayüzü ses dalgası moduna geçirir
+        setIsListening(true);
       };
 
       recognition.onerror = (event) => {
@@ -267,10 +281,9 @@ export default function Index() {
       };
 
       recognition.onend = () => {
-        console.log("Ses tanıma bitti.");
         stream.getTracks().forEach(track => track.stop());
         recognitionRef.current = null;
-        setIsListening(false); // Arayüzü normal textarea moduna geri döndürür
+        setIsListening(false);
       };
 
       recognition.start();
@@ -280,6 +293,7 @@ export default function Index() {
       setIsListening(false);
     }
   };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
       {/* Sol Sidebar */}
@@ -290,6 +304,7 @@ export default function Index() {
           setIsChatActive(false);
           setMessages([]);
           setSearchQuery("");
+          setActiveResults([]);
         }}
       />
 
@@ -316,15 +331,22 @@ export default function Index() {
           className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"}`}
         >
           <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-          Tarayıcınız video etiketini desteklemiyor.
         </video>
 
-        <div className="flex-1 flex h-full relative z-10 w-full">
-          <div className="flex-1 flex flex-col h-full relative min-w-0">
-            <div className="flex-1 overflow-y-auto px-4 py-8 flex flex-col items-center justify-between h-full">
+        <div className="flex-1 flex h-full relative z-10 w-full overflow-hidden">
+
+          {/* CHAT ALANI (Sol Taraf) */}
+          <div
+            className={cn(
+              "flex flex-col h-full relative min-w-0 flex-1 transition-all duration-300 ease-in-out",
+              isRightPanelOpen && (activeResults.length > 0 || context) ? "w-full lg:w-3/5" : "w-full"
+            )}
+          >
+            {/* DÜZELTME: İçerik alanı koşullara göre esnetildi */}
+            <div className="flex-1 overflow-y-auto px-4 py-8 flex flex-col items-center justify-center h-full relative">
 
               {!isChatActive ? (
-                // ==================== 1. KARŞILAMA EKRANI LAYOUT'U ====================
+                // ==================== 1. SADECE KARŞILAMA EKRANI VE ORTAKDAKİ INPUT ====================
                 <div className="w-full max-w-[850px] my-auto animate-fade-in flex flex-col items-center relative z-20">
                   <div className="mb-8 text-center flex flex-col items-center">
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-2 select-none text-center md:text-left">
@@ -342,6 +364,7 @@ export default function Index() {
                     </p>
                   </div>
 
+                  {/* Ortadaki Arama Çubuğu */}
                   <div
                     className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300 relative z-30"
                     style={{
@@ -351,9 +374,7 @@ export default function Index() {
                   >
                     <div className="p-3">
                       <div className="relative flex items-center w-full min-h-[40px]">
-
                         {!isListening ? (
-                          // ================= MOD 1: NORMAL TEXTAREA MODU =================
                           <>
                             <textarea
                               ref={textareaRef}
@@ -361,13 +382,13 @@ export default function Index() {
                               value={searchQuery}
                               onChange={handleTextareaChange}
                               onKeyDown={handleKeyDown}
-                              placeholder={t("input_placeholder_welcome")} // Aktif chat için placeholder_chat yapın
+                              placeholder={t("input_placeholder_welcome")}
                               className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                             />
                             <div className="absolute right-2 flex items-center gap-1.5 z-40">
                               <input
                                 type="file"
-                                ref={welcomeFileInputRef} // Veya chatFileInputRef
+                                ref={welcomeFileInputRef}
                                 onChange={handleFileChange}
                                 className="hidden"
                               />
@@ -395,12 +416,8 @@ export default function Index() {
                             </div>
                           </>
                         ) : (
-                          // ================= MOD 2: SES DALGASI VE DURDURMA MODU =================
                           <div className="flex items-center justify-between w-full px-2 animate-fade-in">
-                            {/* Sol taraftaki artı / ataç görsel simgesi */}
                             <span className="text-xl text-slate-400 font-light select-none cursor-not-allowed opacity-50">＋</span>
-
-                            {/* CSS Animasyonlu Ses Dalgaları Yapısı */}
                             <div className="flex items-center gap-[3px] h-6 flex-1 justify-center max-w-[60%]">
                               {[...Array(24)].map((_, i) => (
                                 <div
@@ -414,8 +431,6 @@ export default function Index() {
                                 />
                               ))}
                             </div>
-
-                            {/* Sağ taraftaki Kırmızı/Gri Kare Durdurma Butonu */}
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
@@ -428,15 +443,12 @@ export default function Index() {
                               >
                                 <div className="w-2.5 h-2.5 bg-slate-800 group-hover:bg-red-500 rounded-sm transition-colors" />
                               </button>
-
-                              {/* Gönder butonu pasif (dinleme esnasında) */}
                               <button disabled className="p-1.5 rounded-lg bg-gray-200 text-gray-400 opacity-50 cursor-not-allowed">
                                 <ArrowUp size={14} />
                               </button>
                             </div>
                           </div>
                         )}
-
                       </div>
                     </div>
                   </div>
@@ -485,8 +497,8 @@ export default function Index() {
                   </div>
                 </div>
               ) : (
-                // ==================== 2. AKTİF SOHBET LAYOUT'U ====================
-                <div className="w-full max-w-[850px] flex-1 flex flex-col h-full relative justify-between overflow-hidden relative z-20">
+                // ==================== 2. AKTİF SOHBET LAYOUT'U (MESAJLAR + ALTTAKİ INPUT) ====================
+                <div className="w-full max-w-[850px] flex-1 flex flex-col h-full relative justify-between overflow-hidden">
                   <div className="flex-1 overflow-y-auto p-2 space-y-4 pb-28 w-full">
                     {messages.map((msg) => (
                       <div key={msg.id} className={`flex items-start gap-3 w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -508,6 +520,7 @@ export default function Index() {
                           >
                             {msg.text}
                           </div>
+
                           {msg.results && msg.results.length > 0 && (
                             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                               {msg.results.map((result, idx) => {
@@ -574,14 +587,14 @@ export default function Index() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Alt Sabit Sohbet Giriş Alanı */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-transparent z-30">
+                  {/* Alt Sabit Sohbet Giriş Alanı (Sadece Chat Aktifken Görünür) */}
+                  <div className="w-full p-4 bg-transparent z-30 mt-auto">
                     <div
                       className="rounded-2xl shadow-xl border w-full transition-all duration-300 relative z-30"
                       style={{
                         backgroundColor: "rgba(255, 255, 255, 0.08)",
                         borderColor: "rgba(255, 255, 255, 0.15)",
-                        backdropBlur: "20px"
+                        backdropFilter: "blur(20px)"
                       }}
                     >
                       <div className="p-3">
@@ -593,10 +606,9 @@ export default function Index() {
                             onChange={handleTextareaChange}
                             onKeyDown={handleKeyDown}
                             placeholder={t("input_placeholder_chat")}
-                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                            className="w-full pl-3 pr-40 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                           />
                           <div className="absolute right-2 flex items-center gap-1.5 z-40">
-                            {/* Gizli Dosya Girişi - Sohbet Modu */}
                             <input
                               type="file"
                               ref={chatFileInputRef}
@@ -625,6 +637,17 @@ export default function Index() {
                             >
                               <ArrowUp size={14} className="pointer-events-none" />
                             </button>
+
+                            {!isRightPanelOpen && (activeResults.length > 0 || context) && (
+                              <button
+                                type="button"
+                                onClick={() => setIsRightPanelOpen(true)}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200/60"
+                                title="Paneli Aç"
+                              >
+                                <HotelIcon size={14} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -632,43 +655,132 @@ export default function Index() {
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 
-          {/* Dinamik Sağ Context Paneli */}
-          {isChatActive && context && (
-            <div className="w-[280px] hidden xl:flex flex-col bg-white/20 border-l border-white/20 backdrop-blur-xl p-5 gap-5 animate-fade-in relative z-20 overflow-y-auto">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-[#0B5FFF] uppercase tracking-wider">
-                  {t("ops_panel_title")}
-                </span>
-                <h3 className="text-base font-bold text-[#0F172A]">
-                  Active Context
-                </h3>
+          {/* DİNAMİK SAĞ PANEL */}
+          {isRightPanelOpen && (activeResults.length > 0 || context) && (
+            <div className="w-full lg:w-[380px] xl:w-[400px] flex flex-col bg-white/95 border-l border-slate-200/80 backdrop-blur-xl shadow-2xl h-full relative z-20 overflow-hidden animate-in slide-in-from-right duration-300">
+
+              {/* Ortak Panel Başlığı */}
+              <div className="p-5 border-b border-slate-200/60 flex items-center justify-between bg-white">
+                <div>
+                  <h3 className="text-base font-bold text-[#0F172A]">
+                    {activeResults.length > 0 ? "Önerilen Seçenekler" : "Active Context"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {activeResults.length > 0
+                      ? `Asistanın listelediği ${activeResults.length} sonuç`
+                      : t("ops_panel_title") || "Operasyon Bağlamı"
+                    }
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsRightPanelOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center"
+                >
+                  <X size={16} />
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-1 bg-white/30 p-3 rounded-lg border border-white/20">
-                  <span className="text-[10px] font-bold text-text-secondary uppercase">{t("ops_category")}</span>
-                  <span className="text-sm font-semibold text-slate-800 block">{context.category}</span>
-                </div>
+              {/* Panel İçerik Alanı */}
+              <div className="flex-1 overflow-y-auto p-5 bg-slate-50/50 space-y-4">
 
-                <div className="space-y-1 bg-white/30 p-3 rounded-lg border border-white/20">
-                  <span className="text-[10px] font-bold text-text-secondary uppercase">{t("ops_ref_num")}</span>
-                  <span className="text-sm font-mono font-bold text-[#0F172A] block">{context.refNum}</span>
-                </div>
+                {activeResults.length > 0 ? (
+                  activeResults.map((result, idx) => {
+                    const isFlight = result.airline !== undefined;
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-slate-100 group"
+                      >
+                        <div className="relative h-36 bg-slate-100 overflow-hidden">
+                          <img
+                            src={result.image || (isFlight
+                              ? "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&fit=crop"
+                              : "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&fit=crop"
+                            )}
+                            alt={result.name || result.airline}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 cursor-pointer shadow-sm">
+                            <Heart size={14} className="text-slate-400 hover:text-red-500 transition-colors" />
+                          </div>
+                        </div>
 
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-text-secondary uppercase block">{t("ops_related_docs")}</span>
-                  <div className="space-y-1.5">
-                    {context.docs.map((doc, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-white/40 hover:bg-white/50 border border-white/10 rounded-md text-xs font-medium text-slate-700 transition-all">
-                        <span>📄</span>
-                        <span className="truncate flex-1" title={doc}>{doc}</span>
+                        <div className="p-4 space-y-2.5">
+                          <h4 className="font-bold text-slate-900 text-sm leading-tight line-clamp-1">
+                            {isFlight ? `✈️ ${result.airline}` : `🏨 ${result.name || result.hotelId}`}
+                          </h4>
+
+                          {!isFlight && (
+                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                              <span className="font-semibold text-amber-500">★ {result.stars || "4"}</span>
+                              <span>•</span>
+                              <span className="truncate">{result.region || "Antalya"}</span>
+                            </div>
+                          )}
+
+                          {isFlight && (
+                            <div className="grid grid-cols-2 gap-1 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg">
+                              <div><strong>Kalkış:</strong> {result.departureTime}</div>
+                              <div><strong>Varış:</strong> {result.arrivalTime}</div>
+                              <div className="col-span-2 mt-1 border-t pt-1 border-slate-200/60 text-[11px]">
+                                <strong>Bagaj:</strong> {result.baggage || "20 KG"}
+                              </div>
+                            </div>
+                          )}
+
+                          {!isFlight && (result.boardType || result.pensionType) && (
+                            <span className="inline-block bg-orange-50 text-orange-600 text-[11px] font-medium px-2 py-0.5 rounded border border-orange-100/50">
+                              {result.boardType || result.pensionType}
+                            </span>
+                          )}
+
+                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                            <div className="flex items-baseline gap-0.5">
+                              <span className="text-lg font-extrabold text-orange-500">
+                                {result.price}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium">
+                                {result.currency || "TRY"} {!isFlight && "/gece"}
+                              </span>
+                            </div>
+                            <button className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs flex items-center gap-0.5 shadow-sm">
+                              Seç
+                              <ChevronRight size={12} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    ))}
+                    );
+                  })
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-1 bg-white/60 p-3 rounded-xl border border-slate-200/60 shadow-sm">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{t("ops_category") || "KATEGORİ"}</span>
+                      <span className="text-sm font-semibold text-slate-800 block">{context.category}</span>
+                    </div>
+
+                    <div className="space-y-1 bg-white/60 p-3 rounded-xl border border-slate-200/60 shadow-sm">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{t("ops_ref_num") || "REFERANS NUMARASI"}</span>
+                      <span className="text-sm font-mono font-bold text-[#0F172A] block">{context.refNum}</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">{t("ops_related_docs") || "İLGİLİ BELGELER"}</span>
+                      <div className="space-y-1.5">
+                        {context.docs.map((doc, idx) => (
+                          <div key={idx} className="flex items-center gap-2 p-2.5 bg-white border border-slate-200/60 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                            <span>📄</span>
+                            <span className="truncate flex-1" title={doc}>{doc}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
