@@ -1,6 +1,3 @@
-import { getCountryCallingCode } from "react-phone-number-input";
-import metadata from "libphonenumber-js/metadata.full.json";
-import { getCountryCallingCode as getCode, parsePhoneNumberFromString } from "libphonenumber-js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -9,6 +6,7 @@ import api from "../services/api";
 import "react-phone-number-input/style.css";
 import ChatSidebar from "../components/ChatSidebar";
 import { PanelLeftOpen } from "lucide-react";
+import { isPhoneNumberTooLong, getPhoneInputMaxLength } from "../utils/phoneLimits";
 
 // Helper to convert "DD.MM.YYYY" to "YYYY-MM-DD" for the backend API
 const toISODate = (ddmmyyyy) => {
@@ -72,16 +70,6 @@ export default function Profile() {
             gender: '',
             dateOfBirth: '',
         };
-    });
-
-    const [activeCountry, setActiveCountry] = useState(() => {
-        if (formData.phone) {
-            const parsed = parsePhoneNumberFromString(formData.phone);
-            if (parsed && parsed.country) {
-                return parsed.country;
-            }
-        }
-        return "TR";
     });
 
     const [backupData, setBackupData] = useState({});
@@ -179,23 +167,15 @@ export default function Profile() {
             return;
         }
 
-        // Country-specific E.164 character limits including '+' and calling code
-        const countryLimits = {
-            TR: 13, // +90 + 10 digits
-            GB: 13, // +44 + 10 digits
-            DE: 15, // +49 + 12 digits (variable length)
-            RU: 12, // +7  + 10 digits
-        };
-
-        const limit = countryLimits[activeCountry] || 16;
-        let truncatedValue = value;
-        if (value.length > limit) {
-            truncatedValue = value.slice(0, limit);
+        // Ulke, numaranin basindaki uluslararasi koddan otomatik belirlenir;
+        // o ulke icin olmasi gerekenden uzun bir numara yazilmasini engelliyoruz.
+        if (isPhoneNumberTooLong(value)) {
+            return;
         }
 
         setFormData((prev) => ({
             ...prev,
-            phone: truncatedValue,
+            phone: value,
         }));
 
         setErrors((prev) => ({
@@ -360,13 +340,7 @@ export default function Profile() {
         navigate("/login");
     };
 
-    const countryFormattedLimits = {
-        TR: 17, // +90 555 444 33 22
-        GB: 16, // +44 342 342 3432 (or mobile: +44 7911 123456)
-        DE: 18, // +49 176 12345678 (16) or up to 18 for longer landlines
-        RU: 16, // +7 912 345-67-89
-    };
-    const inputMaxLength = countryFormattedLimits[activeCountry] || 16;
+    const inputMaxLength = getPhoneInputMaxLength(formData.phone);
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
@@ -547,24 +521,6 @@ export default function Profile() {
                                                 countries={["TR", "GB", "DE", "RU"]}
                                                 value={formData.phone}
                                                 onChange={handlePhoneChange}
-                                                onCountryChange={(country) => {
-                                                    if (country) {
-                                                        setActiveCountry(country);
-                                                        const countryLimits = {
-                                                            TR: 13,
-                                                            GB: 13,
-                                                            DE: 15,
-                                                            RU: 12,
-                                                        };
-                                                        const limit = countryLimits[country] || 16;
-                                                        if (formData.phone && formData.phone.length > limit) {
-                                                            setFormData((prev) => ({
-                                                                ...prev,
-                                                                phone: prev.phone.slice(0, limit),
-                                                            }));
-                                                        }
-                                                    }
-                                                }}
                                                 onBlur={() => handleBlur("phone")}
                                                 smartCaret={false}
                                                 className="flex items-center w-full bg-white/50 border border-white/20 rounded-[12px] px-[16px] py-[12px] text-slate-900 text-[15px] focus-within:ring-2 focus-within:ring-[#219ebc]/40 focus-within:bg-white/70 transition-all duration-200"
