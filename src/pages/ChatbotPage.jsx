@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   PanelLeftOpen,
@@ -49,6 +49,7 @@ export default function Index() {
   });
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const sessionId = searchParams.get('sessionId') || '';
   const [isListening, setIsListening] = useState(false);
 
@@ -209,7 +210,9 @@ export default function Index() {
             id: idx,
             text: msg.text,
             sender: msg.sender,
-            results: msg.results || null
+            results: msg.results || null,
+            chatStatus: msg.chatStatus || null,
+            selectedItem: msg.selectedItem || null
           }));
           setMessages(history);
           setIsChatActive(history.length > 0);
@@ -289,7 +292,9 @@ export default function Index() {
         id: Date.now() + 1,
         text: data.reply,
         sender: "bot",
-        results: data.results
+        results: data.results,
+        chatStatus: data.chatStatus,
+        selectedItem: data.selectedItem
       };
 
       setMessages(prev => [...prev, botMsg]);
@@ -628,6 +633,16 @@ export default function Index() {
                               }`}
                           >
                             {msg.text}
+                            {msg.chatStatus === "BOOKING" && msg.selectedItem && (
+                              <div className="mt-3 text-right">
+                                <button
+                                  onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem } })}
+                                  className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
+                                >
+                                  {t("proceed_to_reservation", "Proceed to Reservation")}
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           {msg.results && msg.results.length > 0 && (
