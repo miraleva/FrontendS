@@ -71,7 +71,7 @@ export default function Index() {
     : null;
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
-  // --- Chat'le Tam Paralel ve Kusursuz Tarih/Veri Çıkarıcı ---
+  // --- Metinden Akıllı Parametre Çıkarıcı (Regex & Kelime Analizi) ---
   const extractBookingDetails = (chatHistory) => {
     let extracted = {
       city: "",
@@ -88,7 +88,7 @@ export default function Index() {
     let detectedType = null;
 
     chatHistory.forEach(msg => {
-      const text = msg.text.trim().toLowerCase();
+      const text = msg.text.toLowerCase();
 
       // 1. Arama Tipini Belirle
       if (text.includes("uçak") || text.includes("bilet") || text.includes("flight") || text.includes("uçuş")) {
@@ -107,53 +107,43 @@ export default function Index() {
       });
 
       // Uçak modunda kalkış/varış ayrımı (Örn: "İstanbul'dan Antalya'ya")
-      if (text.includes("dan ") || text.includes("den ") || text.includes("ten ") || text.includes("tan ") || text.includes("'dan") || text.includes("'den")) {
+      if (text.includes("dan ") || text.includes("den ") || text.includes("ten ") || text.includes("tan ")) {
         foundCities.forEach(city => {
           const lowerCity = city.toLowerCase();
-          if (text.includes(lowerCity + "dan") || text.includes(lowerCity + " den") || text.includes(lowerCity + " tan") || text.includes(lowerCity + " ten") || text.includes(lowerCity + "'dan") || text.includes(lowerCity + "'den")) {
+          if (text.includes(lowerCity + "dan") || text.includes(lowerCity + " den") || text.includes(lowerCity + " tan") || text.includes(lowerCity + " ten")) {
             extracted.departureCity = city;
           } else {
             extracted.arrivalCity = city;
           }
         });
       } else {
+        // Doğrudan iki şehir yazıldıysa ilkini kalkış, ikincisini varış yapalım
         if (foundCities.length >= 2) {
           extracted.departureCity = foundCities[0];
           extracted.arrivalCity = foundCities[1];
         } else if (foundCities.length === 1) {
-          extracted.city = foundCities[0];
-          extracted.arrivalCity = foundCities[0];
+          extracted.city = foundCities[0]; // Otel için tek konum
+          extracted.arrivalCity = foundCities[0]; // Uçak için tek varış noktası varsayalım
         }
       }
 
-      // 3. Kişi Sayısı Yakalama (Sadece sayı girildiğinde veya "2" dendiğinde de çalışması için)
-      const guestMatch = text.match(/(\d+)\s*(kişi|yetişkin|guest|adult)?/);
-      // Eğer kullanıcı sadece sayı girdiyse ve bu sayı tarih değilse (örneğin "2") konuk sayısı olarak eşle
-      if (guestMatch && !text.includes(".")) {
+      // 3. Kişi Sayısı
+      const guestMatch = text.match(/(\d+)\s*(kişi|yetişkin|guest|adult)/);
+      if (guestMatch) {
         extracted.guests = `${guestMatch[1]} Kişi`;
       }
 
-      // 4. Tarihleri Kusursuz Ayrıştırma (Örn: "17.07.2026 19.07.2026" veya "17.07.2026 - 19.07.2026")
-      // DD.MM.YYYY veya DD/MM/YYYY formatındaki tüm tarihleri bulur
-      const dateRegexGlobal = /(\d{2}[\./]\d{2}[\./]\d{4})/g;
-      const matchedDates = text.match(dateRegexGlobal);
-
-      if (matchedDates && matchedDates.length >= 2) {
-        // Eğer 2 veya daha fazla tarih bulunursa ilkini check-in, ikincisini check-out yap
-        extracted.checkIn = matchedDates[0];
-        extracted.checkOut = matchedDates[1];
-      } else if (matchedDates && matchedDates.length === 1) {
-        // Tek tarih varsa check-in yap
-        extracted.checkIn = matchedDates[0];
-      } else {
-        // Yazılı aylar için alternatif regex (Örn: "17 Temmuz - 19 Temmuz")
-        const textDateRegex = /(\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december))/g;
-        const matchedTextDates = text.match(textDateRegex);
-        if (matchedTextDates && matchedTextDates.length >= 2) {
-          extracted.checkIn = matchedTextDates[0];
-          extracted.checkOut = matchedTextDates[1];
-        } else if (matchedTextDates && matchedTextDates.length === 1) {
-          extracted.checkIn = matchedTextDates[0];
+      // 4. Tarih Aralığı
+      const dateRegex = /(\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december|\d{1,2})[\s-]*\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december|\d{2,4})?)/;
+      const dateMatch = text.match(dateRegex);
+      if (dateMatch) {
+        const parts = dateMatch[0].split("-");
+        if (parts.length > 1) {
+          extracted.checkIn = parts[0].trim();
+          extracted.checkOut = parts[1].trim();
+        } else {
+          extracted.checkIn = dateMatch[0];
+          extracted.checkOut = "";
         }
       }
 
@@ -169,11 +159,7 @@ export default function Index() {
         } else {
           detectedType = "hotel";
           extracted.hotelName = firstResult.name || firstResult.hotelId;
-          // Ondalık fiyat hanesini güzelleştirelim (Örn: 11801.94202 -> 11801.94)
-          const rawPrice = Number(firstResult.price);
-          extracted.price = !isNaN(rawPrice)
-            ? `${rawPrice.toFixed(2)} ${firstResult.currency || 'TRY'}`
-            : `${firstResult.price} ${firstResult.currency || 'TRY'}`;
+          extracted.price = `${firstResult.price} ${firstResult.currency || 'TRY'}`;
           if (firstResult.region) extracted.city = firstResult.region;
         }
       }
