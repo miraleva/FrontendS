@@ -336,11 +336,16 @@ export default function Profile() {
     };
 
     // Gerçek silme işlemini yapan fonksiyon
-    const handleConfirmDelete = () => {
-        console.log("Deleting account permanently...");
-        localStorage.clear();
-        setShowDeleteModal(false);
-        navigate("/login");
+    const handleConfirmDelete = async () => {
+        try {
+            console.log("Deleting account permanently...");
+            await api.delete('/api/profile');
+            localStorage.clear();
+            setShowDeleteModal(false);
+            navigate("/login");
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+        }
     };
 
     const inputMaxLength = getPhoneInputMaxLength(formData.phone);
