@@ -32,6 +32,9 @@ export default function Index() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
 
+  // --- Seçilen Otel Objesi ---
+  const [selectedHotel, setSelectedHotel] = useState(null);
+
   // --- Arama Tipi ("hotel" | "flight") ---
   const [searchType, setSearchType] = useState("hotel");
 
@@ -72,124 +75,7 @@ export default function Index() {
     : null;
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
-  // --- Metinden Akıllı Parametre Çıkarıcı (Regex & Kelime Analizi) ---
-  const extractBookingDetails = (chatHistory) => {
-    let extracted = {
-      city: "",
-      departureCity: "",
-      arrivalCity: "",
-      checkIn: "",
-      checkOut: "",
-      guests: "",
-      hotelName: "",
-      airline: "",
-      price: ""
-    };
-
-    let detectedType = null;
-
-    chatHistory.forEach(msg => {
-      const text = msg.text.toLowerCase();
-
-      // 1. Arama Tipini Belirle
-      if (text.includes("uçak") || text.includes("bilet") || text.includes("flight") || text.includes("uçuş")) {
-        detectedType = "flight";
-      } else if (text.includes("otel") || text.includes("konaklama") || text.includes("hotel") || text.includes("pansiyon")) {
-        detectedType = "hotel";
-      }
-
-      // 2. Şehirleri Yakala (Örnek Havuz)
-      const cities = ["antalya", "muğla", "istanbul", "izmir", "bodrum", "fethiye", "ankara", "london", "paris", "berlin", "roma"];
-      let foundCities = [];
-      cities.forEach(c => {
-        if (text.includes(c)) {
-          foundCities.push(c.charAt(0).toUpperCase() + c.slice(1));
-        }
-      });
-
-      // Uçak modunda kalkış/varış ayrımı (Örn: "İstanbul'dan Antalya'ya")
-      if (text.includes("dan ") || text.includes("den ") || text.includes("ten ") || text.includes("tan ")) {
-        foundCities.forEach(city => {
-          const lowerCity = city.toLowerCase();
-          if (text.includes(lowerCity + "dan") || text.includes(lowerCity + " den") || text.includes(lowerCity + " tan") || text.includes(lowerCity + " ten")) {
-            extracted.departureCity = city;
-          } else {
-            extracted.arrivalCity = city;
-          }
-        });
-      } else {
-        // Doğrudan iki şehir yazıldıysa ilkini kalkış, ikincisini varış yapalım
-        if (foundCities.length >= 2) {
-          extracted.departureCity = foundCities[0];
-          extracted.arrivalCity = foundCities[1];
-        } else if (foundCities.length === 1) {
-          extracted.city = foundCities[0]; // Otel için tek konum
-          extracted.arrivalCity = foundCities[0]; // Uçak için tek varış noktası varsayalım
-        }
-      }
-
-      // 3. Kişi Sayısı
-      const guestMatch = text.match(/(\d+)\s*(kişi|yetişkin|guest|adult)/);
-      if (guestMatch) {
-        extracted.guests = `${guestMatch[1]} Kişi`;
-      }
-
-      // 4. Tarih Aralığı
-      const dateRegex = /(\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december|\d{1,2})[\s-]*\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december|\d{2,4})?)/;
-      const dateMatch = text.match(dateRegex);
-      if (dateMatch) {
-        const parts = dateMatch[0].split("-");
-        if (parts.length > 1) {
-          extracted.checkIn = parts[0].trim();
-          extracted.checkOut = parts[1].trim();
-        } else {
-          extracted.checkIn = dateMatch[0];
-          extracted.checkOut = "";
-        }
-      }
-
-      // 5. Kart/Sonuç Kartından Gelen Veriyi Yakalama (Otel veya Havayolu)
-      if (msg.results && msg.results.length > 0) {
-        const firstResult = msg.results[0];
-        const isFlightResult = firstResult.airline !== undefined;
-
-        if (isFlightResult) {
-          detectedType = "flight";
-          extracted.airline = firstResult.airline;
-          extracted.price = `${firstResult.price} ${firstResult.currency || 'TRY'}`;
-        } else {
-          detectedType = "hotel";
-          extracted.hotelName = firstResult.name || firstResult.hotelId;
-          extracted.price = `${firstResult.price} ${firstResult.currency || 'TRY'}`;
-          if (firstResult.region) extracted.city = firstResult.region;
-        }
-      }
-    });
-
-    if (detectedType) {
-      setSearchType(detectedType);
-    }
-
-    setBookingDetails(prev => ({
-      ...prev,
-      city: extracted.city || prev.city,
-      departureCity: extracted.departureCity || prev.departureCity,
-      arrivalCity: extracted.arrivalCity || prev.arrivalCity,
-      guests: extracted.guests || prev.guests,
-      checkIn: extracted.checkIn || prev.checkIn,
-      checkOut: extracted.checkOut || prev.checkOut,
-      hotelName: extracted.hotelName || prev.hotelName,
-      airline: extracted.airline || prev.airline,
-      price: extracted.price || prev.price,
-    }));
-  };
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      extractBookingDetails(messages);
-    }
-  }, [messages]);
-
+  // --- HTML5 Video Autoplay Engeli Çözümü ---
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = true;
@@ -199,6 +85,7 @@ export default function Index() {
     }
   }, []);
 
+  // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
   useEffect(() => {
     if (sessionId) {
       const loadHistory = async () => {
@@ -206,16 +93,28 @@ export default function Index() {
           setIsThinking(true);
           setThinkingStep("Loading history...");
           const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+
           const history = response.data.map((msg, idx) => ({
             id: idx,
             text: msg.text,
             sender: msg.sender,
             results: msg.results || null,
             chatStatus: msg.chatStatus || null,
-            selectedItem: msg.selectedItem || null
+            selectedItem: msg.selectedItem || null,
+            bookingMeta: msg.bookingMeta || null
           }));
+
           setMessages(history);
           setIsChatActive(history.length > 0);
+
+          // Geçmiş mesajlar içinde en güncel bookingMeta'yı bulup sağ tarafa doldur
+          const lastMetaMessage = [...response.data].reverse().find(msg => msg.bookingMeta);
+          if (lastMetaMessage && lastMetaMessage.bookingMeta) {
+            setBookingDetails(prev => ({ ...prev, ...lastMetaMessage.bookingMeta }));
+            if (lastMetaMessage.bookingMeta.type) {
+              setSearchType(lastMetaMessage.bookingMeta.type);
+            }
+          }
         } catch (err) {
           console.error("Failed to load message history for session", sessionId, err);
         } finally {
@@ -252,6 +151,7 @@ export default function Index() {
     return "greeting_night";
   };
 
+  // --- Yeni Mesaj Gönderme ve bookingMeta Güncelleme ---
   const handleSend = async () => {
     if (!searchQuery.trim()) return;
 
@@ -294,14 +194,91 @@ export default function Index() {
         sender: "bot",
         results: data.results,
         chatStatus: data.chatStatus,
-        selectedItem: data.selectedItem
+        selectedItem: data.selectedItem,
+        bookingMeta: data.bookingMeta || null
       };
 
       setMessages(prev => [...prev, botMsg]);
 
-      if (data.bookingMeta) {
-        setBookingDetails(prev => ({ ...prev, ...data.bookingMeta }));
-        if (data.bookingMeta.type) setSearchType(data.bookingMeta.type);
+      // 1. Arama Tipini Gelen "searchType" Değerine Göre Güncelle
+      if (data.searchType) {
+        if (data.searchType.includes("HOTEL")) {
+          setSearchType("hotel");
+        } else if (data.searchType.includes("FLIGHT")) {
+          setSearchType("flight");
+        }
+      }
+
+      // 2. Kullanıcının Kendi Yazdığı Mesajdan (Sorgudan) Tarih ve Konuk Bilgilerini Ayıkla (Yedek Plan)
+      let extractedFromQuery = {};
+      const lowerQuery = query.toLowerCase();
+
+      // Konuk Sayısı Ayıklama
+      const guestMatch = lowerQuery.match(/(\d+)\s*(kişi|kisi|yetişkin|yetiskin|guest|adult)/i);
+      if (guestMatch) {
+        extractedFromQuery.guests = `${guestMatch[1]} Kişi`;
+      }
+
+      // Sayısal Tarih Formatı Ayıklama (Örn: 17.07.2026-19.07.2026 veya 17.07-19.07)
+      const numericRangeRegex = /(\d{1,2})[\./-](\d{1,2})(?:[\./-](\d{2,4}))?\s*[-–—]\s*(\d{1,2})[\./-](\d{1,2})(?:[\./-](\d{2,4}))/;
+      const rangeMatch = lowerQuery.match(numericRangeRegex);
+      if (rangeMatch) {
+        const currentYear = new Date().getFullYear();
+        extractedFromQuery.checkIn = `${rangeMatch[1].padStart(2, '0')}.${rangeMatch[2].padStart(2, '0')}.${rangeMatch[3] || currentYear}`;
+        extractedFromQuery.checkOut = `${rangeMatch[4].padStart(2, '0')}.${rangeMatch[5].padStart(2, '0')}.${rangeMatch[6] || rangeMatch[3] || currentYear}`;
+      } else {
+        // Metinsel Tarih Ayıklama (Örn: 17 temmuz - 19 temmuz)
+        const ayIsimleri = "ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december";
+        const singleDateRegex = new RegExp(`(\\d{1,2})\\s*(${ayIsimleri})`, "gi");
+        let matches = [];
+        let m;
+        while ((m = singleDateRegex.exec(lowerQuery)) !== null) {
+          matches.push(`${m[1]} ${m[2].charAt(0).toUpperCase() + m[2].slice(1)}`);
+        }
+        if (matches.length >= 2) {
+          extractedFromQuery.checkIn = matches[0];
+          extractedFromQuery.checkOut = matches[1];
+        } else if (matches.length === 1) {
+          extractedFromQuery.checkIn = matches[0];
+        }
+      }
+
+      // 3. Backend'den Dönen Sonuç Listesindeki (`results`) İlk Elemana Göre Sağ Barı Besle
+      if (data.results && data.results.length > 0) {
+        const firstItem = data.results[0];
+        const isFlight = firstItem.airline !== undefined;
+
+        setBookingDetails(prev => {
+          if (isFlight) {
+            return {
+              ...prev,
+              departureCity: firstItem.departureCity || prev.departureCity || "İstanbul", // Varsayılan kalkış
+              arrivalCity: firstItem.arrivalCity || firstItem.region || prev.arrivalCity,
+              checkIn: extractedFromQuery.checkIn || prev.checkIn,
+              airline: firstItem.airline || prev.airline,
+              price: `${firstItem.price} ${firstItem.currency || 'TRY'}`,
+              guests: extractedFromQuery.guests || prev.guests
+            };
+          } else {
+            return {
+              ...prev,
+              city: firstItem.region || prev.city || "Antalya",
+              checkIn: extractedFromQuery.checkIn || prev.checkIn,
+              checkOut: extractedFromQuery.checkOut || prev.checkOut,
+              hotelName: firstItem.name || firstItem.hotelId || prev.hotelName,
+              price: `${firstItem.price} ${firstItem.currency || 'TRY'}`,
+              guests: extractedFromQuery.guests || prev.guests
+            };
+          }
+        });
+      } else {
+        // Eğer arama sonucu henüz dönmediyse sadece kullanıcının sorgusundaki verileri güncelle
+        setBookingDetails(prev => ({
+          ...prev,
+          checkIn: extractedFromQuery.checkIn || prev.checkIn,
+          checkOut: extractedFromQuery.checkOut || prev.checkOut,
+          guests: extractedFromQuery.guests || prev.guests
+        }));
       }
 
       if (data.sessionId && data.sessionId !== sessionId) {
@@ -320,7 +297,6 @@ export default function Index() {
       setIsThinking(false);
     }
   };
-
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -664,20 +640,45 @@ export default function Index() {
                                       </div>
                                     </div>
                                   );
+
                                 } else {
+                                  // Otel kartını tıklanabilir bir butona dönüştürüyoruz
+                                  const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
+
                                   return (
-                                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex flex-col">
-                                          <span className="font-bold text-[#1E232C] text-sm">🏨 {result.name || result.hotelId}</span>
-                                          <span className="text-xs text-slate-500">{result.region} • {result.stars}★</span>
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setSelectedHotel(result);
+                                        // Tıklanan otel bilgisini sağdaki bar state'ine anında aktarıyoruz
+                                        setBookingDetails(prev => ({
+                                          ...prev,
+                                          hotelName: result.name || result.hotelId,
+                                          price: `${result.price} ${result.currency || 'TRY'}`
+                                        }));
+                                      }}
+                                      className={cn(
+                                        "w-full text-left bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50" : "border-slate-200"
+                                      )}
+                                    >
+                                      <div className="flex justify-between items-start w-full">
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="font-bold text-[#1E232C] text-sm truncate">
+                                            🏨 {result.name || result.hotelId}
+                                          </span>
+                                          <span className="text-xs text-slate-500">
+                                            {result.region} • {result.stars}★
+                                          </span>
                                         </div>
-                                        <span className="text-[#3B82F6] font-bold text-sm">{result.price} {result.currency}</span>
+                                        <span className="text-[#3B82F6] font-bold text-sm flex-shrink-0">
+                                          {result.price} {result.currency}
+                                        </span>
                                       </div>
                                       <div className="text-xs text-slate-600">
                                         <strong>Board/Pension:</strong> {result.boardType || result.pensionType || "N/A"}
                                       </div>
-                                    </div>
+                                    </button>
                                   );
                                 }
                               })}
@@ -871,7 +872,7 @@ export default function Index() {
                         </div>
                       </div>
 
-                      {/* Uçuş Tarihi (Sadece Tek Tarih) */}
+                      {/* Uçuş Tarihi */}
                       <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                         <Calendar size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
@@ -929,10 +930,19 @@ export default function Index() {
                 <button
                   disabled={
                     searchType === "hotel"
-                      ? !bookingDetails.city || !bookingDetails.checkIn || !bookingDetails.checkOut
+                      ? !bookingDetails.city || !bookingDetails.checkIn || !bookingDetails.checkOut || !selectedHotel
                       : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn
                   }
-                  className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  onClick={() => {
+                    // Seçilen oteli state olarak rezervasyon sayfasına paslıyoruz
+                    navigate('/reservation', {
+                      state: {
+                        selectedItem: selectedHotel,
+                        bookingDetails: bookingDetails
+                      }
+                    });
+                  }}
+                  className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   {searchType === "hotel" ? "Otel Rezervasyonunu Tamamla" : "Uçuş Biletini Satın Al"}
                 </button>
