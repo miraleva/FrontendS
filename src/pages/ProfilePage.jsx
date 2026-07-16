@@ -200,6 +200,9 @@ export default function Profile() {
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
             return t("profile_dob_invalid_date");
         }
+        if (year < 1906) {
+            return t("profile_dob_too_old");
+        }
         if (date > now) {
             return t("profile_dob_future");
         }
