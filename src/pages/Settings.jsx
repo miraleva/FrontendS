@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plane, Hotel, Wifi, Dumbbell, Waves, Plus, Eye, EyeOff, PanelLeftOpen } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
+import api from "../services/api";
 
 export default function Settings() {
     const { t } = useTranslation();
@@ -66,6 +67,7 @@ export default function Settings() {
     });
 
     const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newCard, setNewCard] = useState({
@@ -84,14 +86,41 @@ export default function Settings() {
         { id: "security" },
     ];
 
-    const handleSave = () => {
+    const handleSave = async () => {
         localStorage.setItem("flightPrefs", JSON.stringify(flightPrefs));
         localStorage.setItem("hotelPrefs", JSON.stringify(hotelPrefs));
         localStorage.setItem("chatbotSettings", JSON.stringify(chatbotSettings));
         localStorage.setItem("aiResponseLanguage", aiResponseLang);
         localStorage.setItem("localizationSettings", JSON.stringify(localizationSettings));
         localStorage.setItem("notificationSettings", JSON.stringify(notificationSettings));
-        alert(t("settings_save_changes"));
+
+        if (newPassword.trim() !== "") {
+            if (newPassword.length < 6) {
+                alert(t("Şifre en az 6 karakter olmalıdır."));
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert(t("Girdiğiniz şifreler eşleşmiyor. Lütfen kontrol edin."));
+                return;
+            }
+
+            try {
+                await api.post("/api/profile/change-password", {
+                    password: newPassword,
+                });
+
+                alert(t("Ayarlar ve yeni şifreniz başarıyla kaydedildi!"));
+                setNewPassword("");
+                setConfirmPassword("");
+            } catch (error) {
+                console.error("Şifre değiştirme hatası:", error);
+                const errorMessage = error.response?.data?.message || "";
+                alert(`${t("Şifre güncellenirken bir hata oluştu")}: ${errorMessage}`);
+            }
+        } else {
+            alert(t("settings_save_changes"));
+        }
     };
 
     const handleCancel = () => {
@@ -119,6 +148,8 @@ export default function Settings() {
             } catch (e) { }
         };
         loadDefaults();
+        setNewPassword("");
+        setConfirmPassword("");
         alert(t("settings_cancel"));
     };
 
@@ -135,10 +166,7 @@ export default function Settings() {
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
             {/* Collapsible Chat Sidebar */}
-            <ChatSidebar
-                isOpen={isSidebarOpen}
-                setIsOpen={setIsSidebarOpen}
-            />
+            <ChatSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
@@ -185,8 +213,8 @@ export default function Settings() {
                                             key={tab.id}
                                             onClick={() => setActiveTab(tab.id)}
                                             className={`w-full px-[16px] py-[12px] text-left text-[14px] font-semibold rounded-[12px] transition-all border cursor-pointer focus:outline-none ${activeTab === tab.id
-                                                    ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
-                                                    : "bg-white/20 text-slate-800 border-white/10 hover:bg-white/30 backdrop-blur-sm"
+                                                ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
+                                                : "bg-white/20 text-slate-800 border-white/10 hover:bg-white/30 backdrop-blur-sm"
                                                 }`}
                                         >
                                             {t(`settings_tab_${tab.id}`)}
@@ -217,8 +245,8 @@ export default function Settings() {
                                                                     key={seat}
                                                                     onClick={() => setFlightPrefs({ ...flightPrefs, seat })}
                                                                     className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${flightPrefs.seat === seat
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
                                                                         }`}
                                                                 >
                                                                     {t(`settings_seat_${seat}`)}
@@ -237,8 +265,8 @@ export default function Settings() {
                                                                     key={meal}
                                                                     onClick={() => setFlightPrefs({ ...flightPrefs, meal })}
                                                                     className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${flightPrefs.meal === meal
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
                                                                         }`}
                                                                 >
                                                                     {t(`settings_meal_${meal}`)}
@@ -269,8 +297,8 @@ export default function Settings() {
                                                                     key={room}
                                                                     onClick={() => setHotelPrefs({ ...hotelPrefs, roomType: [room] })}
                                                                     className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${hotelPrefs.roomType.includes(room)
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
                                                                         }`}
                                                                 >
                                                                     {t(`settings_room_${room}`)}
@@ -300,8 +328,8 @@ export default function Settings() {
                                                                         });
                                                                     }}
                                                                     className={`flex items-center gap-[8px] px-[20px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${hotelPrefs.amenities.includes(id)
-                                                                            ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                            : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
                                                                         }`}
                                                                 >
                                                                     <Icon className="w-[20px] h-[20px]" />
@@ -344,8 +372,8 @@ export default function Settings() {
                                                             key={tone}
                                                             onClick={() => setChatbotSettings({ ...chatbotSettings, tone })}
                                                             className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${chatbotSettings.tone === tone
-                                                                    ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                    : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
+                                                                : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
                                                                 }`}
                                                         >
                                                             {t(`settings_tone_${tone}`)}
@@ -503,19 +531,24 @@ export default function Settings() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between bg-white/20 backdrop-blur-md p-[16px] rounded-[12px] border border-white/20">
-                                                        <div>
-                                                            <h3 className="font-bold text-slate-900 text-[16px]">{t("settings_two_factor")}</h3>
-                                                            <p className="text-[12px] text-slate-700 mt-[2px]">{t("settings_two_factor_desc")}</p>
+                                                    <div>
+                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                            {t("Yeni Şifreyi Tekrar Girin")}
+                                                        </label>
+                                                        <div className="relative">
+                                                            <input
+                                                                type={showPassword ? "text" : "password"}
+                                                                value={confirmPassword}
+                                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                                placeholder={t("Yeni şifrenizi tekrar girin")}
+                                                                className="w-full rounded-[12px] bg-white/50 backdrop-blur-md px-[16px] py-[12px] border border-white/30 text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 pr-[48px] font-medium text-[14px]"
+                                                            />
                                                         </div>
-                                                        <button
-                                                            onClick={() => setSecuritySettings({ ...securitySettings, twoFactorEnabled: !securitySettings.twoFactorEnabled })}
-                                                            className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 cursor-pointer ${securitySettings.twoFactorEnabled ? "bg-[#F59E0B]" : "bg-white/40"
-                                                                }`}
-                                                        >
-                                                            <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${securitySettings.twoFactorEnabled ? "translate-x-[28px]" : "translate-x-[2px]"
-                                                                }`} />
-                                                        </button>
+                                                        {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                                                            <p className="text-red-600 text-[12px] font-semibold mt-[6px]">
+                                                                {t("Şifreler birbiriyle eşleşmiyor.")}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -551,12 +584,10 @@ export default function Settings() {
                         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                         onClick={handleCloseModal}
                     />
-
                     <div className="relative w-full max-w-[448px] bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-2xl rounded-[20px] p-[24px] md:p-[32px] shadow-2xl border border-white/20 z-10 animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="text-[20px] font-bold text-slate-900 mb-[24px]">
                             {t("settings_add_card_title")}
                         </h3>
-
                         <div className="space-y-[16px]">
                             <div>
                                 <label className="block text-[14px] font-semibold text-slate-800 mb-[8px]">{t("settings_card_number")}</label>
@@ -568,7 +599,6 @@ export default function Settings() {
                                     onChange={(e) => {
                                         let rawVal = e.target.value.replace(/\D/g, '');
                                         let formattedVal = rawVal.match(/.{1,4}/g)?.join(' ') || '';
-
                                         let detectedType = "";
                                         if (rawVal.startsWith("5") || rawVal.startsWith("2")) {
                                             detectedType = "Mastercard";
@@ -579,7 +609,6 @@ export default function Settings() {
                                         } else if (rawVal.length > 0) {
                                             detectedType = "Credit Card";
                                         }
-
                                         setNewCard({
                                             cardType: detectedType,
                                             lastFour: rawVal.length >= 4 ? rawVal.slice(-4) : "",
@@ -590,7 +619,6 @@ export default function Settings() {
                                     className="w-full rounded-[12px] bg-white/60 px-[16px] py-[12px] border border-white/30 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]/40 font-medium tracking-wider text-[14px]"
                                 />
                             </div>
-
                             <div className="grid grid-cols-2 gap-[16px]">
                                 <div>
                                     <label className="block text-[14px] font-semibold text-slate-800 mb-[8px]">{t("settings_expiry_date")}</label>
@@ -602,7 +630,6 @@ export default function Settings() {
                                         onChange={(e) => {
                                             let rawVal = e.target.value.replace(/\D/g, '');
                                             let formattedExpiry = "";
-
                                             if (rawVal.length > 0) {
                                                 if (rawVal.length === 1 && parseInt(rawVal) > 1) {
                                                     rawVal = "0" + rawVal;
@@ -616,7 +643,6 @@ export default function Settings() {
                                                     formattedExpiry = rawVal;
                                                 }
                                             }
-
                                             setNewCard({
                                                 ...newCard,
                                                 expiry: formattedExpiry
@@ -636,7 +662,6 @@ export default function Settings() {
                                 </div>
                             </div>
                         </div>
-
                         <div className="mt-[32px] flex justify-end gap-[12px]">
                             <button
                                 onClick={handleCloseModal}
@@ -675,7 +700,6 @@ export default function Settings() {
                         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                         onClick={() => setCardToDelete(null)}
                     />
-
                     <div className="relative w-full max-w-[384px] bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-2xl rounded-[20px] p-[24px] shadow-2xl border border-white/20 z-10 text-center animate-in fade-in zoom-in-95 duration-150">
                         <h3 className="text-[20px] font-bold text-slate-900 mb-[8px]">
                             {t("settings_remove_card_title")}
@@ -683,7 +707,6 @@ export default function Settings() {
                         <p className="text-[14px] text-slate-700 mb-[24px]">
                             {t("settings_remove_card_desc")}
                         </p>
-
                         <div className="flex gap-[12px] justify-center">
                             <button
                                 onClick={() => setCardToDelete(null)}

@@ -6,6 +6,7 @@ import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
 import 'react-phone-number-input/style.css';
 import api from '../services/api';
+import { isPhoneNumberTooLong, getPhoneInputMaxLength } from '../utils/phoneLimits';
 
 
 export default function SignupPage() {
@@ -44,12 +45,13 @@ export default function SignupPage() {
       setFieldErrors((prev) => ({ ...prev, phone: '' }));
       return;
     }
-    // Limit to '+' plus 15 digits (E.164 max digits is 15, so max length is 16 characters including '+')
-    let cleaned = val.replace(/[^\d+]/g, '');
-    if (cleaned.length > 16) {
-      cleaned = cleaned.substring(0, 16);
+    // Ulke, numaranin basindaki uluslararasi koddan (+90, +1, +44 vb.)
+    // PhoneInput tarafindan otomatik belirlenir. Biz sadece o ulke icin
+    // olmasi gerekenden uzun bir numara yazilmasini engelliyoruz.
+    if (isPhoneNumberTooLong(val)) {
+      return;
     }
-    setFormData((prev) => ({ ...prev, phone: cleaned }));
+    setFormData((prev) => ({ ...prev, phone: val }));
     setFieldErrors((prev) => ({ ...prev, phone: '' }));
   };
 
@@ -126,9 +128,14 @@ export default function SignupPage() {
     } catch (err) {
       if (err.response) {
         if (err.response.status === 409) {
+          const fields = err.response.data?.fields || [];
+          const message = err.response.data?.message || '';
+          const hasEmail = fields.includes('email') || message.toLowerCase().includes('email');
+          const hasPhone = fields.includes('phone') || message.toLowerCase().includes('phone');
           setFieldErrors((prev) => ({
             ...prev,
-            email: "Email already exists"
+            ...(hasEmail && { email: "Email already exists" }),
+            ...(hasPhone && { phone: "Phone number already exists" })
           }));
         } else if (err.response.status === 400) {
           setFieldErrors((prev) => ({
@@ -315,7 +322,8 @@ export default function SignupPage() {
               numberInputProps={{
                 className: 'bg-transparent border-0 outline-none w-full text-[16px] text-white placeholder-white/40 focus:ring-0 focus:outline-none ml-3',
                 placeholder: t('phone_placeholder'),
-                id: 'phone'
+                id: 'phone',
+                maxLength: getPhoneInputMaxLength(formData.phone)
               }}
             />
             {fieldErrors.phone && (
