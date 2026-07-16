@@ -128,9 +128,14 @@ export default function SignupPage() {
     } catch (err) {
       if (err.response) {
         if (err.response.status === 409) {
+          const fields = err.response.data?.fields || [];
+          const message = err.response.data?.message || '';
+          const hasEmail = fields.includes('email') || message.toLowerCase().includes('email');
+          const hasPhone = fields.includes('phone') || message.toLowerCase().includes('phone');
           setFieldErrors((prev) => ({
             ...prev,
-            email: "Email already exists"
+            ...(hasEmail && { email: "Email already exists" }),
+            ...(hasPhone && { phone: "Phone number already exists" })
           }));
         } else if (err.response.status === 400) {
           setFieldErrors((prev) => ({
