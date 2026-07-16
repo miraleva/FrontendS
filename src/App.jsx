@@ -10,6 +10,8 @@ import Settings from './pages/Settings.jsx';
 import Reservation from './pages/ReservationPage.jsx';
 import AdminLayout from "./admin/AdminLayout.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
+import ForgotPasswordPage from './pages/ForgotPassword.jsx';
+import ResetPasswordPage from './pages/ResetPassword.jsx';
 
 
 import LanguageSelector from './components/LanguageSelector.jsx';
@@ -56,6 +58,9 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/reservation" element={<Reservation />} />
+            {/* Şifremi Unuttum ve Sıfırlama Sayfalarının Rotaları */}
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
         </Routes>
       </div >
