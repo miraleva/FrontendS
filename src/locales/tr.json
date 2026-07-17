@@ -146,5 +146,21 @@
   "profile_logout_confirm": "Mevcut oturumunuzu kapatmak istediğinize emin misiniz?",
   "profile_delete_title": "Hesabı Sil?",
   "profile_delete_confirm": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
-  "profile_delete_btn": "Sil"
+  "profile_delete_btn": "Sil",
+  "forgot_password_title": "Şifrenizi mi Unuttunuz?",
+  "forgot_password_subtitle": "E-posta adresinizi girin, size şifrenizi sıfırlamanız için bir bağlantı gönderelim.",
+  "forgot_password_send_btn": "Bağlantıyı Gönder",
+  "forgot_password_sending": "Gönderiliyor...",
+  "forgot_password_check_email": "E-postanızı kontrol edin! Şifre sıfırlama bağlantısını gönderdik.",
+  "forgot_password_back_login": "Giriş Ekranına Dön",
+  "reset_password_title": "Yeni Şifre Oluştur",
+  "reset_password_subtitle": "Lütfen yeni ve güvenli şifrenizi belirleyin.",
+  "reset_password_confirm_label": "Yeni Şifreyi Onayla",
+  "reset_password_placeholder_new": "Yeni şifrenizi girin",
+  "reset_password_placeholder_confirm": "Yeni şifrenizi onaylayın",
+  "reset_password_success": "Şifreniz başarıyla sıfırlandı! Giriş sayfasına yönlendiriliyorsunuz...",
+  "reset_password_redirect_manual": "Otomatik olarak yönlendirilmediyseniz buraya tıklayın",
+  "reset_password_mismatch_err": "Şifreler eşleşmiyor.",
+  "reset_password_length_err": "Şifre en az 6, en fazla 30 karakter olmalıdır.",
+  "reset_password_invalid_token": "Geçersiz veya süresi dolmuş bağlantı."
 }

@@ -149,5 +149,21 @@
   "profile_logout_confirm": "Are you sure you want to log out of your current session?",
   "profile_delete_title": "Delete Account?",
   "profile_delete_confirm": "Are you sure you want to delete your account? This action cannot be undone.",
-  "profile_delete_btn": "Delete"
+  "profile_delete_btn": "Delete",
+  "forgot_password_title": "Forgot Password?",
+  "forgot_password_subtitle": "Enter your email address, and we'll send you a link to reset your password.",
+  "forgot_password_send_btn": "Send Link",
+  "forgot_password_sending": "Sending...",
+  "forgot_password_check_email": "Check your email! We've sent the password reset link.",
+  "forgot_password_back_login": "Back to Login",
+  "reset_password_title": "Create New Password",
+  "reset_password_subtitle": "Please set your new, secure password.",
+  "reset_password_confirm_label": "Confirm New Password",
+  "reset_password_placeholder_new": "Enter new password",
+  "reset_password_placeholder_confirm": "Confirm new password",
+  "reset_password_success": "Password reset successful! Redirecting to login...",
+  "reset_password_redirect_manual": "If not redirected automatically, click here",
+  "reset_password_mismatch_err": "Passwords do not match.",
+  "reset_password_length_err": "Password must be between 6 and 30 characters.",
+  "reset_password_invalid_token": "Invalid or expired link."
 }
