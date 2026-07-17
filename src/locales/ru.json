@@ -249,5 +249,21 @@
   "chat_logs_menu": "Журналы чатов",
   "tours_menu": "Туры",
   "operations_assistant": "Операционный помощник",
-  "services_active": "Сервисы активны"
+  "services_active": "Сервисы активны",
+  "dashboard_title": "Панель управления",
+  "dashboard_subtitle": "Здесь вы можете следить за производительностью системы и последними операциями.",
+  "total_reservations": "Всего бронирований",
+  "total_users": "Всего пользователей",
+  "active_tours": "Активные туры",
+  "chat_messages": "Сообщения чата",
+  "recent_reservations_title": "Последние бронирования",
+  "recent_reservations_subtitle": "Последние записи о бронировании, добавленные в систему.",
+  "view_all": "Посмотреть все",
+  "table_col_reservation": "БРОНИРОВАНИЕ",
+  "table_col_client": "КЛИЕНТ",
+  "table_col_tour": "ТУР",
+  "table_col_date": "ДАТА",
+  "tour_cappadocia": "Тур в Каппадокию",
+  "tour_antalya": "Отдых в Анталии",
+  "tour_blacksea": "Тур по Черному морю"
 }

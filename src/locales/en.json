@@ -249,5 +249,21 @@
   "chat_logs_menu": "Chat Logs",
   "tours_menu": "Tours",
   "operations_assistant": "Operations Assistant",
-  "services_active": "Services active"
+  "services_active": "Services active",
+  "dashboard_title": "Dashboard",
+  "dashboard_subtitle": "You can monitor system performance and recent transactions here.",
+  "total_reservations": "Total Reservations",
+  "total_users": "Total Users",
+  "active_tours": "Active Tours",
+  "chat_messages": "Chat Messages",
+  "recent_reservations_title": "Recent Reservations",
+  "recent_reservations_subtitle": "The latest reservation records added to the system.",
+  "view_all": "View All",
+  "table_col_reservation": "RESERVATION",
+  "table_col_client": "CLIENT",
+  "table_col_tour": "TOUR",
+  "table_col_date": "DATE",
+  "tour_cappadocia": "Cappadocia Tour",
+  "tour_antalya": "Antalya Holiday",
+  "tour_blacksea": "Black Sea Tour"
 }
