@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
-import { PanelLeftOpen, ArrowLeft } from "lucide-react";
+import { PanelLeftOpen, ArrowLeft, CheckCircle2 } from "lucide-react";
+import api from "../services/api";
 
 function formatPrice(price) {
     const num = Number(price);
@@ -30,6 +31,17 @@ function formatBaggage(baggage, t) {
     return baggage;
 }
 
+// LocalDate (yyyy-MM-dd) bekleyen backend'e göndermek için tarih/tarih-saat
+// değerinden sadece tarih kısmını çıkarır.
+function toDateOnly(value) {
+    if (!value) return null;
+    const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
+    if (match) return match[0];
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString().slice(0, 10);
+}
+
 export default function ReservationPage() {
     const { t } = useTranslation();
     const location = useLocation();
@@ -37,10 +49,77 @@ export default function ReservationPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const selectedItem = location.state?.selectedItem;
+    const bookingDetails = location.state?.bookingDetails;
     const sessionId = location.state?.sessionId;
+
+    const [passenger, setPassenger] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        identityNumber: "",
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
+    const [reservationResult, setReservationResult] = useState(null);
 
     // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
     const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
+
+    const handlePassengerChange = (field, value) => {
+        setPassenger((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleConfirm = async () => {
+        if (!selectedItem) return;
+        setSubmitError("");
+
+        const isFlight = selectedItem.airline !== undefined;
+        const startDate = isFlight
+            ? toDateOnly(selectedItem.departureTime)
+            : toDateOnly(bookingDetails?.checkIn);
+        const endDate = isFlight
+            ? toDateOnly(selectedItem.returnDepartureTime) || startDate
+            : toDateOnly(bookingDetails?.checkOut);
+
+        const payload = {
+            type: isFlight ? "FLIGHT" : "HOTEL",
+            itemName: isFlight ? selectedItem.airline : (selectedItem.name || selectedItem.hotelId || "-"),
+            destination: isFlight
+                ? (bookingDetails?.arrivalCity || "-")
+                : (bookingDetails?.city || selectedItem.region || "-"),
+            startDate,
+            endDate,
+            totalPrice: Number(selectedItem.price) || 0,
+            currency: selectedItem.currency || "TRY",
+            passengers: [
+                {
+                    firstName: passenger.firstName,
+                    lastName: passenger.lastName,
+                    email: passenger.email,
+                    phoneNumber: passenger.phone,
+                    identityNumber: passenger.identityNumber,
+                },
+            ],
+        };
+
+        setIsSubmitting(true);
+        try {
+            const response = await api.post("/api/reservations", payload);
+            setReservationResult(response.data);
+        } catch (err) {
+            console.error("Reservation creation failed", err);
+            setSubmitError(t("reservation_confirm_error"));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const isPassengerFormValid = passenger.firstName.trim()
+        && passenger.lastName.trim()
+        && passenger.email.trim()
+        && passenger.phone.trim()
+        && passenger.identityNumber.trim();
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
@@ -78,6 +157,20 @@ export default function ReservationPage() {
                             {!selectedItem ? (
                                 <div className="text-center py-8">
                                     <p className="text-slate-800 font-medium mb-6">{t("reservation_no_item")}</p>
+                                    <button
+                                        onClick={backToChat}
+                                        className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
+                                    >
+                                        <ArrowLeft size={16} />
+                                        {t("reservation_back_to_chat")}
+                                    </button>
+                                </div>
+                            ) : reservationResult ? (
+                                <div className="text-center py-8">
+                                    <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-4" />
+                                    <p className="text-slate-800 font-medium mb-6">
+                                        {t("reservation_confirm_success", { number: reservationResult.reservationNumber })}
+                                    </p>
                                     <button
                                         onClick={backToChat}
                                         className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
@@ -128,18 +221,82 @@ export default function ReservationPage() {
                                         </div>
                                     )}
 
+                                    <div className="bg-white/50 border border-white/20 rounded-[16px] p-6 space-y-4">
+                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                                            {t("reservation_passenger_info")}
+                                        </h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_first_name")}</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    value={passenger.firstName}
+                                                    onChange={(e) => handlePassengerChange("firstName", e.target.value)}
+                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_last_name")}</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    value={passenger.lastName}
+                                                    onChange={(e) => handlePassengerChange("lastName", e.target.value)}
+                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_email")}</label>
+                                                <input
+                                                    required
+                                                    type="email"
+                                                    value={passenger.email}
+                                                    onChange={(e) => handlePassengerChange("email", e.target.value)}
+                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_phone")}</label>
+                                                <input
+                                                    required
+                                                    type="tel"
+                                                    value={passenger.phone}
+                                                    onChange={(e) => handlePassengerChange("phone", e.target.value)}
+                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_identity_number")}</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    value={passenger.identityNumber}
+                                                    onChange={(e) => handlePassengerChange("identityNumber", e.target.value)}
+                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {submitError && (
+                                        <p className="text-red-600 text-sm font-medium text-right">{submitError}</p>
+                                    )}
+
                                     <div className="mt-8 flex justify-end gap-4">
                                         <button
                                             onClick={backToChat}
-                                            className="px-6 py-3 border border-slate-700/20 hover:bg-slate-700/10 text-slate-700 font-semibold rounded-[12px] transition-colors duration-200 text-[14px]"
+                                            disabled={isSubmitting}
+                                            className="px-6 py-3 border border-slate-700/20 hover:bg-slate-700/10 text-slate-700 font-semibold rounded-[12px] transition-colors duration-200 text-[14px] disabled:opacity-50"
                                         >
                                             {t("reservation_cancel")}
                                         </button>
                                         <button
-                                            onClick={() => alert(t("reservation_future_task_alert"))}
-                                            className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] shadow-md transition-colors duration-200 text-[14px]"
+                                            onClick={handleConfirm}
+                                            disabled={!isPassengerFormValid || isSubmitting}
+                                            className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold rounded-[12px] shadow-md transition-colors duration-200 text-[14px]"
                                         >
-                                            {t("reservation_confirm_proceed")}
+                                            {isSubmitting ? t("reservation_submitting") : t("reservation_confirm_proceed")}
                                         </button>
                                     </div>
                                 </div>

@@ -33,6 +33,23 @@ function formatPrice(price) {
   return Math.round(num).toLocaleString("tr-TR");
 }
 
+// TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
+// ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
+// gösterilir.
+function formatGuestCount(adultCount, childCount, passengerCount, t) {
+  if (adultCount) {
+    const parts = [`${adultCount} ${t("unit_adult")}`];
+    if (childCount) {
+      parts.push(`${childCount} ${t("unit_child")}`);
+    }
+    return parts.join(", ");
+  }
+  if (passengerCount) {
+    return `${passengerCount} ${t("unit_person")}`;
+  }
+  return null;
+}
+
 function formatFlightDateTime(value) {
   if (!value) return value;
   // Sadece tarih ("2026-08-01") ile tarih+saat ("2026-08-01T09:05:00") ayrımı yap
@@ -177,9 +194,7 @@ export default function Index() {
                 city: c.locationOrHotelName || prev.city,
                 checkIn: c.checkInDate || c.departureDate || prev.checkIn,
                 checkOut: c.checkOutDate || prev.checkOut,
-                guests: c.adultCount
-                  ? `${c.adultCount} ${t("unit_person")}`
-                  : (c.passengerCount ? `${c.passengerCount} ${t("unit_person")}` : prev.guests),
+                guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t) || prev.guests,
                 departureCity: c.departureLocation || prev.departureCity,
                 arrivalCity: c.arrivalLocation || prev.arrivalCity,
                 returnDate: c.returnDate || prev.returnDate
@@ -329,9 +344,7 @@ export default function Index() {
           city: c.locationOrHotelName || prev.city,
           checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
           checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
-          guests: c.adultCount
-            ? `${c.adultCount} ${t("unit_person")}`
-            : (c.passengerCount ? `${c.passengerCount} ${t("unit_person")}` : (extractedFromQuery.guests || prev.guests)),
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t) || extractedFromQuery.guests || prev.guests,
           departureCity: c.departureLocation || prev.departureCity,
           arrivalCity: c.arrivalLocation || prev.arrivalCity,
           returnDate: c.returnDate || prev.returnDate
