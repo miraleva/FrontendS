@@ -238,7 +238,20 @@
   "tours_menu": "Tours",
   "operations_assistant": "Operations Assistant",
   "services_active": "Services active",
-  "starter_hotel_antalya": "Search for a hotel in Antalya",
-  "starter_flight_ist_ayt": "Find a flight from Istanbul to Antalya",
-  "starter_best_hotels_antalya": "Top 5 hotels in Antalya"
+  "dashboard_title": "Dashboard",
+  "dashboard_subtitle": "You can monitor system performance and recent transactions here.",
+  "total_reservations": "Total Reservations",
+  "total_users": "Total Users",
+  "active_tours": "Active Tours",
+  "chat_messages": "Chat Messages",
+  "recent_reservations_title": "Recent Reservations",
+  "recent_reservations_subtitle": "The latest reservation records added to the system.",
+  "view_all": "View All",
+  "table_col_reservation": "RESERVATION",
+  "table_col_client": "CLIENT",
+  "table_col_tour": "TOUR",
+  "table_col_date": "DATE",
+  "tour_cappadocia": "Cappadocia Tour",
+  "tour_antalya": "Antalya Holiday",
+  "tour_blacksea": "Black Sea Tour"
 }
