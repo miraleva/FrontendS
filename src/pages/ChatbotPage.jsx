@@ -623,25 +623,6 @@ export default function Index() {
                     </div>
                   </div>
 
-                  {/* Hızlı Aksiyonlar */}
-                  <div className="w-full max-w-[700px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-                    {[
-                      { key: "hotel_sop" },
-                      { key: "flight_sop" },
-                      { key: "reservation" },
-                      { key: "cancellation_refund" },
-                      { key: "voucher" }
-                    ].map((action) => (
-                      <button
-                        key={action.key}
-                        onClick={() => handleQuickAction(t(action.key))}
-                        className="flex flex-col items-center justify-center p-3.5 bg-white/40 hover:bg-white/60 border border-white/20 rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:border-[#F59E0B]/40 animate-fade-in"
-                      >
-                        <span className="text-xs font-bold text-slate-800 text-center truncate w-full">{t(action.key)}</span>
-                      </button>
-                    ))}
-                  </div>
-
                   {/* Örnek Soru Çipleri */}
                   <div className="w-full max-w-[700px] flex flex-col items-center gap-2">
                     <span className="text-[11px] text-[#1E232C]/60 font-semibold uppercase tracking-wider">
@@ -649,10 +630,9 @@ export default function Index() {
                     </span>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {[
-                        "starter_titanic",
-                        "starter_thy_baggage",
-                        "starter_voucher_refund",
-                        "starter_transfer_delay"
+                        "starter_hotel_antalya",
+                        "starter_flight_ist_ayt",
+                        "starter_best_hotels_antalya"
                       ].map((queryKey) => (
                         <button
                           key={queryKey}

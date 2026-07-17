@@ -368,27 +368,43 @@ export default function ChatSidebar({
       {/* REACT PORTAL ILE EN ÜSTE TAŞINAN MODAL                    */}
       {/* ======================================================== */}
       {isDeleteModalOpen && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[99999] animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl border border-border w-[340px] p-6 max-w-[90%] transform scale-100 transition-all text-left">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[99999] animate-fade-in p-4"
+          onClick={() => {
+            setIsDeleteModalOpen(false);
+            setSessionToDelete(null);
+          }}
+        >
+          <div 
+            className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 w-full max-w-[360px] p-6 text-center transform scale-100 transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* İkon */}
+            <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-orange-100 mb-4">
+              <Trash2 className="h-6 w-6 text-orange-600" />
+            </div>
+            
+            <h3 className="text-lg font-bold text-slate-800 mb-2">
               {t('delete_chat_title', 'Sohbeti Sil')}
             </h3>
-            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed px-2">
               {t('delete_chat_confirm_message', 'Bu sohbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')}
             </p>
-            <div className="flex items-center justify-end gap-3">
+            
+            <div className="flex items-center gap-3 w-full">
               <button
                 onClick={() => {
                   setIsDeleteModalOpen(false);
                   setSessionToDelete(null);
                 }}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors focus:outline-none cursor-pointer"
               >
                 {t('cancel', 'İptal')}
               </button>
               <button
                 onClick={confirmDeleteSession}
-                className="px-5 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all focus:outline-none cursor-pointer"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold bg-orange-600 hover:bg-orange-700 text-white shadow-md hover:shadow-lg transition-all focus:outline-none cursor-pointer"
               >
                 {t('delete', 'Sil')}
               </button>
