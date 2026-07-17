@@ -237,5 +237,8 @@
   "chat_logs_menu": "Журналы чатов",
   "tours_menu": "Туры",
   "operations_assistant": "Операционный помощник",
-  "services_active": "Сервисы активны"
+  "services_active": "Сервисы активны",
+  "starter_hotel_antalya": "Искать отель в Анталии",
+  "starter_flight_ist_ayt": "Найти рейс из Стамбула в Анталию",
+  "starter_best_hotels_antalya": "Топ 5 отелей в Анталии"
 }
