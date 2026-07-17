@@ -14,7 +14,7 @@ import ForgotPasswordPage from './pages/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/ResetPassword.jsx';
 
 
-import LanguageSelector from './components/LanguageSelector.jsx';
+// LanguageSelector import removed, moved to ChatSidebar
 
 import Reservations from "./pages/admin/Reservations.jsx";
 import Users from "./pages/admin/Users.jsx";
@@ -38,10 +38,8 @@ function HistoryPagePlaceholder() {
 export default function App() {
   return (
     <BrowserRouter>
+      {/* Global sarmalayıcı */}
       <div className="relative min-h-screen w-full">
-        <div className="absolute top-4 right-4 z-[9999]">
-          <LanguageSelector />
-        </div>
 
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />

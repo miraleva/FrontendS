@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function LanguageSelector() {
+export default function LanguageSelector({ className = "fixed top-4 right-4 z-50" }) {
   const { i18n } = useTranslation();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const langRef = useRef(null);
@@ -19,7 +19,7 @@ export default function LanguageSelector() {
   const currentLangLabel = i18n.language ? i18n.language.slice(0, 2).toUpperCase() : 'EN';
 
   return (
-    <div className="fixed top-4 right-4 z-50" ref={langRef}>
+    <div className={className} ref={langRef}>
       <button
         type="button"
         onClick={() => setIsLangOpen(!isLangOpen)}
