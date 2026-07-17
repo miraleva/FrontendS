@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plane, Hotel, Wifi, Dumbbell, Waves, Plus, Eye, EyeOff, PanelLeftOpen } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
+import api from "../services/api";
 
 export default function Settings() {
     const { t } = useTranslation();
@@ -105,25 +106,17 @@ export default function Settings() {
             }
 
             try {
-                const response = await fetch("/api/user/change-password", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ password: newPassword }),
+                await api.post("/api/profile/change-password", {
+                    password: newPassword,
                 });
 
-                if (response.ok) {
-                    alert(t("Ayarlar ve yeni şifreniz başarıyla kaydedildi!"));
-                    setNewPassword("");
-                    setConfirmPassword("");
-                } else {
-                    const errorData = await response.json();
-                    alert(`${t("Şifre güncellenirken bir hata oluştu")}: ${errorData.message || ''}`);
-                }
+                alert(t("Ayarlar ve yeni şifreniz başarıyla kaydedildi!"));
+                setNewPassword("");
+                setConfirmPassword("");
             } catch (error) {
                 console.error("Şifre değiştirme hatası:", error);
-                alert(t("Sunucu ile bağlantı kurulamadı."));
+                const errorMessage = error.response?.data?.message || "";
+                alert(`${t("Şifre güncellenirken bir hata oluştu")}: ${errorMessage}`);
             }
         } else {
             alert(t("settings_save_changes"));

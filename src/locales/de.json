@@ -191,5 +191,21 @@
   "profile_logout_confirm": "Sind Sie sicher, dass Sie sich von Ihrer aktuellen Sitzung abmelden möchten?",
   "profile_delete_title": "Konto löschen?",
   "profile_delete_confirm": "Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
-  "profile_delete_btn": "Löschen"
+  "profile_delete_btn": "Löschen",
+  "forgot_password_title": "Passwort vergessen?",
+  "forgot_password_subtitle": "Geben Sie Ihre E-Mail-Adresse ein, und wir senden Ihnen einen Link zum Zurücksetzen des Passworts.",
+  "forgot_password_send_btn": "Link senden",
+  "forgot_password_sending": "Wird gesendet...",
+  "forgot_password_check_email": "Überprüfen Sie Ihre E-Mails! Wir haben den Link zum Zurücksetzen des Passworts gesendet.",
+  "forgot_password_back_login": "Zurück zum Login",
+  "reset_password_title": "Neues Passwort erstellen",
+  "reset_password_subtitle": "Bitte legen Sie Ihr neues, sicheres Passwort fest.",
+  "reset_password_confirm_label": "Neues Passwort bestätigen",
+  "reset_password_placeholder_new": "Neues Passwort eingeben",
+  "reset_password_placeholder_confirm": "Neues Passwort bestätigen",
+  "reset_password_success": "Passwort erfolgreich zurückgesetzt! Weiterleitung zum Login...",
+  "reset_password_redirect_manual": "Wenn Sie nicht automatisch weitergeleitet werden, klicken Sie hier",
+  "reset_password_mismatch_err": "Passwörter stimmen nicht überein.",
+  "reset_password_length_err": "Das Passwort muss zwischen 6 und 30 Zeichen lang sein.",
+  "reset_password_invalid_token": "Ungültiger oder abgelaufener Link."
 }

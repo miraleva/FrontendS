@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom'; // 1. React Portal import ediyoruz
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // 1. i18n hook'unu import ediyoruz
+import { useTranslation } from 'react-i18next';
 import {
   PanelLeftClose,
   Plus,
@@ -10,7 +11,8 @@ import {
   Settings,
   ChevronDown,
   Check,
-  ListFilter
+  ListFilter,
+  Trash2
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
 import api from '../services/api';
@@ -20,7 +22,7 @@ export default function ChatSidebar({
   setIsOpen,
   onNewChat
 }) {
-  const { t } = useTranslation(); // 2. t fonksiyonumuzu tanımlıyoruz
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const isChatActive = location.pathname.startsWith('/chat');
@@ -30,6 +32,10 @@ export default function ChatSidebar({
   const [activeFilter, setActiveFilter] = useState('None');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Pop-up kontrolü için state'ler
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -50,6 +56,31 @@ export default function ChatSidebar({
       setSessions(response.data);
     } catch (err) {
       console.error("Failed to fetch chat sessions", err);
+    }
+  };
+
+  const handleDeleteClick = (e, sessionId) => {
+    e.stopPropagation();
+    setSessionToDelete(sessionId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteSession = async () => {
+    if (!sessionToDelete) return;
+
+    try {
+      await api.delete(`/api/chat/sessions/${sessionToDelete}`);
+      fetchSessions();
+
+      const params = new URLSearchParams(location.search);
+      if (params.get('sessionId') === sessionToDelete) {
+        navigate('/chat');
+      }
+    } catch (err) {
+      console.error("Failed to delete chat session", err);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSessionToDelete(null);
     }
   };
 
@@ -264,18 +295,30 @@ export default function ChatSidebar({
                 <div
                   key={session.id}
                   onClick={() => navigate(`/chat?sessionId=${session.id}`)}
-                  className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group"
+                  className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group relative"
                 >
-                  <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate" title={session.title}>
+                  <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate pr-6" title={session.title}>
                     {session.title || 'Chat Session'}
                   </p>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getBadgeStyle(category)}`}>
+
+                  <div className="mt-1.5 flex items-end justify-between min-h-[32px]">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium self-center ${getBadgeStyle(category)}`}>
                       {category}
                     </span>
-                    <span className="text-[10px] text-text-secondary font-medium">
-                      {formatTimestamp(session.lastMessageTimestamp)}
-                    </span>
+
+                    <div className="flex flex-col items-end justify-end gap-1 select-none">
+                      <button
+                        onClick={(e) => handleDeleteClick(e, session.id)}
+                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-150 cursor-pointer"
+                        title={t('Delete Chat')}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+
+                      <span className="text-[10px] text-text-secondary font-medium whitespace-nowrap leading-none">
+                        {formatTimestamp(session.lastMessageTimestamp)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -318,6 +361,40 @@ export default function ChatSidebar({
           <Settings size={18} />
         </button>
       </div>
+
+      {/* ======================================================== */}
+      {/* REACT PORTAL ILE EN ÜSTE TAŞINAN MODAL                    */}
+      {/* ======================================================== */}
+      {isDeleteModalOpen && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[99999] animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl border border-border w-[340px] p-6 max-w-[90%] transform scale-100 transition-all text-left">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
+              {t('delete_chat_title', 'Sohbeti Sil')}
+            </h3>
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              {t('delete_chat_confirm_message', 'Bu sohbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')}
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSessionToDelete(null);
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+              >
+                {t('cancel', 'İptal')}
+              </button>
+              <button
+                onClick={confirmDeleteSession}
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all focus:outline-none cursor-pointer"
+              >
+                {t('delete', 'Sil')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body // Modal'ı doğrudan body elementinin altına yerleştirir
+      )}
     </div>
   );
 }
