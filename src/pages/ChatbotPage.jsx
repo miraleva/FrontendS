@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   PanelLeftOpen,
+  PanelRightOpen,
+  PanelRightClose,
   Send,
   Paperclip,
   Mic,
@@ -18,6 +20,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
+import HotelDetailPanel from "../components/HotelDetailPanel";
+import ReservationFormPanel from "../components/ReservationFormPanel";
 
 function cn(...inputs) {
   return inputs.filter(Boolean).join(" ");
@@ -65,6 +69,14 @@ export default function Index() {
 
   // --- Arama Tipi ("hotel" | "flight") ---
   const [searchType, setSearchType] = useState("hotel");
+
+  // --- Slide-in Panel State ---
+  const [activePanel, setActivePanel] = useState(null); // 'hotelDetail' | 'reservation' | null
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+
+  // --- Reservation Form Preserved State ---
+  const [reservationGuests, setReservationGuests] = useState(null);
+  const [reservationTermsAccepted, setReservationTermsAccepted] = useState(false);
 
   // --- Rezervasyon Önizleme State'leri ---
   const [bookingDetails, setBookingDetails] = useState({
@@ -478,9 +490,10 @@ export default function Index() {
           setMessages([]);
           setSearchQuery("");
           setSearchType("hotel");
+          setActivePanel(null);
           setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
-      setSelectedHotel(null);
-      setSelectedFlight(null);
+          setSelectedHotel(null);
+          setSelectedFlight(null);
         }}
       />
 
@@ -493,6 +506,15 @@ export default function Index() {
             title="Expand Sidebar"
           >
             <PanelLeftOpen size={18} />
+          </button>
+        )}
+        {!isRightSidebarOpen && isChatActive && (
+          <button
+            onClick={() => setIsRightSidebarOpen(true)}
+            className="absolute top-4 right-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
+            title="Expand Details Panel"
+          >
+            <PanelRightOpen size={18} />
           </button>
         )}
 
@@ -754,39 +776,83 @@ export default function Index() {
                                 } else {
                                   // Otel kartını tıklanabilir bir butona dönüştürüyoruz
                                   const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
+                                  
+                                  // Küsüratsız, yuvarlanmış fiyat (kullanıcı isteği: "13463.87" değil "13.463")
+                                  const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
+                                    
+                                  const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
+                                  const uniqueLocationParts = [...new Set(locationParts)];
+                                  const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
 
                                   return (
                                     <button
                                       key={idx}
                                       onClick={() => {
                                         setSelectedHotel(result);
-                                        // Tıklanan otel bilgisini sağdaki bar state'ine anında aktarıyoruz
+                                        setActivePanel('hotelDetail');
                                         setBookingDetails(prev => ({
                                           ...prev,
                                           hotelName: result.name || result.hotelId,
-                                          price: `${formatPrice(result.price)} ${result.currency || 'TRY'}`
+                                          price: formattedPrice
                                         }));
                                       }}
                                       className={cn(
-                                        "w-full text-left bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        "w-full text-left bg-white border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
                                         isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50" : "border-slate-200"
                                       )}
                                     >
-                                      <div className="flex justify-between items-start w-full">
-                                        <div className="flex flex-col min-w-0">
-                                          <span className="font-bold text-[#1E232C] text-sm truncate">
-                                            🏨 {result.name || result.hotelId}
-                                          </span>
-                                          <span className="text-xs text-slate-500">
-                                            {result.region} • {result.stars}★
+                                      {/* Thumbnail */}
+                                      <div className="w-16 h-16 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
+                                        {(result.thumbnailFull || result.thumbnail) ? (
+                                          <img
+                                            src={result.thumbnailFull || result.thumbnail}
+                                            alt={result.name || "Hotel"}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { 
+                                              e.currentTarget.style.display = 'none'; 
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <div className={`absolute inset-0 flex items-center justify-center ${(result.thumbnailFull || result.thumbnail) ? 'hidden' : ''}`}>
+                                          <span className="text-xl">🏨</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Content */}
+                                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex flex-col min-w-0 pr-2">
+                                            <span className="font-bold text-[#1E232C] text-sm leading-tight flex items-center gap-1 flex-wrap">
+                                              {result.name || result.hotelId}
+                                              {result.stars && (
+                                                <span className="text-amber-400 text-xs flex items-center flex-shrink-0 bg-amber-50 px-1 py-0.5 rounded">
+                                                  {result.stars}<Star size={10} className="ml-0.5 fill-amber-400" />
+                                                </span>
+                                              )}
+                                            </span>
+                                            {locationText && (
+                                              <span className="text-[11px] text-slate-500 mt-0.5 truncate flex items-center gap-1">
+                                                <MapPin size={10} /> {locationText}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-end mt-1">
+                                          <div className="flex flex-wrap gap-1">
+                                            {(result.boardName || result.boardType || result.pensionType) && (
+                                              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wide inline-flex items-center">
+                                                {result.boardName || result.boardType || result.pensionType}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="text-[#3B82F6] font-extrabold text-sm flex-shrink-0">
+                                            {formattedPrice}
                                           </span>
                                         </div>
-                                        <span className="text-[#3B82F6] font-bold text-sm flex-shrink-0">
-                                          {formatPrice(result.price)} {result.currency}
-                                        </span>
-                                      </div>
-                                      <div className="text-xs text-slate-600">
-                                        <strong>{t("reservation_board_pension")}:</strong> {result.boardType || result.pensionType || t("reservation_na")}
                                       </div>
                                     </button>
                                   );
@@ -884,8 +950,8 @@ export default function Index() {
           </div>
 
           {/* ==================== 3. AKTİF REZERVASYON ÖNİZLEME PANELİ ==================== */}
-          {/* Kullanıcı bir otel/uçuş seçene kadar bu panel hiç gösterilmiyor */}
-          {isChatActive && (selectedHotel || selectedFlight) && (
+          {/* Kullanıcı bir otel/uçuş seçene kadar bu panel hiç gösterilmiyor; ayrıca elle kapatılabilir */}
+          {isChatActive && isRightSidebarOpen && (selectedHotel || selectedFlight) && (
             <div className="hidden lg:flex w-[320px] h-full border-l border-white/20 bg-white/10 backdrop-blur-xl p-6 flex-col justify-between animate-slide-in relative z-20">
               <div className="space-y-6">
 
@@ -900,6 +966,13 @@ export default function Index() {
                       {searchType === "hotel" ? t("panel_subtitle_hotel") : t("panel_subtitle_flight")}
                     </p>
                   </div>
+                  <button
+                    onClick={() => setIsRightSidebarOpen(false)}
+                    className="p-1.5 bg-white/10 border border-slate-200/20 rounded-lg hover:bg-white/20 text-slate-500 hover:text-slate-800 transition-all cursor-pointer"
+                    title="Collapse Panel"
+                  >
+                    <PanelRightClose size={18} />
+                  </button>
                 </div>
 
                 {/* Kart Görünümü */}
@@ -1071,6 +1144,40 @@ export default function Index() {
                 >
                   {searchType === "hotel" ? t("panel_complete_hotel") : t("panel_complete_flight")}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Overlay Backdrop & Centered Modal */}
+          {activePanel && (
+            <div 
+              className="fixed inset-0 bg-black/40 z-[100] transition-opacity backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+              onClick={() => setActivePanel(null)}
+            >
+              <div 
+                className="w-full max-w-[850px] max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activePanel === 'hotelDetail' && (
+                  <HotelDetailPanel 
+                    hotel={selectedHotel} 
+                    bookingDetails={bookingDetails} 
+                    onClose={() => setActivePanel(null)} 
+                    onProceed={() => setActivePanel('reservation')} 
+                  />
+                )}
+                {activePanel === 'reservation' && (
+                  <ReservationFormPanel 
+                    hotel={selectedHotel} 
+                    bookingDetails={bookingDetails} 
+                    onClose={() => setActivePanel(null)}
+                    onBack={() => setActivePanel('hotelDetail')}
+                    guests={reservationGuests}
+                    setGuests={setReservationGuests}
+                    termsAccepted={reservationTermsAccepted}
+                    setTermsAccepted={setReservationTermsAccepted}
+                  />
+                )}
               </div>
             </div>
           )}
