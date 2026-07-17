@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, User, Mail, Phone, Baby, ShieldCheck, ChevronDown, ChevronUp, MapPin, Star, Info } from 'lucide-react';
+import { X, ArrowLeft, User, Mail, Phone, Baby, ShieldCheck, ChevronDown, ChevronUp, MapPin, Star, Info, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import api from '../services/api';
+
+function toDateOnly(value) {
+  if (!value) return null;
+  const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
+  if (match) return match[0];
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+}
 
 export default function ReservationFormPanel({ 
   hotel, 
@@ -18,6 +28,9 @@ export default function ReservationFormPanel({
 
   // Expansion state for accordion
   const [expandedGuestId, setExpandedGuestId] = useState('adult-0');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [reservationResult, setReservationResult] = useState(null);
 
   useEffect(() => {
     if (!guests && hotel) {
@@ -58,6 +71,29 @@ export default function ReservationFormPanel({
 
   if (!hotel) return null;
 
+  if (reservationResult) {
+    return (
+      <div className="flex flex-col h-full bg-slate-50 font-sans w-full relative items-center justify-center p-8 text-center">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-black/10 hover:bg-black/20 text-slate-600 rounded-full transition-colors"
+        >
+          <X size={20} />
+        </button>
+        <CheckCircle2 size={48} className="text-emerald-500 mb-4" />
+        <p className="text-slate-800 font-medium mb-6 max-w-sm">
+          {t('reservation_confirm_success', { number: reservationResult.reservationNumber })}
+        </p>
+        <button
+          onClick={onClose}
+          className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl shadow-md transition-all"
+        >
+          {t('reservation_ok')}
+        </button>
+      </div>
+    );
+  }
+
   const handleGuestChange = (index, field, value) => {
     setGuests(prev => {
       const updated = [...prev];
@@ -66,14 +102,42 @@ export default function ReservationFormPanel({
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!termsAccepted) {
       alert("Lütfen şartlar ve koşulları kabul ediniz.");
       return;
     }
-    console.log('Form submitted for reservation:', { hotel, bookingDetails, guests });
-    alert('Rezervasyon bilgileri alındı (TODO: Backend entegrasyonu)');
+
+    const primaryGuest = guests?.[0];
+    const payload = {
+      type: 'HOTEL',
+      itemName: hotel.name || hotel.hotelId || '-',
+      destination: locationText || hotel.city || hotel.region || '-',
+      startDate: toDateOnly(bookingDetails?.checkIn),
+      endDate: toDateOnly(bookingDetails?.checkOut),
+      totalPrice: Number(hotel.price) || 0,
+      currency: hotel.currency || 'TRY',
+      passengers: (guests || []).map((g) => ({
+        firstName: g.firstName,
+        lastName: g.lastName,
+        email: g.email || primaryGuest?.email || '',
+        phoneNumber: g.phone || primaryGuest?.phone || '',
+        identityNumber: g.identityNumber,
+      })),
+    };
+
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      const response = await api.post('/api/reservations', payload);
+      setReservationResult(response.data);
+    } catch (err) {
+      console.error('Reservation creation failed', err);
+      setSubmitError(t('reservation_confirm_error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formattedPrice = hotel.price != null && !isNaN(hotel.price)
@@ -351,15 +415,16 @@ export default function ReservationFormPanel({
         <div className="flex flex-col w-full md:w-auto text-center md:text-left">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Toplam Tutar</span>
           <span className="text-2xl font-extrabold text-[#3B82F6] leading-none">{formattedPrice}</span>
+          {submitError && <span className="text-xs text-red-600 font-medium mt-1">{submitError}</span>}
         </div>
         <button
           type="submit"
           form="reservation-form"
-          disabled={!termsAccepted}
+          disabled={!termsAccepted || isSubmitting}
           className="w-full md:w-auto md:min-w-[240px] py-3.5 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
         >
           <ShieldCheck size={18} />
-          Rezervasyonu Onayla
+          {isSubmitting ? t('reservation_submitting') : 'Rezervasyonu Onayla'}
         </button>
       </div>
     </div>

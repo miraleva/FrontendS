@@ -8,8 +8,8 @@ import MainLayout from './layouts/MainLayout.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import Settings from './pages/Settings.jsx';
 import Reservation from './pages/ReservationPage.jsx';
-import AdminLayout from "./layouts/AdminLayout.jsx";
-import Dashboard from "./pages/admin/Dashboard.jsx";
+import AdminLayout from './admin/AdminLayout.jsx';
+import Dashboard from "./admin/pages/Dashboard.jsx";
 import ForgotPasswordPage from './pages/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/ResetPassword.jsx';
 
