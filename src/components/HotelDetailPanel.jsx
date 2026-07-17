@@ -2,6 +2,19 @@ import React from 'react';
 import { X, MapPin, Star, Calendar, Users, CheckCircle, BedDouble } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+function formatDate(value) {
+  if (!value) return value;
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+  });
+}
+
 export default function HotelDetailPanel({ hotel, bookingDetails, onClose, onProceed }) {
   const { t } = useTranslation();
 
@@ -112,11 +125,11 @@ export default function HotelDetailPanel({ hotel, bookingDetails, onClose, onPro
             {bookingDetails?.checkIn && (
               <div className="flex items-center gap-2 text-sm text-slate-700">
                 <Calendar size={16} className="text-blue-500" />
-                <span className="font-semibold">{bookingDetails.checkIn}</span>
+                <span className="font-semibold">{formatDate(bookingDetails.checkIn)}</span>
                 {bookingDetails.checkOut && (
                   <>
                     <span className="text-slate-400">-</span>
-                    <span className="font-semibold">{bookingDetails.checkOut}</span>
+                    <span className="font-semibold">{formatDate(bookingDetails.checkOut)}</span>
                   </>
                 )}
               </div>
