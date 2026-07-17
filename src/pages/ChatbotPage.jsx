@@ -27,6 +27,33 @@ function cn(...inputs) {
   return inputs.filter(Boolean).join(" ");
 }
 
+function formatPrice(price) {
+  const num = Number(price);
+  if (Number.isNaN(num)) return price;
+  return Math.round(num).toLocaleString("tr-TR");
+}
+
+function formatFlightDateTime(value) {
+  if (!value) return value;
+  // Sadece tarih ("2026-08-01") ile tarih+saat ("2026-08-01T09:05:00") ayrımı yap
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+  });
+}
+
+function formatBaggage(baggage, t) {
+  if (!baggage || baggage === "0kg" || baggage === "0 kg") {
+    return t ? t("baggage_not_included") : "Baggage not included";
+  }
+  return baggage;
+}
+
 export default function Index() {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,8 +63,9 @@ export default function Index() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
 
-  // --- Seçilen Otel Objesi ---
+  // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedFlight, setSelectedFlight] = useState(null);
 
   // --- Arama Tipi ("hotel" | "flight") ---
   const [searchType, setSearchType] = useState("hotel");
@@ -53,14 +81,15 @@ export default function Index() {
   // --- Rezervasyon Önizleme State'leri ---
   const [bookingDetails, setBookingDetails] = useState({
     city: "",           // Otel için: Nerede (Konum)
-    checkIn: "",        // Otel için Giriş / Uçak için Uçuş Tarihi
+    checkIn: "",        // Otel için Giriş / Uçak için Gidiş Tarihi
     checkOut: "",       // Sadece Otel için Çıkış Tarihi
     guests: "",
     hotelName: "",
     price: "",
     departureCity: "",  // Uçak için: Kalkış Noktası
     arrivalCity: "",    // Uçak için: Varış Noktası
-    airline: ""         // Uçak için: Havayolu
+    airline: "",        // Uçak için: Havayolu
+    returnDate: ""       // Uçak için: Dönüş Tarihi (sadece gidiş-dönüşte dolu)
   });
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -119,13 +148,45 @@ export default function Index() {
           setMessages(history);
           setIsChatActive(history.length > 0);
 
+          // Arama tipini, en güncel sonuç içeren mesajdaki verinin şekline göre belirle
+          // (bookingMeta hiç yazılmamış eski sohbetlerde bile doğru çalışır)
+          const lastResultMessage = [...response.data].reverse().find(msg => msg.results && msg.results.length > 0);
+          if (lastResultMessage) {
+            const isFlight = lastResultMessage.results[0].airline !== undefined;
+            setSearchType(isFlight ? "flight" : "hotel");
+          }
+
           // Geçmiş mesajlar içinde en güncel bookingMeta'yı bulup sağ tarafa doldur
           const lastMetaMessage = [...response.data].reverse().find(msg => msg.bookingMeta);
           if (lastMetaMessage && lastMetaMessage.bookingMeta) {
             setBookingDetails(prev => ({ ...prev, ...lastMetaMessage.bookingMeta }));
-            if (lastMetaMessage.bookingMeta.type) {
+            if (!lastResultMessage && lastMetaMessage.bookingMeta.type) {
               setSearchType(lastMetaMessage.bookingMeta.type);
             }
+          }
+
+          // Bu oturum için backend'de toplanmış kriterleri (kalkış/varış/yolcu/tarih)
+          // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
+          // kriter kaydından (search_criteria_json) geliyor.
+          try {
+            const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
+            const c = criteriaResponse.data;
+            if (c) {
+              setBookingDetails(prev => ({
+                ...prev,
+                city: c.locationOrHotelName || prev.city,
+                checkIn: c.checkInDate || c.departureDate || prev.checkIn,
+                checkOut: c.checkOutDate || prev.checkOut,
+                guests: c.adultCount
+                  ? `${c.adultCount} ${t("unit_person")}`
+                  : (c.passengerCount ? `${c.passengerCount} ${t("unit_person")}` : prev.guests),
+                departureCity: c.departureLocation || prev.departureCity,
+                arrivalCity: c.arrivalLocation || prev.arrivalCity,
+                returnDate: c.returnDate || prev.returnDate
+              }));
+            }
+          } catch (criteriaErr) {
+            console.error("Failed to load session criteria", sessionId, criteriaErr);
           }
         } catch (err) {
           console.error("Failed to load message history for session", sessionId, err);
@@ -138,7 +199,9 @@ export default function Index() {
       setMessages([]);
       setIsChatActive(false);
       setSearchType("hotel");
-      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "" });
+      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
+      setSelectedHotel(null);
+      setSelectedFlight(null);
     }
   }, [sessionId]);
 
@@ -228,7 +291,7 @@ export default function Index() {
       // Konuk Sayısı Ayıklama
       const guestMatch = lowerQuery.match(/(\d+)\s*(kişi|kisi|yetişkin|yetiskin|guest|adult)/i);
       if (guestMatch) {
-        extractedFromQuery.guests = `${guestMatch[1]} Kişi`;
+        extractedFromQuery.guests = `${guestMatch[1]} ${t("unit_person")}`;
       }
 
       // Sayısal Tarih Formatı Ayıklama (Örn: 17.07.2026-19.07.2026 veya 17.07-19.07)
@@ -255,7 +318,37 @@ export default function Index() {
         }
       }
 
-      // 3. Backend'den Dönen Sonuç Listesindeki (`results`) İlk Elemana Göre Sağ Barı Besle
+      // 3. Backend'in çözdüğü arama kriterlerinden (varsa) sağ paneli doldur.
+      // Metinden regex ile tahmin etmek kırılgan; backend zaten SearchCriteria'yı
+      // çözüyor, onu doğrudan kullanmak çok daha güvenilir (kalkış/varış/yolcu
+      // sayısı gibi alanlar artık kullanıcı bunları söyler söylemez dolar).
+      if (data.criteria) {
+        const c = data.criteria;
+        setBookingDetails(prev => ({
+          ...prev,
+          city: c.locationOrHotelName || prev.city,
+          checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
+          checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
+          guests: c.adultCount
+            ? `${c.adultCount} ${t("unit_person")}`
+            : (c.passengerCount ? `${c.passengerCount} ${t("unit_person")}` : (extractedFromQuery.guests || prev.guests)),
+          departureCity: c.departureLocation || prev.departureCity,
+          arrivalCity: c.arrivalLocation || prev.arrivalCity,
+          returnDate: c.returnDate || prev.returnDate
+        }));
+      } else {
+        // Backend kriteri dönmediyse (ör. kapsam dışı mesaj) en azından kullanıcının
+        // sorgusundaki verileri güncelle
+        setBookingDetails(prev => ({
+          ...prev,
+          checkIn: extractedFromQuery.checkIn || prev.checkIn,
+          checkOut: extractedFromQuery.checkOut || prev.checkOut,
+          guests: extractedFromQuery.guests || prev.guests
+        }));
+      }
+
+      // 4. Sonuç listesindeki ilk (en iyi) öğeden otel adı / uçuş fiyatı için bir
+      // varsayılan doldur — kullanıcı bir kart seçtiğinde bu değerler o kartla değişir.
       if (data.results && data.results.length > 0) {
         const firstItem = data.results[0];
         const isFlight = firstItem.airline !== undefined;
@@ -264,33 +357,17 @@ export default function Index() {
           if (isFlight) {
             return {
               ...prev,
-              departureCity: firstItem.departureCity || prev.departureCity || "İstanbul", // Varsayılan kalkış
-              arrivalCity: firstItem.arrivalCity || firstItem.region || prev.arrivalCity,
-              checkIn: extractedFromQuery.checkIn || prev.checkIn,
               airline: firstItem.airline || prev.airline,
-              price: `${firstItem.price} ${firstItem.currency || 'TRY'}`,
-              guests: extractedFromQuery.guests || prev.guests
+              price: `${formatPrice(firstItem.price)} ${firstItem.currency || 'TRY'}`
             };
           } else {
             return {
               ...prev,
-              city: firstItem.region || prev.city || "Antalya",
-              checkIn: extractedFromQuery.checkIn || prev.checkIn,
-              checkOut: extractedFromQuery.checkOut || prev.checkOut,
               hotelName: firstItem.name || firstItem.hotelId || prev.hotelName,
-              price: `${firstItem.price} ${firstItem.currency || 'TRY'}`,
-              guests: extractedFromQuery.guests || prev.guests
+              price: `${formatPrice(firstItem.price)} ${firstItem.currency || 'TRY'}`
             };
           }
         });
-      } else {
-        // Eğer arama sonucu henüz dönmediyse sadece kullanıcının sorgusundaki verileri güncelle
-        setBookingDetails(prev => ({
-          ...prev,
-          checkIn: extractedFromQuery.checkIn || prev.checkIn,
-          checkOut: extractedFromQuery.checkOut || prev.checkOut,
-          guests: extractedFromQuery.guests || prev.guests
-        }));
       }
 
       if (data.sessionId && data.sessionId !== sessionId) {
@@ -414,7 +491,9 @@ export default function Index() {
           setSearchQuery("");
           setSearchType("hotel");
           setActivePanel(null);
-          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "" });
+          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
+          setSelectedHotel(null);
+          setSelectedFlight(null);
         }}
       />
 
@@ -634,7 +713,7 @@ export default function Index() {
                             {msg.chatStatus === "BOOKING" && msg.selectedItem && (
                               <div className="mt-3 text-right">
                                 <button
-                                  onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem } })}
+                                  onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
                                   className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
                                 >
                                   {t("proceed_to_reservation", "Proceed to Reservation")}
@@ -648,33 +727,58 @@ export default function Index() {
                               {msg.results.map((result, idx) => {
                                 const isFlight = result.airline !== undefined;
                                 if (isFlight) {
+                                  const isCurrentlySelected = selectedFlight
+                                    && selectedFlight.airline === result.airline
+                                    && selectedFlight.departureTime === result.departureTime;
+
                                   return (
-                                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setSelectedFlight(result);
+                                        // Tıklanan uçuş bilgisini sağdaki bar state'ine anında aktarıyoruz
+                                        setBookingDetails(prev => ({
+                                          ...prev,
+                                          airline: result.airline,
+                                          checkIn: result.departureTime || prev.checkIn,
+                                          // returnDepartureTime sadece gidiş-dönüş uçuşlarında dolu gelir
+                                          returnDate: result.returnDepartureTime || "",
+                                          price: `${formatPrice(result.price)} ${result.currency || 'TRY'}`
+                                        }));
+                                      }}
+                                      className={cn(
+                                        "w-full text-left bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50" : "border-slate-200"
+                                      )}
+                                    >
                                       <div className="flex justify-between items-center">
                                         <span className="font-bold text-[#1E232C] text-sm">✈️ {result.airline}</span>
-                                        <span className="text-[#3B82F6] font-bold text-sm">{result.price} {result.currency}</span>
+                                        <span className="text-[#3B82F6] font-bold text-sm">{formatPrice(result.price)} {result.currency}</span>
                                       </div>
                                       <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                                        <div><strong>Departure:</strong> {result.departureTime}</div>
-                                        <div><strong>Arrival:</strong> {result.arrivalTime}</div>
-                                        <div><strong>Transfers:</strong> {result.transfers}</div>
-                                        <div><strong>Baggage:</strong> {result.baggage}</div>
+                                        <div><strong>{t("reservation_departure")}:</strong> {formatFlightDateTime(result.departureTime)}</div>
+                                        <div><strong>{t("reservation_arrival")}:</strong> {formatFlightDateTime(result.arrivalTime)}</div>
+                                        <div><strong>{t("reservation_transfers")}:</strong> {result.transfers}</div>
+                                        <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.baggage, t)}</div>
                                       </div>
-                                    </div>
+                                      {result.returnDepartureTime && (
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-2 mt-1 border-t border-dashed border-slate-200">
+                                          <div className="col-span-2 font-bold text-[#1E232C]">↩ {result.returnAirline || result.airline}</div>
+                                          <div><strong>{t("reservation_return_departure_short")}:</strong> {formatFlightDateTime(result.returnDepartureTime)}</div>
+                                          <div><strong>{t("reservation_return_arrival_short")}:</strong> {formatFlightDateTime(result.returnArrivalTime)}</div>
+                                          <div><strong>{t("reservation_transfers")}:</strong> {result.returnTransfers}</div>
+                                          <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.returnBaggage, t)}</div>
+                                        </div>
+                                      )}
+                                    </button>
                                   );
 
                                 } else {
                                   // Otel kartını tıklanabilir bir butona dönüştürüyoruz
                                   const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
                                   
-                                  const formattedPrice = result.price != null && !isNaN(result.price)
-                                    ? new Intl.NumberFormat('tr-TR', {
-                                        style: 'currency',
-                                        currency: result.currency || 'TRY',
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2
-                                      }).format(result.price)
-                                    : `${result.price} ${result.currency || 'TRY'}`;
+                                  // Küsüratsız, yuvarlanmış fiyat (kullanıcı isteği: "13463.87" değil "13.463")
+                                  const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
                                     
                                   const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
                                   const uniqueLocationParts = [...new Set(locationParts)];
@@ -846,7 +950,8 @@ export default function Index() {
           </div>
 
           {/* ==================== 3. AKTİF REZERVASYON ÖNİZLEME PANELİ ==================== */}
-          {isChatActive && isRightSidebarOpen && (
+          {/* Kullanıcı bir otel/uçuş seçene kadar bu panel hiç gösterilmiyor; ayrıca elle kapatılabilir */}
+          {isChatActive && isRightSidebarOpen && (selectedHotel || selectedFlight) && (
             <div className="hidden lg:flex w-[320px] h-full border-l border-white/20 bg-white/10 backdrop-blur-xl p-6 flex-col justify-between animate-slide-in relative z-20">
               <div className="space-y-6">
 
@@ -856,9 +961,9 @@ export default function Index() {
                     <Sparkles size={18} className="animate-pulse" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 text-sm">Canlı Rezervasyon</h3>
+                    <h3 className="font-bold text-slate-800 text-sm">{t("panel_title")}</h3>
                     <p className="text-[10px] text-slate-500">
-                      {searchType === "hotel" ? "Otel aramanız güncelleniyor" : "Uçuş detaylarınız güncelleniyor"}
+                      {searchType === "hotel" ? t("panel_subtitle_hotel") : t("panel_subtitle_flight")}
                     </p>
                   </div>
                   <button
@@ -880,9 +985,9 @@ export default function Index() {
                       <div className="flex items-start gap-3">
                         <MapPin size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Nerede</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_where")}</span>
                           <span className={`text-sm font-semibold ${bookingDetails.city ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.city || "Konum belirtilmedi..."}
+                            {bookingDetails.city || t("panel_where_placeholder")}
                           </span>
                         </div>
                       </div>
@@ -891,9 +996,9 @@ export default function Index() {
                       <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                         <Calendar size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Giriş Tarihi</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkin")}</span>
                           <span className={`text-sm font-semibold ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.checkIn || "Giriş tarihi belirtilmedi..."}
+                            {bookingDetails.checkIn || t("panel_checkin_placeholder")}
                           </span>
                         </div>
                       </div>
@@ -902,9 +1007,9 @@ export default function Index() {
                       <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                         <Calendar size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Çıkış Tarihi</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkout")}</span>
                           <span className={`text-sm font-semibold ${bookingDetails.checkOut ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.checkOut || "Çıkış tarihi belirtilmedi..."}
+                            {bookingDetails.checkOut || t("panel_checkout_placeholder")}
                           </span>
                         </div>
                       </div>
@@ -913,9 +1018,9 @@ export default function Index() {
                       <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                         <Hotel size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Seçilen Otel</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_selected_hotel")}</span>
                           <span className={`text-sm font-semibold block truncate ${bookingDetails.hotelName ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.hotelName || "Sohbetten seçin..."}
+                            {bookingDetails.hotelName || t("panel_selected_hotel_placeholder")}
                           </span>
                         </div>
                       </div>
@@ -931,9 +1036,9 @@ export default function Index() {
                           <Plane size={18} className="text-slate-400 rotate-45" />
                         </div>
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Kalkış Noktası</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_departure_location")}</span>
                           <span className={`text-sm font-semibold ${bookingDetails.departureCity ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.departureCity || "Kalkış noktası belirtilmedi..."}
+                            {bookingDetails.departureCity || t("panel_departure_location_placeholder")}
                           </span>
                         </div>
                       </div>
@@ -944,31 +1049,44 @@ export default function Index() {
                           <Plane size={18} className="text-[#3B82F6] rotate-90" />
                         </div>
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Varış Noktası</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_arrival_location")}</span>
                           <span className={`text-sm font-semibold ${bookingDetails.arrivalCity ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.arrivalCity || "Varış noktası belirtilmedi..."}
+                            {bookingDetails.arrivalCity || t("panel_arrival_location_placeholder")}
                           </span>
                         </div>
                       </div>
 
-                      {/* Uçuş Tarihi */}
+                      {/* Gidiş Tarihi */}
                       <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                         <Calendar size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Uçuş Tarihi</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_departure_date")}</span>
                           <span className={`text-sm font-semibold ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.checkIn || "Uçuş tarihi belirtilmedi..."}
+                            {bookingDetails.checkIn ? formatFlightDateTime(bookingDetails.checkIn) : t("panel_departure_date_placeholder")}
                           </span>
                         </div>
                       </div>
+
+                      {/* Dönüş Tarihi — sadece gidiş-dönüş uçuşlarında gösterilir */}
+                      {bookingDetails.returnDate && (
+                        <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
+                          <Calendar size={18} className="text-[#3B82F6] mt-0.5" />
+                          <div className="flex-1">
+                            <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_return_date")}</span>
+                            <span className="text-sm font-semibold text-slate-800">
+                              {formatFlightDateTime(bookingDetails.returnDate)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Seçilen Havayolu */}
                       <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                         <Plane size={18} className="text-slate-400 mt-0.5" />
                         <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Seçilen Havayolu</span>
+                          <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_selected_airline")}</span>
                           <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.airline || "Sohbetten uçuş seçin..."}
+                            {bookingDetails.airline || t("panel_selected_airline_placeholder")}
                           </span>
                         </div>
                       </div>
@@ -980,10 +1098,10 @@ export default function Index() {
                     <Users size={18} className="text-slate-400 mt-0.5" />
                     <div className="flex-1">
                       <span className="text-[10px] text-slate-400 block font-bold uppercase">
-                        {searchType === "hotel" ? "Konuk Sayısı" : "Yolcu Sayısı"}
+                        {searchType === "hotel" ? t("panel_guest_count") : t("panel_passenger_count")}
                       </span>
                       <span className={`text-sm font-semibold ${bookingDetails.guests ? "text-slate-800" : "text-slate-400 italic"}`}>
-                        {bookingDetails.guests || "Belirtilmedi..."}
+                        {bookingDetails.guests || t("panel_count_placeholder")}
                       </span>
                     </div>
                   </div>
@@ -991,7 +1109,7 @@ export default function Index() {
                   {/* Fiyat Bilgisi */}
                   {bookingDetails.price && (
                     <div className="pt-3 border-t border-dashed border-slate-200 flex justify-between items-center">
-                      <span className="text-xs text-slate-500 font-bold">Toplam Tutar:</span>
+                      <span className="text-xs text-slate-500 font-bold">{t("panel_total_amount")}</span>
                       <span className="text-sm font-extrabold text-amber-600">{bookingDetails.price}</span>
                     </div>
                   )}
@@ -1003,27 +1121,28 @@ export default function Index() {
               <div className="space-y-3">
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
                   <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                    Tüm alanlar tamamlandığında hızlıca ödeme ve onay sayfasına geçebilirsin.
+                    {t("panel_footer_hint")}
                   </p>
                 </div>
                 <button
                   disabled={
                     searchType === "hotel"
                       ? !bookingDetails.city || !bookingDetails.checkIn || !bookingDetails.checkOut || !selectedHotel
-                      : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn
+                      : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn || !selectedFlight
                   }
                   onClick={() => {
-                    // Seçilen oteli state olarak rezervasyon sayfasına paslıyoruz
+                    // Seçilen otel veya uçuşu state olarak rezervasyon sayfasına paslıyoruz
                     navigate('/reservation', {
                       state: {
-                        selectedItem: selectedHotel,
-                        bookingDetails: bookingDetails
+                        selectedItem: searchType === "hotel" ? selectedHotel : selectedFlight,
+                        bookingDetails: bookingDetails,
+                        sessionId: sessionId
                       }
                     });
                   }}
                   className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
-                  {searchType === "hotel" ? "Otel Rezervasyonunu Tamamla" : "Uçuş Biletini Satın Al"}
+                  {searchType === "hotel" ? t("panel_complete_hotel") : t("panel_complete_flight")}
                 </button>
               </div>
             </div>

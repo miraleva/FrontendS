@@ -37,4 +37,13 @@ i18n
     }
   });
 
+// <html lang="..."> her zaman "tr" kalıyordu; bu da CSS text-transform:uppercase
+// gibi tarayıcı Türkçe kurallarına göre "I" harfini "İ" yapıp etiketleri
+// (ör. "ARRİVAL") bozuyordu. Dil değiştikçe senkronize tutuyoruz.
+const syncHtmlLang = (lng) => {
+  document.documentElement.lang = lng;
+};
+syncHtmlLang(i18n.language);
+i18n.on('languageChanged', syncHtmlLang);
+
 export default i18n;
