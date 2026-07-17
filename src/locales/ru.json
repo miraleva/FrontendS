@@ -148,5 +148,21 @@
   "profile_logout_confirm": "Вы уверены, что хотите выйти из текущего сеанса?",
   "profile_delete_title": "Удалить аккаунт?",
   "profile_delete_confirm": "Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.",
-  "profile_delete_btn": "Удалить"
+  "profile_delete_btn": "Удалить",
+  "forgot_password_title": "Забыли пароль?",
+  "forgot_password_subtitle": "Введите адрес электронной почты, и мы отправим вам ссылку для сброса пароля.",
+  "forgot_password_send_btn": "Отправить ссылку",
+  "forgot_password_sending": "Отправка...",
+  "forgot_password_check_email": "Проверьте вашу почту! Мы отправили ссылку для сброса пароля.",
+  "forgot_password_back_login": "Назад к входу",
+  "reset_password_title": "Создать новый пароль",
+  "reset_password_subtitle": "Пожалуйста, установите ваш новый, безопасный пароль.",
+  "reset_password_confirm_label": "Подтвердить новый пароль",
+  "reset_password_placeholder_new": "Введите новый пароль",
+  "reset_password_placeholder_confirm": "Подтвердите новый пароль",
+  "reset_password_success": "Пароль успешно сброшен! Перенаправление на вход...",
+  "reset_password_redirect_manual": "Если не перенаправлены автоматически, нажмите сюда",
+  "reset_password_mismatch_err": "Пароли не совпадают.",
+  "reset_password_length_err": "Пароль должен содержать от 6 до 30 символов.",
+  "reset_password_invalid_token": "Неверная или просроченная ссылка."
 }

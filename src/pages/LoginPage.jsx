@@ -230,12 +230,12 @@ export default function LoginPage() {
               />
               {t('remember_me')}
             </label>
-            <button
-              type="button"
+            <Link
+              to="/forgot-password"
               className="text-[15px] text-white/80 hover:text-white hover:underline transition-colors duration-200"
             >
               {t('forgot_password')}
-            </button>
+            </Link>
           </div>
 
           {/* Submit Button Centered Redesign */}
