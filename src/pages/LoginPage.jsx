@@ -259,6 +259,15 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => navigate("/admin")}
+            className="max-w-[220px] w-full bg-primary hover:bg-primary-dark active:scale-95 text-white font-bold py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-primary/30 font-sans tracking-wide text-[18px]"
+          >
+            Admin Paneli
+          </button>
+        </div>
       </div>
     </div>
   );
