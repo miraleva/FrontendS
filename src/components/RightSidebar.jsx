@@ -1,16 +1,33 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Calendar, Hotel, Plane, Users, Sparkles, PanelRightClose } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
+
+function formatFlightDateTime(value) {
+  if (!value) return value;
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+  });
+}
 
 export default function RightSidebar({
   isRightSidebarOpen,
   setIsRightSidebarOpen,
   searchType,
   bookingDetails,
-  selectedHotel
+  selectedHotel,
+  selectedFlight,
+  sessionId
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (!isRightSidebarOpen) return null;
 
@@ -36,9 +53,9 @@ export default function RightSidebar({
               <Sparkles size={18} className="animate-pulse" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-800 text-sm">Canlı Rezervasyon</h3>
+              <h3 className="font-bold text-slate-800 text-sm">{t("panel_title")}</h3>
               <p className="text-[10px] text-slate-500">
-                {searchType === "hotel" ? "Otel aramanız güncelleniyor" : "Uçuş detaylarınız güncelleniyor"}
+                {searchType === "hotel" ? t("panel_subtitle_hotel") : t("panel_subtitle_flight")}
               </p>
             </div>
           </div>
@@ -54,9 +71,9 @@ export default function RightSidebar({
               <div className="flex items-start gap-3">
                 <MapPin size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Nerede</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_where")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.city ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.city || "Konum belirtilmedi..."}
+                    {bookingDetails.city || t("panel_where_placeholder")}
                   </span>
                 </div>
               </div>
@@ -65,9 +82,9 @@ export default function RightSidebar({
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                 <Calendar size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Giriş Tarihi</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkin")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.checkIn || "Giriş tarihi belirtilmedi..."}
+                    {bookingDetails.checkIn || t("panel_checkin_placeholder")}
                   </span>
                 </div>
               </div>
@@ -76,9 +93,9 @@ export default function RightSidebar({
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                 <Calendar size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Çıkış Tarihi</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkout")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.checkOut ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.checkOut || "Çıkış tarihi belirtilmedi..."}
+                    {bookingDetails.checkOut || t("panel_checkout_placeholder")}
                   </span>
                 </div>
               </div>
@@ -87,9 +104,9 @@ export default function RightSidebar({
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                 <Hotel size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Seçilen Otel</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_selected_hotel")}</span>
                   <span className={`text-sm font-semibold block truncate ${bookingDetails.hotelName ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.hotelName || "Sohbetten seçin..."}
+                    {bookingDetails.hotelName || t("panel_selected_hotel_placeholder")}
                   </span>
                 </div>
               </div>
@@ -105,9 +122,9 @@ export default function RightSidebar({
                   <Plane size={18} className="text-slate-400 rotate-45" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Kalkış Noktası</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_departure_location")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.departureCity ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.departureCity || "Kalkış noktası belirtilmedi..."}
+                    {bookingDetails.departureCity || t("panel_departure_location_placeholder")}
                   </span>
                 </div>
               </div>
@@ -118,31 +135,44 @@ export default function RightSidebar({
                   <Plane size={18} className="text-[#3B82F6] rotate-90" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Varış Noktası</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_arrival_location")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.arrivalCity ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.arrivalCity || "Varış noktası belirtilmedi..."}
+                    {bookingDetails.arrivalCity || t("panel_arrival_location_placeholder")}
                   </span>
                 </div>
               </div>
 
-              {/* Uçuş Tarihi */}
+              {/* Gidiş Tarihi */}
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                 <Calendar size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Uçuş Tarihi</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_departure_date")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.checkIn || "Uçuş tarihi belirtilmedi..."}
+                    {bookingDetails.checkIn ? formatFlightDateTime(bookingDetails.checkIn) : t("panel_departure_date_placeholder")}
                   </span>
                 </div>
               </div>
+
+              {/* Dönüş Tarihi — sadece gidiş-dönüş uçuşlarında gösterilir */}
+              {bookingDetails.returnDate && (
+                <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
+                  <Calendar size={18} className="text-[#3B82F6] mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_return_date")}</span>
+                    <span className="text-sm font-semibold text-slate-800 truncate block">
+                      {formatFlightDateTime(bookingDetails.returnDate)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Seçilen Havayolu */}
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
                 <Plane size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Seçilen Havayolu</span>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_selected_airline")}</span>
                   <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.airline || "Sohbetten uçuş seçin..."}
+                    {bookingDetails.airline || t("panel_selected_airline_placeholder")}
                   </span>
                 </div>
               </div>
@@ -154,10 +184,10 @@ export default function RightSidebar({
             <Users size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-[10px] text-slate-400 block font-bold uppercase">
-                {searchType === "hotel" ? "Konuk Sayısı" : "Yolcu Sayısı"}
+                {searchType === "hotel" ? t("panel_guest_count") : t("panel_passenger_count")}
               </span>
               <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800" : "text-slate-400 italic"}`}>
-                {bookingDetails.guests || "Belirtilmedi..."}
+                {bookingDetails.guests || t("panel_count_placeholder")}
               </span>
             </div>
           </div>
@@ -165,7 +195,7 @@ export default function RightSidebar({
           {/* Fiyat Bilgisi */}
           {bookingDetails.price && (
             <div className="pt-3 border-t border-dashed border-slate-200 flex justify-between items-center">
-              <span className="text-xs text-slate-500 font-bold">Toplam Tutar:</span>
+              <span className="text-xs text-slate-500 font-bold">{t("panel_total_amount")}</span>
               <span className="text-sm font-extrabold text-amber-600">{bookingDetails.price}</span>
             </div>
           )}
@@ -177,26 +207,27 @@ export default function RightSidebar({
       <div className="space-y-3">
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
           <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-            Tüm alanlar tamamlandığında hızlıca ödeme ve onay sayfasına geçebilirsin.
+            {t("panel_footer_hint")}
           </p>
         </div>
         <button
           disabled={
             searchType === "hotel"
               ? !bookingDetails.city || !bookingDetails.checkIn || !bookingDetails.checkOut || !selectedHotel
-              : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn
+              : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn || !selectedFlight
           }
           onClick={() => {
             navigate('/reservation', {
               state: {
-                selectedItem: selectedHotel,
-                bookingDetails: bookingDetails
+                selectedItem: searchType === "hotel" ? selectedHotel : selectedFlight,
+                bookingDetails: bookingDetails,
+                sessionId: sessionId
               }
             });
           }}
           className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
         >
-          {searchType === "hotel" ? "Otel Rezervasyonunu Tamamla" : "Uçuş Biletini Satın Al"}
+          {searchType === "hotel" ? t("panel_complete_hotel") : t("panel_complete_flight")}
         </button>
       </div>
     </div>
