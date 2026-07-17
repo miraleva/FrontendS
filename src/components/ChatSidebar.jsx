@@ -295,31 +295,33 @@ export default function ChatSidebar({
                 <div
                   key={session.id}
                   onClick={() => navigate(`/chat?sessionId=${session.id}`)}
-                  className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group relative"
+                  className="p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-all border border-transparent hover:border-slate-100 group relative flex flex-col gap-1"
                 >
-                  <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate pr-6" title={session.title}>
-                    {session.title || 'Chat Session'}
-                  </p>
-
-                  <div className="mt-1.5 flex items-end justify-between min-h-[32px]">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium self-center ${getBadgeStyle(category)}`}>
-                      {category}
-                    </span>
-
-                    <div className="flex flex-col items-end justify-end gap-1 select-none">
-                      <button
-                        onClick={(e) => handleDeleteClick(e, session.id)}
-                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-150 cursor-pointer"
-                        title={t('Delete Chat')}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-
-                      <span className="text-[10px] text-text-secondary font-medium whitespace-nowrap leading-none">
-                        {formatTimestamp(session.lastMessageTimestamp)}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors truncate flex-1" title={session.title}>
+                      {session.title || 'Chat Session'}
+                    </p>
+                    <button
+                      onClick={(e) => handleDeleteClick(e, session.id)}
+                      className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-150 cursor-pointer flex-shrink-0"
+                      title={t('Delete Chat')}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
+
+                  <div className="flex items-end justify-end">
+                    <span className="text-[10px] text-text-secondary font-medium whitespace-nowrap leading-none">
+                      {formatTimestamp(session.lastMessageTimestamp)}
+                    </span>
+                  </div>
+                  
+                  {/* Hayalet kod - badge iptali */}
+                  {/* 
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium self-center ${getBadgeStyle(category)}`}>
+                    {category}
+                  </span> 
+                  */}
                 </div>
               );
             })

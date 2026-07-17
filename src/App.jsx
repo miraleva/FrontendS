@@ -14,8 +14,7 @@ import ForgotPasswordPage from './pages/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/ResetPassword.jsx';
 
 
-import LanguageSelector from './components/LanguageSelector.jsx';
-
+// LanguageSelector import removed, moved to ChatSidebar
 function DocumentPagePlaceholder() {
   return <div className="p-6 text-text-secondary">Dokuman yonetimi (FE2 tarafindan doldurulacak)</div>;
 }
@@ -26,13 +25,8 @@ function HistoryPagePlaceholder() {
 export default function App() {
   return (
     <BrowserRouter>
-      {/* Tüm ekranları kaplayan relative bir sarmalayıcı ekliyoruz.
-        Böylece dil seçici absolute CSS ile hep sağ üstte sabit kalacak.
-      */}
+      {/* Global sarmalayıcı */}
       <div className="relative min-h-screen w-full">
-        <div className="absolute top-4 right-4 z-[9999]">
-          <LanguageSelector />
-        </div>
 
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
