@@ -234,5 +234,21 @@
   "chat_logs_menu": "Sohbet Kayıtları",
   "tours_menu": "Turlar",
   "operations_assistant": "Operasyon Asistanı",
-  "services_active": "Servisler aktif"
+  "services_active": "Servisler aktif",
+  "dashboard_title": "Dashboard",
+  "dashboard_subtitle": "Sistem performansını ve son işlemleri buradan takip edebilirsiniz.",
+  "total_reservations": "Toplam Rezervasyon",
+  "total_users": "Toplam Kullanıcı",
+  "active_tours": "Aktif Tur",
+  "chat_messages": "Chat Mesajı",
+  "recent_reservations_title": "Son Rezervasyonlar",
+  "recent_reservations_subtitle": "Sisteme eklenen son rezervasyon kayıtları.",
+  "view_all": "Tümünü Gör",
+  "table_col_reservation": "REZERVASYON",
+  "table_col_client": "MÜŞTERİ",
+  "table_col_tour": "TUR",
+  "table_col_date": "TARİH",
+  "tour_cappadocia": "Kapadokya Turu",
+  "tour_antalya": "Antalya Tatili",
+  "tour_blacksea": "Karadeniz Turu"
 }

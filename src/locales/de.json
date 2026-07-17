@@ -233,6 +233,20 @@
   "users_menu": "Benutzer",
   "chat_logs_menu": "Chat-Protokolle",
   "tours_menu": "Touren",
-  "operations_assistant": "Operations Assistant",
-  "services_active": "Services active"
+  "dashboard_title": "Dashboard",
+  "dashboard_subtitle": "Hier können Sie die Systemleistung und die letzten Transaktionen überwachen.",
+  "total_reservations": "Reservierungen Gesamt",
+  "total_users": "Benutzer Gesamt",
+  "active_tours": "Aktive Touren",
+  "chat_messages": "Chat-Nachrichten",
+  "recent_reservations_title": "Aktuelle Reservierungen",
+  "recent_reservations_subtitle": "Die neuesten im System hinzugefügten Reservierungsdatensätze.",
+  "view_all": "Alle anzeigen",
+  "table_col_reservation": "RESERVIERUNG",
+  "table_col_client": "KUNDE",
+  "table_col_tour": "TOUR",
+  "table_col_date": "DATUM",
+  "tour_cappadocia": "Kappadokien-Tour",
+  "tour_antalya": "Antalya-Urlaub",
+  "tour_blacksea": "Schwarzmeer-Tour"
 }

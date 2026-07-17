@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -5,36 +6,58 @@ import {
     CalendarCheck,
     Users,
     MessageSquare,
-    Map
+    Map,
+    Globe,
+    ChevronDown
 } from "lucide-react";
 
 export default function AdminLayout() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
+    // Aktif dil etiketini i18n entegrasyonu ile kullanıcı dostu gösterelim
+    const currentLanguageLabel = {
+        tr: "Türkçe",
+        en: "English",
+        de: "Deutsch",
+        ru: "Русский"
+    }[i18n.language] || "English";
+
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+        setIsLangDropdownOpen(false);
+    };
+
+    // Menü anahtarlarını JSON dosyalarındaki key'ler ile eşleştiriyoruz
     const menuItems = [
         {
-            label: t('dashboard_menu', 'Dashboard'),
+            key: 'dashboard_menu',
+            defaultLabel: 'Dashboard',
             path: "/admin",
             icon: LayoutDashboard,
             end: true,
         },
         {
-            label: t('reservations_menu', 'Reservations'),
+            key: 'reservations_menu',
+            defaultLabel: 'Reservations',
             path: "/admin/reservations",
             icon: CalendarCheck,
         },
         {
-            label: t('users_menu', 'Users'),
+            key: 'users_menu',
+            defaultLabel: 'Users',
             path: "/admin/users",
             icon: Users,
         },
         {
-            label: t('chat_logs_menu', 'Chat Logs'),
+            key: 'chat_logs_menu',
+            defaultLabel: 'Chat Logs',
             path: "/admin/chats",
             icon: MessageSquare,
         },
         {
-            label: t('tours_menu', 'Tours'),
+            key: 'tours_menu',
+            defaultLabel: 'Tours',
             path: "/admin/tours",
             icon: Map,
         },
@@ -53,7 +76,9 @@ export default function AdminLayout() {
                     />
                     <div className="flex flex-col min-w-0">
                         <h1 className="text-xl font-bold tracking-wide text-orange-500 leading-none">Sanny</h1>
-                        <span className="text-xs font-medium text-gray-400 mt-1">Admin Panel</span>
+                        <span className="text-xs font-medium text-gray-400 mt-1">
+                            {t('admin_panel_title', 'Admin Panel')}
+                        </span>
                     </div>
                 </div>
 
@@ -75,15 +100,71 @@ export default function AdminLayout() {
                                 }
                             >
                                 <Icon size={20} />
-                                <span className="text-sm">{item.label}</span>
+                                <span className="text-sm">
+                                    {t(item.key, item.defaultLabel)}
+                                </span>
                             </NavLink>
                         );
                     })}
                 </nav>
             </aside>
 
-            {/* SAĞ TARAF: SADECE ANA İÇERİK ALANI */}
+            {/* SAĞ TARAF: ÜST BAR VE ANA İÇERİK ALANI */}
             <div className="flex-1 flex flex-col min-w-0">
+                {/* ÜST BAR (HEADER) */}
+                <header className="h-16 border-b border-gray-200 bg-white px-8 flex items-center justify-end flex-shrink-0">
+
+                    {/* ADMİNE ÖZEL ŞIK DİL SEÇİCİ DROPDOWN */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                        >
+                            <Globe size={16} className="text-gray-500" />
+                            <span>{currentLanguageLabel}</span>
+                            <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isLangDropdownOpen && (
+                            <>
+                                {/* Arka planı kapatmak için görünmez tıklama alanı */}
+                                <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setIsLangDropdownOpen(false)}
+                                />
+
+                                <div className="absolute right-0 mt-2 w-40 origin-top-right rounded-xl border border-gray-100 bg-white p-1 shadow-lg ring-1 ring-black/5 focus:outline-none z-20">
+                                    <button
+                                        onClick={() => changeLanguage("tr")}
+                                        className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${i18n.language === 'tr' ? 'bg-orange-50 text-orange-500 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Türkçe
+                                    </button>
+                                    <button
+                                        onClick={() => changeLanguage("en")}
+                                        className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${i18n.language === 'en' ? 'bg-orange-50 text-orange-500 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        English
+                                    </button>
+                                    <button
+                                        onClick={() => changeLanguage("de")}
+                                        className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${i18n.language === 'de' ? 'bg-orange-50 text-orange-500 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Deutsch
+                                    </button>
+                                    <button
+                                        onClick={() => changeLanguage("ru")}
+                                        className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${i18n.language === 'ru' ? 'bg-orange-50 text-orange-500 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Русский
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </header>
+
+                {/* ANA İÇERİK ALANI */}
                 <main className="flex-1 p-8 overflow-y-auto bg-gray-50/50">
                     <Outlet />
                 </main>
