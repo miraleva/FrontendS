@@ -234,5 +234,8 @@
   "chat_logs_menu": "Sohbet Kayıtları",
   "tours_menu": "Turlar",
   "operations_assistant": "Operasyon Asistanı",
-  "services_active": "Servisler aktif"
+  "services_active": "Servisler aktif",
+  "starter_hotel_antalya": "Antalya'da otel ara",
+  "starter_flight_ist_ayt": "İstanbul'dan Antalya'ya uçak bileti bul",
+  "starter_best_hotels_antalya": "En iyi 5 otel Antalya"
 }

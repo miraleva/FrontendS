@@ -237,5 +237,8 @@
   "chat_logs_menu": "Chat Logs",
   "tours_menu": "Tours",
   "operations_assistant": "Operations Assistant",
-  "services_active": "Services active"
+  "services_active": "Services active",
+  "starter_hotel_antalya": "Search for a hotel in Antalya",
+  "starter_flight_ist_ayt": "Find a flight from Istanbul to Antalya",
+  "starter_best_hotels_antalya": "Top 5 hotels in Antalya"
 }
