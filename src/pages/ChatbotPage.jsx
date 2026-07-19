@@ -674,24 +674,26 @@ export default function Index() {
                           </div>
                         )}
                         <div className="flex flex-col max-w-[75%]">
-                          <div
-                            className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
-                              ? "bg-amber-500 text-white rounded-tr-none"
-                              : "bg-white/90 border border-white/30 text-[#0F172A] rounded-tl-none backdrop-blur-md"
-                              }`}
-                          >
-                            {msg.text}
-                            {msg.chatStatus === "BOOKING" && msg.selectedItem && (
-                              <div className="mt-3 text-right">
-                                <button
-                                  onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
-                                  className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
-                                >
-                                  {t("proceed_to_reservation", "Proceed to Reservation")}
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          {(msg.text || (msg.chatStatus === "BOOKING" && msg.selectedItem)) && (
+                            <div
+                              className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
+                                ? "bg-amber-500 text-white rounded-tr-none"
+                                : "bg-white/90 border border-white/30 text-[#0F172A] rounded-tl-none backdrop-blur-md"
+                                }`}
+                            >
+                              {msg.text}
+                              {msg.chatStatus === "BOOKING" && msg.selectedItem && (
+                                <div className="mt-3 text-right">
+                                  <button
+                                    onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
+                                    className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
+                                  >
+                                    {t("proceed_to_reservation", "Proceed to Reservation")}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {msg.results && msg.results.length > 0 && (
                             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
