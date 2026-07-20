@@ -178,10 +178,10 @@ export default function LoginPage() {
       />
 
       {/* Katman 2 (z-10): Overlay Mask */}
-      <div className="fixed inset-0 z-10 pointer-events-none bg-white/5 dark:bg-black/65" />
+      <div className="fixed inset-0 z-10 pointer-events-none bg-slate-900/20 dark:bg-slate-950/70" />
 
       {/* Katman 3 (z-20): Form Container */}
-      <div className="relative z-20 w-full max-w-[550px] bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
+      <div className="relative z-20 w-full max-w-[550px] bg-white/70 backdrop-blur-md border border-white/40 dark:bg-slate-900/75 dark:border-slate-800/50 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
 
         {/* BAŞLIK */}
         <div className="text-center mb-8">
