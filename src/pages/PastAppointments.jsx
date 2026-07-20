@@ -16,11 +16,33 @@ import {
   RefreshCw,
   ArrowRight,
   User,
-  Ticket
+  Ticket,
+  Moon,
+  Users,
+  Car
 } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
 import api from "../services/api";
 import { useTranslation } from "react-i18next";
+
+const formatPrice = (amount, currency = 'TRY') => {
+  if (amount === undefined || amount === null) return '';
+  // if amount is a string like "$1,420", just return it
+  if (typeof amount === 'string' && isNaN(Number(amount.replace(/[^0-9.-]+/g,"")))) return amount;
+  
+  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]+/g,"")) : amount;
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currency }).format(num);
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  // Check if it's YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+    const [y, m, d] = dateStr.split('T')[0].split('-');
+    return `${d}.${m}.${y}`;
+  }
+  return dateStr;
+};
 
 export default function PastAppointments() {
   const { t } = useTranslation();
@@ -37,22 +59,22 @@ export default function PastAppointments() {
       id: 1, 
       title: "Titanic Deluxe Lara Stay", 
       type: "Hotel", 
-      date: "June 12 - June 19, 2026", 
+      date: "12.06.2026 - 19.06.2026", 
       status: "Completed",
       hotelName: "Titanic Deluxe Lara",
-      checkIn: "June 12, 2026",
-      checkOut: "June 19, 2026",
+      checkIn: "12.06.2026",
+      checkOut: "19.06.2026",
       nights: 7,
       guests: 2,
       resNumber: "HTL-908234",
-      paymentStatus: "Paid ($1,420)",
-      price: "$1,420"
+      paymentStatus: "Paid",
+      price: formatPrice(1420, "USD")
     },
     { 
       id: 2, 
       title: "Istanbul (IST) to Munich (MUC)", 
       type: "Flight", 
-      date: "May 08, 2026", 
+      date: "08.05.2026 (Tek Yön)", 
       status: "Completed",
       from: "Istanbul (IST)",
       to: "Munich (MUC)",
@@ -60,37 +82,37 @@ export default function PastAppointments() {
       seat: "14A (Window)",
       flightClass: "Economy",
       resNumber: "FLT-561029",
-      paymentStatus: "Paid ($245)",
-      price: "$245"
+      paymentStatus: "Paid",
+      price: formatPrice(245, "USD")
     },
     { 
       id: 3, 
       title: "Antalya Airport Transfer to Titanic Hotel", 
       type: "Transfer", 
-      date: "June 12, 2026", 
+      date: "12.06.2026", 
       status: "Cancelled",
       transferType: "Airport Transfer",
       driverStatus: "Cancelled by Operator",
       pickupLocation: "Antalya Airport (AYT) Terminal 2",
       resNumber: "TRF-774021",
-      paymentStatus: "Refunded ($45)",
-      price: "$45",
+      paymentStatus: "Refunded",
+      price: formatPrice(45, "USD"),
       cancelReason: "VIP Transfer Vehicle Delay - Driver flight tracking delay exceeded safety limit"
     },
     { 
       id: 4, 
       title: "Sheraton Berlin Grand Hotel Esplanade", 
       type: "Hotel", 
-      date: "April 02 - April 05, 2026", 
+      date: "02.04.2026 - 05.04.2026", 
       status: "Pending",
       hotelName: "Sheraton Berlin Grand Hotel Esplanade",
-      checkIn: "April 02, 2026",
-      checkOut: "April 05, 2026",
+      checkIn: "02.04.2026",
+      checkOut: "05.04.2026",
       nights: 3,
       guests: 1,
       resNumber: "HTL-PENDING",
       paymentStatus: "Unpaid",
-      price: "$380"
+      price: formatPrice(380, "USD")
     }
   ];
 
@@ -111,16 +133,16 @@ export default function PastAppointments() {
           id: res.id,
           title: res.itemName,
           type: res.type === 'HOTEL' ? 'Hotel' : (res.type === 'FLIGHT' ? 'Flight' : 'Transfer'),
-          date: `${res.startDate} - ${res.endDate}`,
+          date: res.endDate ? `${formatDate(res.startDate)} - ${formatDate(res.endDate)}` : `${formatDate(res.startDate)} (Tek Yön)`,
           status: 'Completed',
           hotelName: res.type === 'HOTEL' ? res.itemName : undefined,
-          checkIn: res.startDate,
-          checkOut: res.endDate,
+          checkIn: formatDate(res.startDate),
+          checkOut: res.endDate ? formatDate(res.endDate) : undefined,
           nights: 1,
           guests: res.passengers ? res.passengers.length : 1,
           resNumber: res.reservationNumber,
-          paymentStatus: `Paid (${res.totalPrice} ${res.currency})`,
-          price: `${res.totalPrice} ${res.currency}`,
+          paymentStatus: `Paid`,
+          price: formatPrice(res.totalPrice, res.currency),
           passengers: res.passengers
         }));
         setAppointments(mapped);
@@ -163,34 +185,6 @@ export default function PastAppointments() {
             <AlertCircle size={12} />
             {t('past_appointments_status_Pending')}
           </span>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const getStatusRow = (status) => {
-    switch (status) {
-      case "Completed":
-        return (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#14B8A6]">
-            <CheckCircle2 size={14} />
-            <span>{t('past_appointments_status_Completed_stay')}</span>
-          </div>
-        );
-      case "Cancelled":
-        return (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#EF4444]">
-            <XCircle size={14} />
-            <span>{t('past_appointments_status_Cancelled_booking')}</span>
-          </div>
-        );
-      case "Pending":
-        return (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F59E0B]">
-            <AlertCircle size={14} className="animate-pulse" />
-            <span>{t('past_appointments_status_Pending_booking')}</span>
-          </div>
         );
       default:
         return null;
@@ -297,41 +291,44 @@ export default function PastAppointments() {
                   className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      <h3 className="font-bold text-[#0F172A] text-xl leading-tight">
+                        {appt.title}
+                      </h3>
                       <div className="flex flex-wrap items-center gap-2">
                         {getCategoryBadge(appt.type)}
-                        <span className="text-[11px] text-text-secondary font-medium flex items-center gap-1">
-                          <Calendar size={12} />
+                        <span className="text-xs text-text-secondary font-medium flex items-center gap-1">
+                          <Calendar size={13} className="text-slate-400" />
                           {appt.date}
                         </span>
                       </div>
-                      <h3 className="font-bold text-[#0F172A] text-lg leading-tight">
-                        {appt.title}
-                      </h3>
 
                       {/* Content details based on type */}
                       {appt.type === "Hotel" && (
-                        <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div><strong>{t('past_appointments_card_nights')}:</strong> {appt.nights}</div>
-                          <div><strong>{t('past_appointments_card_guests')}:</strong> {appt.guests}</div>
-                          <div><strong>{t('past_appointments_card_checkin')}:</strong> {appt.checkIn}</div>
-                          <div><strong>{t('past_appointments_card_checkout')}:</strong> {appt.checkOut}</div>
+                        <div className="flex items-center flex-wrap gap-2 text-xs text-slate-500 font-medium mt-1">
+                          <span className="flex items-center gap-1"><Moon size={12} className="text-slate-400" /> {appt.nights} {t('past_appointments_card_nights')}</span>
+                          <span className="text-slate-300">&middot;</span>
+                          <span className="flex items-center gap-1"><Users size={12} className="text-slate-400" /> {appt.guests} {t('past_appointments_card_guests')}</span>
+                          <span className="text-slate-300">&middot;</span>
+                          <span className="flex items-center gap-1"><Calendar size={12} className="text-slate-400" /> {appt.checkIn} <ArrowRight size={10} className="mx-0.5 text-slate-300" /> {appt.checkOut}</span>
                         </div>
                       )}
 
                       {appt.type === "Flight" && (
-                        <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div><strong>{t('past_appointments_card_flight_no')}:</strong> {appt.flightNumber}</div>
-                          <div><strong>{t('past_appointments_card_seat')}:</strong> {appt.seat}</div>
-                          <div><strong>{t('past_appointments_card_class')}:</strong> {appt.flightClass}</div>
-                          <div><strong>{t('past_appointments_card_route')}:</strong> {appt.from} → {appt.to}</div>
+                        <div className="flex items-center flex-wrap gap-2 text-xs text-slate-500 font-medium mt-1">
+                          <span className="flex items-center gap-1"><Ticket size={12} className="text-slate-400" /> {appt.flightNumber}</span>
+                          <span className="text-slate-300">&middot;</span>
+                          <span className="flex items-center gap-1"><User size={12} className="text-slate-400" /> {appt.seat} ({appt.flightClass})</span>
+                          <span className="text-slate-300">&middot;</span>
+                          <span className="flex items-center gap-1"><Plane size={12} className="text-slate-400" /> {appt.from} <ArrowRight size={10} className="mx-0.5 text-slate-300" /> {appt.to}</span>
                         </div>
                       )}
 
                       {appt.type === "Transfer" && (
-                        <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div><strong>{t('past_appointments_card_service')}:</strong> {appt.transferType}</div>
-                          <div><strong>{t('past_appointments_card_pickup')}:</strong> {appt.pickupLocation}</div>
+                        <div className="flex items-center flex-wrap gap-2 text-xs text-slate-500 font-medium mt-1">
+                          <span className="flex items-center gap-1"><Car size={12} className="text-slate-400" /> {appt.transferType}</span>
+                          <span className="text-slate-300">&middot;</span>
+                          <span className="flex items-center gap-1"><MapPin size={12} className="text-slate-400" /> {appt.pickupLocation}</span>
                         </div>
                       )}
                     </div>
@@ -342,12 +339,11 @@ export default function PastAppointments() {
                     </div>
                   </div>
 
-                  {/* Status row + Details button */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                    {getStatusRow(appt.status)}
+                  {/* Details button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-end mt-2">
                     <button 
                       onClick={() => handleOpenDrawer(appt)}
-                      className="text-xs font-semibold px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-[#F59E0B]/10 hover:border-[#F59E0B]/30 hover:text-[#F59E0B] transition-all duration-200 focus:outline-none whitespace-nowrap self-end sm:self-auto cursor-pointer"
+                      className="text-xs font-bold px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow transition-all duration-200 focus:outline-none whitespace-nowrap self-end sm:self-auto cursor-pointer"
                     >
                       {appt.status === "Completed" ? t('past_appointments_btn_details') : t('past_appointments_btn_resume')}
                     </button>
