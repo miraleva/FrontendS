@@ -31,7 +31,7 @@ export default function RightSidebar({
   if (!isRightSidebarOpen) return null;
 
   return (
-    <div className="hidden lg:flex w-[320px] h-full border-l border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900 backdrop-blur-xl p-6 flex-col justify-between animate-slide-in relative z-20">
+    <div className="hidden lg:flex w-[320px] h-full border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-6 flex-col justify-between animate-slide-in relative z-20">
       <div className="space-y-6">
 
         {/* Panel Başlığı */}

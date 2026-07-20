@@ -25,6 +25,7 @@ import ChatSidebar from "../components/ChatSidebar";
 import api from "../services/api";
 import { useTranslation } from "react-i18next";
 import AppointmentDetailModal from "../components/AppointmentDetailModal";
+import { useTheme } from "../components/ThemeContext";
 
 const formatPrice = (amount, currency = 'TRY') => {
   if (amount === undefined || amount === null) return '';
@@ -47,6 +48,7 @@ const formatDate = (dateStr) => {
 
 export default function PastAppointments() {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedAppt, setSelectedAppt] = useState(null);
@@ -119,12 +121,10 @@ export default function PastAppointments() {
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(error => {
-        console.log("Video autoplay engeline takıldı:", error);
-      });
+      videoRef.current.load();
+      videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
     }
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -236,14 +236,29 @@ export default function PastAppointments() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-transparent text-slate-900 dark:text-slate-100 font-sans relative">
-      {/* Collapsible Chat Sidebar */}
+      {/* Katman 1 (z-0): Background Video */}
+      <video
+        ref={videoRef}
+        src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+      />
+
+      {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+      <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+      {/* Katman 3 (z-30): Sidebar */}
       <ChatSidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen} 
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent">
+      {/* Katman 3 (z-20): Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent z-20">
         {/* Toggle open button when sidebar is collapsed */}
         {!isSidebarOpen && (
           <button 
@@ -255,21 +270,7 @@ export default function PastAppointments() {
           </button>
         )}
 
-        {/* Arka Plan Videosu - fixed ve z-0 ile en arkaya çiviliyoruz */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
-        >
-          <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-          {t('past_appointments_video_unsupported')}
-        </video>
-
-        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-10 relative">
+        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-20 relative">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#0F172A] dark:text-slate-100 font-display mb-2">
               {t('past_appointments_title')}
@@ -290,7 +291,7 @@ export default function PastAppointments() {
 
                 {/* Main Card Component */}
                 <div 
-                  className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4"
+                  className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="space-y-3">

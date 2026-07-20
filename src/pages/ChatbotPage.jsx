@@ -180,15 +180,13 @@ export default function Index() {
     : null;
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
-  // --- HTML5 Video Autoplay Engeli Çözümü ---
+  // --- HTML5 Video Autoplay Engeli Çözümü & Tema Değişimi ---
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(error => {
-        console.log("Video autoplay engeline takıldı:", error);
-      });
+      videoRef.current.load();
+      videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
     }
-  }, []);
+  }, [theme]);
 
   // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
   useEffect(() => {
@@ -542,8 +540,23 @@ export default function Index() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans relative">
-      {/* Sol Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+      {/* Katman 1 (z-0): Background Video */}
+      <video
+        ref={videoRef}
+        src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-80 dark:opacity-40"
+      />
+
+      {/* Katman 2 (z-10): Overlay Mask */}
+      <div className="fixed inset-0 z-10 pointer-events-none bg-white/10 dark:bg-black/30" />
+
+      {/* Katman 3 (z-30): Sol Sidebar */}
       <ChatSidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -559,8 +572,8 @@ export default function Index() {
         }}
       />
 
-      {/* Ana İçerik Alanı */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+      {/* Katman 3 (z-20): Ana İçerik Alanı */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -581,20 +594,7 @@ export default function Index() {
           </button>
         )}
 
-        {/* Arka Plan Videosu */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 dark:opacity-20 blur-md dark:blur-lg scale-105" : "opacity-100 dark:opacity-30 dark:brightness-[0.4]"}`}
-        >
-          <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-        </video>
-
-        <div className="flex-1 flex h-full relative z-10 w-full overflow-hidden">
+        <div className="flex-1 flex h-full relative z-20 w-full overflow-hidden">
 
           {/* CHAT ALANI */}
           <div className="flex flex-col h-full relative min-w-0 flex-1 transition-all duration-300 ease-in-out w-full">
@@ -737,7 +737,7 @@ export default function Index() {
                             <div
                               className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
                                 ? "bg-amber-500 text-white rounded-tr-none"
-                                : "bg-white/90 dark:bg-slate-900/90 border border-white/30 dark:border-slate-800/30 text-[#0F172A] dark:text-slate-100 rounded-tl-none backdrop-blur-md"
+                                : "bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-tl-none"
                                 }`}
                             >
                               {msg.text}
@@ -926,7 +926,7 @@ export default function Index() {
                           />
                         </div>
                         <div className="space-y-1 max-w-[75%]">
-                          <div className="bg-white/90 dark:bg-slate-900/90 border border-white/30 dark:border-slate-800/30 text-[#0F172A] dark:text-slate-100 rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3 backdrop-blur-md">
+                          <div className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3">
                             <div className="flex gap-1 flex-shrink-0">
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" />
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.2s]" />
@@ -945,9 +945,8 @@ export default function Index() {
                     <div
                       className="rounded-2xl shadow-xl border w-full transition-all duration-300 relative z-30"
                       style={{
-                        backgroundColor: theme === 'dark' ? "rgba(15, 23, 42, 0.6)" : "rgba(255, 255, 255, 0.08)",
-                        borderColor: theme === 'dark' ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.15)",
-                        backdropFilter: "blur(20px)"
+                        backgroundColor: theme === 'dark' ? "rgba(15, 23, 42, 0.75)" : "rgba(255, 255, 255, 0.75)",
+                        borderColor: theme === 'dark' ? "rgba(30, 41, 59, 0.8)" : "rgba(226, 232, 240, 0.8)"
                       }}
                     >
                       <div className="p-3">
@@ -1004,7 +1003,7 @@ export default function Index() {
           {/* Overlay Backdrop & Centered Modal */}
           {activePanel && (
             <div
-              className="fixed inset-0 bg-black/40 z-[100] transition-opacity backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+              className="fixed inset-0 bg-black/40 z-[100] transition-opacity flex items-center justify-center p-4 sm:p-6"
               onClick={() => setActivePanel(null)}
             >
               <div

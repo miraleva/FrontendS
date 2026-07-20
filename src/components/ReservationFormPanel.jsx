@@ -275,7 +275,7 @@ export default function ReservationFormPanel({
         {onBack && (
           <button
             onClick={onBack}
-            className="absolute top-4 left-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md flex items-center gap-1 pr-4 text-sm font-semibold"
+            className="absolute top-4 left-4 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors flex items-center gap-1 pr-4 text-sm font-semibold"
           >
             <ArrowLeft size={18} /> Geri
           </button>
@@ -284,7 +284,7 @@ export default function ReservationFormPanel({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md"
+          className="absolute top-4 right-4 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
         >
           <X size={20} />
         </button>

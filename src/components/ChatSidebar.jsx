@@ -151,7 +151,7 @@ export default function ChatSidebar({
   return (
     // YENİ: h h-screen bg-white sınıfı, dark mod uyumlu yapıldı: bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800
     <div
-      className={`h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-10 ${isOpen ? 'w-[330px]' : 'w-0 border-r-0'
+      className={`h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-30 ${isOpen ? 'w-[330px]' : 'w-0 border-r-0'
         }`}
     >
       {/* 1. Top Row (Logo Alanı) */}
@@ -364,18 +364,17 @@ export default function ChatSidebar({
         </button>
       </div>
 
-      {/* Modal Kısmı (Aynen Kalıyor, Sadece dark: sınıfları entegre edildi) */}
+      {/* Modal Kısmı */}
       {isDeleteModalOpen && createPortal(
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[99999] animate-fade-in p-4"
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999] animate-fade-in p-4"
           onClick={() => {
             setIsDeleteModalOpen(false);
             setSessionToDelete(null);
           }}
         >
-          {/* YENİ: bg-white dark:bg-slate-900 border-white/20 dark:border-slate-800 */}
           <div
-            className="bg-white dark:bg-slate-900 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 dark:border-slate-800 w-full max-w-[360px] p-6 text-center transform scale-100 transition-all"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200 dark:border-slate-800 w-full max-w-[360px] p-6 text-center transform scale-100 transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-orange-100 dark:bg-orange-950/50 mb-4">

@@ -6,8 +6,10 @@ import {
   ChevronRight 
 } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
+import { useTheme } from "../components/ThemeContext";
 
 export default function SearchChats() {
+  const { theme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -16,12 +18,10 @@ export default function SearchChats() {
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(error => {
-        console.log("Video autoplay engeline takıldı:", error);
-      });
+      videoRef.current.load();
+      videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
     }
-  }, []);
+  }, [theme]);
 
   // Mock sessions
   const mockSessions = [
@@ -53,42 +53,33 @@ export default function SearchChats() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans">
-      {/* Collapsible Chat Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+      {/* Katman 1 (z-0): Background Video */}
+      <video
+        ref={videoRef}
+        src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+      />
+
+      {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+      <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+      {/* Katman 3 (z-30): Sidebar */}
       <ChatSidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen} 
         currentView="chat"
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent">
-        {/* Toggle open button when sidebar is collapsed */}
-        {!isSidebarOpen && (
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
-            title="Expand Sidebar"
-          >
-            <PanelLeftOpen size={18} />
-          </button>
-        )}
+      {/* Katman 3 (z-20): Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent z-20">
 
-        {/* Arka Plan Videosu - fixed ve z-0 ile en arkaya çiviliyoruz */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-lg"
-        >
-          <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-          Tarayıcınız video etiketini desteklemiyor.
-        </video>
-
-        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-10 relative">
+        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-20 relative">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#0F172A] dark:text-slate-100 font-display mb-2">
               Search Chats

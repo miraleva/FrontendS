@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
@@ -7,6 +7,7 @@ import "react-phone-number-input/style.css";
 import ChatSidebar from "../components/ChatSidebar";
 import { PanelLeftOpen } from "lucide-react";
 import { isPhoneNumberTooLong, getPhoneInputMaxLength } from "../utils/phoneLimits";
+import { useTheme } from "../components/ThemeContext";
 
 // Helper to convert "DD.MM.YYYY" to "YYYY-MM-DD" for the backend API
 const toISODate = (ddmmyyyy) => {
@@ -32,7 +33,17 @@ const toDisplayDate = (isoDate) => {
 
 export default function Profile() {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const navigate = useNavigate();
+
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
+        }
+    }, [theme]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -353,15 +364,30 @@ export default function Profile() {
     const inputMaxLength = getPhoneInputMaxLength(formData.phone);
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans relative">
-            {/* Collapsible Chat Sidebar */}
+        <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+            {/* Katman 1 (z-0): Background Video */}
+            <video
+                ref={videoRef}
+                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            />
+
+            {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+            {/* Katman 3 (z-30): Sidebar */}
             <ChatSidebar
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+            {/* Katman 3 (z-20): Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
                 {/* Toggle open button when sidebar is collapsed */}
                 {!isSidebarOpen && (
                     <button
@@ -373,19 +399,11 @@ export default function Profile() {
                     </button>
                 )}
 
-                {/* Background Video */}
-                <video autoPlay loop muted playsInline className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-20 blur-none dark:blur-lg">
-                    <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-
-                <div className="absolute top-0 left-0 w-full h-full bg-black/20 dark:bg-black/60 z-10 pointer-events-none" />
-
                 {/* Scrollable Container holding the Glass Card */}
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
                         {/* Main Profile Info Card */}
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] dark:from-slate-900/60 dark:to-slate-900/40 backdrop-blur-xl rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-white/20 dark:border-slate-800/40">
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-slate-200 dark:border-slate-800">
                             {/* Header Section */}
                             <div className="flex items-center justify-between mb-[32px]">
                                 <div className="flex items-center gap-[16px]">
@@ -645,7 +663,7 @@ export default function Profile() {
                         </div>
 
                         {/* Account Actions Card */}
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] dark:from-slate-900/60 dark:to-slate-900/40 backdrop-blur-xl rounded-[20px] shadow-xl p-[24px] md:p-[32px] border border-white/20 dark:border-slate-800 mt-[24px]">
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[24px] md:p-[32px] border border-slate-200 dark:border-slate-800 mt-[24px]">
                             <h2 className="text-[18px] font-bold text-slate-900 dark:text-slate-100 mb-[16px] flex items-center gap-[8px]">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0B5FFF]">
                                     <circle cx="12" cy="12" r="3" />
@@ -678,10 +696,10 @@ export default function Profile() {
                 </div>
             </div>
 
-            {/* --- GLASSMORPHIC LOG OUT CONFIRMATION MODAL PENCERESI --- */}
+            {/* --- LOG OUT CONFIRMATION MODAL PENCERESI --- */}
             {showLogoutModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] backdrop-blur-md bg-black/40 animate-fade-in">
-                    <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.95] to-white/[0.90] dark:from-slate-900 dark:to-slate-900 backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] bg-black/40 animate-fade-in">
+                    <div className="w-full max-w-[440px] bg-white dark:bg-slate-900 rounded-[24px] p-[32px] border border-slate-200 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
 
                         <h3 className="text-[22px] font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-[12px]">
                             {t("profile_logout_title", "Log Out?")}
@@ -708,10 +726,10 @@ export default function Profile() {
                 </div>
             )}
 
-            {/* --- GLASSMORPHIC DELETE ACCOUNT CONFIRMATION MODAL PENCERESI --- */}
+            {/* --- DELETE ACCOUNT CONFIRMATION MODAL PENCERESI --- */}
             {showDeleteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] backdrop-blur-md bg-black/40 animate-fade-in">
-                    <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.95] to-white/[0.90] dark:from-slate-900 dark:to-slate-900 backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] bg-black/40 animate-fade-in">
+                    <div className="w-full max-w-[440px] bg-white dark:bg-slate-900 rounded-[24px] p-[32px] border border-slate-200 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
 
                         <h3 className="text-[22px] font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-[12px]">
                             {t("profile_delete_title", "Remove Account?")}
