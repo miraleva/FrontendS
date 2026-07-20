@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Calendar, Hotel, Plane, Users, Sparkles, PanelRightClose } from 'lucide-react';
-import LanguageSelector from './LanguageSelector';
 
 function formatFlightDateTime(value) {
   if (!value) return value;
@@ -37,7 +36,7 @@ export default function RightSidebar({
 
         {/* Panel Başlığı */}
         <div className="flex flex-col gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex justify-between items-center w-full">
+          <div className="flex justify-end items-center w-full">
             <button
               onClick={() => setIsRightSidebarOpen(false)}
               className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
@@ -45,7 +44,6 @@ export default function RightSidebar({
             >
               <PanelRightClose size={18} />
             </button>
-            <LanguageSelector className="relative z-50 scale-90 origin-right" />
           </div>
           
           <div className="flex items-center gap-2">
