@@ -18,6 +18,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "../components/ThemeContext";
 import ChatSidebar from "../components/ChatSidebar";
 import HotelDetailPanel from "../components/HotelDetailPanel";
 import ReservationFormPanel from "../components/ReservationFormPanel";
@@ -36,11 +37,14 @@ function formatPrice(price) {
 // TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
 // ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
 // gösterilir.
-function formatGuestCount(adultCount, childCount, passengerCount, t) {
+function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount) {
   if (adultCount) {
     const parts = [`${adultCount} ${t("unit_adult")}`];
     if (childCount) {
       parts.push(`${childCount} ${t("unit_child")}`);
+    }
+    if (infantCount) {
+      parts.push(`${infantCount} ${t("unit_infant")}`);
     }
     return parts.join(", ");
   }
@@ -64,6 +68,46 @@ function formatFlightDateTime(value) {
   });
 }
 
+// TourVisio GetProductInfo yanıtını HotelDetailPanel'in beklediği düz alanlara çevirir
+// (fotoğraf galerisi, açıklama metni, olanaklar/temalar isim listeleri).
+function mapProductInfoToHotelDetail(productInfo) {
+  const hotel = productInfo?.body?.hotel;
+  if (!hotel) return {};
+
+  const photoUrls = new Set();
+  if (hotel.mediaFiles) {
+    hotel.mediaFiles.forEach(m => photoUrls.add(m.urlFull || m.url));
+  }
+  (hotel.seasons || []).forEach(season => {
+    (season.mediaFiles || []).forEach(m => photoUrls.add(m.urlFull || m.url));
+  });
+
+  let description = "";
+  const firstSeason = (hotel.seasons || [])[0];
+  if (firstSeason?.textCategories) {
+    const texts = firstSeason.textCategories
+      .flatMap(cat => cat.presentations || [])
+      .map(p => p.text)
+      .filter(Boolean);
+    description = texts.join("\n\n");
+  }
+
+  const facilities = new Set();
+  if (firstSeason?.facilityCategories) {
+    firstSeason.facilityCategories.forEach(cat => {
+      (cat.facilities || []).forEach(f => { if (f.name) facilities.add(f.name); });
+    });
+  }
+
+  return {
+    address: hotel.address || null,
+    photos: [...photoUrls].filter(Boolean),
+    description: description || null,
+    facilities: [...facilities],
+    themes: (hotel.themes || []).map(t => t.name).filter(Boolean),
+  };
+}
+
 function formatBaggage(baggage, t) {
   if (!baggage || baggage === "0kg" || baggage === "0 kg") {
     return t ? t("baggage_not_included") : "Baggage not included";
@@ -73,6 +117,7 @@ function formatBaggage(baggage, t) {
 
 export default function Index() {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatActive, setIsChatActive] = useState(false);
@@ -83,6 +128,7 @@ export default function Index() {
   // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [selectedFlight, setSelectedFlight] = useState(null);
+  const [hotelDetailLoading, setHotelDetailLoading] = useState(false);
 
   // --- Arama Tipi ("hotel" | "flight") ---
   const [searchType, setSearchType] = useState("hotel");
@@ -101,6 +147,10 @@ export default function Index() {
     checkIn: "",        // Otel için Giriş / Uçak için Gidiş Tarihi
     checkOut: "",       // Sadece Otel için Çıkış Tarihi
     guests: "",
+    adultCount: 1,
+    childCount: 0,
+    childAges: [],
+    passengerCount: 1,
     hotelName: "",
     price: "",
     departureCity: "",  // Uçak için: Kalkış Noktası
@@ -130,15 +180,13 @@ export default function Index() {
     : null;
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
-  // --- HTML5 Video Autoplay Engeli Çözümü ---
+  // --- HTML5 Video Autoplay Engeli Çözümü & Tema Değişimi ---
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(error => {
-        console.log("Video autoplay engeline takıldı:", error);
-      });
+      videoRef.current.load();
+      videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
     }
-  }, []);
+  }, [theme]);
 
   // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
   useEffect(() => {
@@ -179,25 +227,29 @@ export default function Index() {
             }
           }
 
-          // Bu oturum için backend'de toplanmış kriterleri (kalkış/varış/yolcu/tarih)
-          // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
-          // kriter kaydından (search_criteria_json) geliyor.
-          try {
-            const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
-            const c = criteriaResponse.data;
-            if (c) {
-              setBookingDetails(prev => ({
-                ...prev,
-                city: c.locationOrHotelName || prev.city,
-                checkIn: c.checkInDate || c.departureDate || prev.checkIn,
-                checkOut: c.checkOutDate || prev.checkOut,
-                guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t) || prev.guests,
-                departureCity: c.departureLocation || prev.departureCity,
-                arrivalCity: c.arrivalLocation || prev.arrivalCity,
-                returnDate: c.returnDate || prev.returnDate
-              }));
-            }
-          } catch (criteriaErr) {
+            // Bu oturum için backend'de toplanmış kriterleri (kalkış/varış/yolcu/tarih)
+            // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
+            // kriter kaydından (search_criteria_json) geliyor.
+            try {
+              const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
+              const c = criteriaResponse.data;
+              if (c) {
+                setBookingDetails(prev => ({
+                  ...prev,
+                  city: c.locationOrHotelName || prev.city,
+                  checkIn: c.checkInDate || c.departureDate || prev.checkIn,
+                  checkOut: c.checkOutDate || prev.checkOut,
+                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || prev.guests,
+                  adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
+                  childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
+                  childAges: c.childAges || prev.childAges,
+                  passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
+                  departureCity: c.departureLocation || prev.departureCity,
+                  arrivalCity: c.arrivalLocation || prev.arrivalCity,
+                  returnDate: c.returnDate || prev.returnDate
+                }));
+              }
+            } catch (criteriaErr) {
             console.error("Failed to load session criteria", sessionId, criteriaErr);
           }
         } catch (err) {
@@ -211,7 +263,7 @@ export default function Index() {
       setMessages([]);
       setIsChatActive(false);
       setSearchType("hotel");
-      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
+      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
       setSelectedHotel(null);
       setSelectedFlight(null);
     }
@@ -341,7 +393,11 @@ export default function Index() {
           city: c.locationOrHotelName || prev.city,
           checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
           checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
-          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t) || extractedFromQuery.guests || prev.guests,
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || prev.guests,
+          adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
+          childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
+          childAges: c.childAges || prev.childAges,
+          passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
           departureCity: c.departureLocation || prev.departureCity,
           arrivalCity: c.arrivalLocation || prev.arrivalCity,
           returnDate: c.returnDate || prev.returnDate
@@ -484,8 +540,23 @@ export default function Index() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
-      {/* Sol Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+      {/* Katman 1 (z-0): Background Video */}
+      <video
+        ref={videoRef}
+        src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-80 dark:opacity-40"
+      />
+
+      {/* Katman 2 (z-10): Overlay Mask */}
+      <div className="fixed inset-0 z-10 pointer-events-none bg-white/10 dark:bg-black/30" />
+
+      {/* Katman 3 (z-30): Sol Sidebar */}
       <ChatSidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -495,47 +566,35 @@ export default function Index() {
           setSearchQuery("");
           setSearchType("hotel");
           setActivePanel(null);
-          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
+          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
           setSelectedHotel(null);
           setSelectedFlight(null);
         }}
       />
 
-      {/* Ana İçerik Alanı */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+      {/* Katman 3 (z-20): Ana İçerik Alanı */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
+            className="absolute top-4 left-4 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
             title="Expand Sidebar"
           >
             <PanelLeftOpen size={18} />
           </button>
         )}
+
         {!isRightSidebarOpen && isChatActive && (
           <button
             onClick={() => setIsRightSidebarOpen(true)}
-            className="absolute top-4 right-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
+            className="absolute top-4 right-4 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
             title="Expand Details Panel"
           >
             <PanelRightOpen size={18} />
           </button>
         )}
 
-        {/* Arka Plan Videosu */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"}`}
-        >
-          <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-        </video>
-
-        <div className="flex-1 flex h-full relative z-10 w-full overflow-hidden">
+        <div className="flex-1 flex h-full relative z-20 w-full overflow-hidden">
 
           {/* CHAT ALANI */}
           <div className="flex flex-col h-full relative min-w-0 flex-1 transition-all duration-300 ease-in-out w-full">
@@ -551,11 +610,11 @@ export default function Index() {
                         alt="Sanny Logo"
                         className="h-16 md:h-20 w-auto object-contain flex-shrink-0"
                       />
-                      <h1 className="text-2xl md:text-4xl font-extrabold text-[#1E232C] font-display">
+                      <h1 className="text-2xl md:text-4xl font-extrabold text-[#1E232C] dark:text-slate-100 font-display">
                         {t(getGreetingKey(), { username })}
                       </h1>
                     </div>
-                    <p className="text-[#1E232C]/70 text-sm font-semibold">
+                    <p className="text-[#1E232C]/70 dark:text-slate-350 text-sm font-semibold">
                       {t("ops_subtitle")}
                     </p>
                   </div>
@@ -564,8 +623,8 @@ export default function Index() {
                   <div
                     className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300 relative z-30"
                     style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.08)",
-                      borderColor: "rgba(255, 255, 255, 0.15)",
+                      backgroundColor: theme === 'dark' ? "rgba(15, 23, 42, 0.6)" : "rgba(255, 255, 255, 0.08)",
+                      borderColor: theme === 'dark' ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.15)",
                     }}
                   >
                     <div className="p-3">
@@ -579,7 +638,7 @@ export default function Index() {
                               onChange={handleTextareaChange}
                               onKeyDown={handleKeyDown}
                               placeholder={t("input_placeholder_welcome")}
-                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                             />
                             <div className="absolute right-2 flex items-center gap-1.5 z-40">
                               <button
@@ -638,7 +697,7 @@ export default function Index() {
 
                   {/* Örnek Soru Çipleri */}
                   <div className="w-full max-w-[700px] flex flex-col items-center gap-2">
-                    <span className="text-[11px] text-[#1E232C]/60 font-semibold uppercase tracking-wider">
+                    <span className="text-[11px] text-[#1E232C]/60 dark:text-slate-400 font-semibold uppercase tracking-wider">
                       {t("try_asking")}
                     </span>
                     <div className="flex flex-wrap gap-2 justify-center">
@@ -650,7 +709,7 @@ export default function Index() {
                         <button
                           key={queryKey}
                           onClick={() => setSearchQuery(t(queryKey))}
-                          className="px-3.5 py-1.5 bg-white/40 hover:bg-white/60 border border-white/20 hover:border-amber-500/50 rounded-full text-xs font-semibold text-slate-800 transition-all hover:scale-[1.02] cursor-pointer"
+                          className="px-3.5 py-1.5 bg-white/80 dark:bg-slate-900 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-amber-500 rounded-full text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all hover:scale-[1.02] cursor-pointer"
                         >
                           {t(queryKey)}
                         </button>
@@ -674,24 +733,26 @@ export default function Index() {
                           </div>
                         )}
                         <div className="flex flex-col max-w-[75%]">
-                          <div
-                            className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
-                              ? "bg-amber-500 text-white rounded-tr-none"
-                              : "bg-white/90 border border-white/30 text-[#0F172A] rounded-tl-none backdrop-blur-md"
-                              }`}
-                          >
-                            {msg.text}
-                            {msg.chatStatus === "BOOKING" && msg.selectedItem && (
-                              <div className="mt-3 text-right">
-                                <button
-                                  onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
-                                  className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
-                                >
-                                  {t("proceed_to_reservation", "Proceed to Reservation")}
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          {(msg.text || (msg.chatStatus === "BOOKING" && msg.selectedItem)) && (
+                            <div
+                              className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
+                                ? "bg-amber-500 text-white rounded-tr-none"
+                                : "bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-tl-none"
+                                }`}
+                            >
+                              {msg.text}
+                              {msg.chatStatus === "BOOKING" && msg.selectedItem && (
+                                <div className="mt-3 text-right">
+                                  <button
+                                    onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
+                                    className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
+                                  >
+                                    {t("proceed_to_reservation", "Proceed to Reservation")}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {msg.results && msg.results.length > 0 && (
                             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
@@ -718,23 +779,23 @@ export default function Index() {
                                         }));
                                       }}
                                       className={cn(
-                                        "w-full text-left bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
-                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50" : "border-slate-200"
+                                        "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
                                       )}
                                     >
                                       <div className="flex justify-between items-center">
-                                        <span className="font-bold text-[#1E232C] text-sm">✈️ {result.airline}</span>
-                                        <span className="text-[#3B82F6] font-bold text-sm">{formatPrice(result.price)} {result.currency}</span>
+                                        <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm">✈️ {result.airline}</span>
+                                        <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-sm">{formatPrice(result.price)} {result.currency}</span>
                                       </div>
-                                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
                                         <div><strong>{t("reservation_departure")}:</strong> {formatFlightDateTime(result.departureTime)}</div>
                                         <div><strong>{t("reservation_arrival")}:</strong> {formatFlightDateTime(result.arrivalTime)}</div>
                                         <div><strong>{t("reservation_transfers")}:</strong> {result.transfers}</div>
                                         <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.baggage, t)}</div>
                                       </div>
                                       {result.returnDepartureTime && (
-                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-2 mt-1 border-t border-dashed border-slate-200">
-                                          <div className="col-span-2 font-bold text-[#1E232C]">↩ {result.returnAirline || result.airline}</div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 pt-2 mt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
+                                          <div className="col-span-2 font-bold text-[#1E232C] dark:text-slate-100">↩ {result.returnAirline || result.airline}</div>
                                           <div><strong>{t("reservation_return_departure_short")}:</strong> {formatFlightDateTime(result.returnDepartureTime)}</div>
                                           <div><strong>{t("reservation_return_arrival_short")}:</strong> {formatFlightDateTime(result.returnArrivalTime)}</div>
                                           <div><strong>{t("reservation_transfers")}:</strong> {result.returnTransfers}</div>
@@ -747,10 +808,10 @@ export default function Index() {
                                 } else {
                                   // Otel kartını tıklanabilir bir butona dönüştürüyoruz
                                   const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
-                                  
+
                                   // Küsüratsız, yuvarlanmış fiyat (kullanıcı isteği: "13463.87" değil "13.463")
                                   const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
-                                    
+
                                   const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
                                   const uniqueLocationParts = [...new Set(locationParts)];
                                   const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
@@ -758,7 +819,7 @@ export default function Index() {
                                   return (
                                     <button
                                       key={idx}
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setSelectedHotel(result);
                                         setActivePanel('hotelDetail');
                                         setBookingDetails(prev => ({
@@ -766,21 +827,41 @@ export default function Index() {
                                           hotelName: result.name || result.hotelId,
                                           price: formattedPrice
                                         }));
+
+                                        if (result.hotelId) {
+                                          setHotelDetailLoading(true);
+                                          try {
+                                            const detailResponse = await api.post('/api/hotels/productinfo', {
+                                              productType: 2,
+                                              ownerProvider: result.provider || 2,
+                                              product: result.hotelId,
+                                              culture: 'tr-TR'
+                                            });
+                                            const mappedDetail = mapProductInfoToHotelDetail(detailResponse.data);
+                                            setSelectedHotel(prev =>
+                                              prev && prev.hotelId === result.hotelId ? { ...prev, ...mappedDetail } : prev
+                                            );
+                                          } catch (err) {
+                                            console.log("Otel detayları yüklenemedi:", err);
+                                          } finally {
+                                            setHotelDetailLoading(false);
+                                          }
+                                        }
                                       }}
                                       className={cn(
-                                        "w-full text-left bg-white border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
-                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50" : "border-slate-200"
+                                        "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
                                       )}
                                     >
                                       {/* Thumbnail */}
-                                      <div className="w-16 h-16 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
+                                      <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
                                         {(result.thumbnailFull || result.thumbnail) ? (
                                           <img
                                             src={result.thumbnailFull || result.thumbnail}
                                             alt={result.name || "Hotel"}
                                             className="w-full h-full object-cover"
-                                            onError={(e) => { 
-                                              e.currentTarget.style.display = 'none'; 
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
                                               if (e.currentTarget.nextElementSibling) {
                                                 e.currentTarget.nextElementSibling.classList.remove('hidden');
                                               }
@@ -796,31 +877,31 @@ export default function Index() {
                                       <div className="flex-1 min-w-0 flex flex-col gap-1">
                                         <div className="flex justify-between items-start">
                                           <div className="flex flex-col min-w-0 pr-2">
-                                            <span className="font-bold text-[#1E232C] text-sm leading-tight flex items-center gap-1 flex-wrap">
+                                            <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm leading-tight flex items-center gap-1 flex-wrap">
                                               {result.name || result.hotelId}
                                               {result.stars && (
-                                                <span className="text-amber-400 text-xs flex items-center flex-shrink-0 bg-amber-50 px-1 py-0.5 rounded">
+                                                <span className="text-amber-400 text-xs flex items-center flex-shrink-0 bg-amber-50 dark:bg-amber-950/30 px-1 py-0.5 rounded">
                                                   {result.stars}<Star size={10} className="ml-0.5 fill-amber-400" />
                                                 </span>
                                               )}
                                             </span>
                                             {locationText && (
-                                              <span className="text-[11px] text-slate-500 mt-0.5 truncate flex items-center gap-1">
+                                              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
                                                 <MapPin size={10} /> {locationText}
                                               </span>
                                             )}
                                           </div>
                                         </div>
-                                        
+
                                         <div className="flex justify-between items-end mt-1">
                                           <div className="flex flex-wrap gap-1">
                                             {(result.boardName || result.boardType || result.pensionType) && (
-                                              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wide inline-flex items-center">
+                                              <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide inline-flex items-center">
                                                 {result.boardName || result.boardType || result.pensionType}
                                               </span>
                                             )}
                                           </div>
-                                          <span className="text-[#3B82F6] font-extrabold text-sm flex-shrink-0">
+                                          <span className="text-[#3B82F6] dark:text-blue-400 font-extrabold text-sm flex-shrink-0">
                                             {formattedPrice}
                                           </span>
                                         </div>
@@ -845,13 +926,13 @@ export default function Index() {
                           />
                         </div>
                         <div className="space-y-1 max-w-[75%]">
-                          <div className="bg-white/90 border border-white/30 text-[#0F172A] rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3 backdrop-blur-md">
+                          <div className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3">
                             <div className="flex gap-1 flex-shrink-0">
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" />
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.2s]" />
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.4s]" />
                             </div>
-                            <span className="text-xs text-slate-500 italic font-medium">{thinkingStep}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 italic font-medium">{thinkingStep}</span>
                           </div>
                         </div>
                       </div>
@@ -864,9 +945,8 @@ export default function Index() {
                     <div
                       className="rounded-2xl shadow-xl border w-full transition-all duration-300 relative z-30"
                       style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.08)",
-                        borderColor: "rgba(255, 255, 255, 0.15)",
-                        backdropFilter: "blur(20px)"
+                        backgroundColor: theme === 'dark' ? "rgba(15, 23, 42, 0.75)" : "rgba(255, 255, 255, 0.75)",
+                        borderColor: theme === 'dark' ? "rgba(30, 41, 59, 0.8)" : "rgba(226, 232, 240, 0.8)"
                       }}
                     >
                       <div className="p-3">
@@ -878,7 +958,7 @@ export default function Index() {
                             onChange={handleTextareaChange}
                             onKeyDown={handleKeyDown}
                             placeholder={t("input_placeholder_chat")}
-                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                           />
                           <div className="absolute right-2 flex items-center gap-1.5 z-40">
                             <button
@@ -909,7 +989,7 @@ export default function Index() {
           {/* ==================== 3. AKTİF REZERVASYON ÖNİZLEME PANELİ ==================== */}
           {/* Kullanıcı bir otel/uçuş seçene kadar bu panel boş detaylarla gösterilebilir; ayrıca elle kapatılabilir */}
           {isChatActive && isRightSidebarOpen && (
-            <RightSidebar 
+            <RightSidebar
               isRightSidebarOpen={isRightSidebarOpen}
               setIsRightSidebarOpen={setIsRightSidebarOpen}
               searchType={searchType}
@@ -922,26 +1002,27 @@ export default function Index() {
 
           {/* Overlay Backdrop & Centered Modal */}
           {activePanel && (
-            <div 
-              className="fixed inset-0 bg-black/40 z-[100] transition-opacity backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+            <div
+              className="fixed inset-0 bg-black/40 z-[100] transition-opacity flex items-center justify-center p-4 sm:p-6"
               onClick={() => setActivePanel(null)}
             >
-              <div 
-                className="w-full max-w-[850px] max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
+              <div
+                className="w-full max-w-[850px] h-[85vh] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
                 onClick={(e) => e.stopPropagation()}
               >
                 {activePanel === 'hotelDetail' && (
-                  <HotelDetailPanel 
-                    hotel={selectedHotel} 
-                    bookingDetails={bookingDetails} 
-                    onClose={() => setActivePanel(null)} 
-                    onProceed={() => setActivePanel('reservation')} 
+                  <HotelDetailPanel
+                    hotel={selectedHotel}
+                    bookingDetails={bookingDetails}
+                    loadingDetail={hotelDetailLoading}
+                    onClose={() => setActivePanel(null)}
+                    onProceed={() => setActivePanel('reservation')}
                   />
                 )}
                 {activePanel === 'reservation' && (
-                  <ReservationFormPanel 
-                    hotel={selectedHotel} 
-                    bookingDetails={bookingDetails} 
+                  <ReservationFormPanel
+                    hotel={selectedHotel}
+                    bookingDetails={bookingDetails}
                     onClose={() => setActivePanel(null)}
                     onBack={() => setActivePanel('hotelDetail')}
                     guests={reservationGuests}

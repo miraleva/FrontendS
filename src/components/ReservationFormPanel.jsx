@@ -1,18 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, User, Mail, Phone, Baby, ShieldCheck, ChevronDown, ChevronUp, MapPin, Star, Info, CheckCircle2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
-import api from '../services/api';
+import React, { useEffect, useState } from "react";
+import {
+  X,
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  Baby,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Star,
+  Info,
+  CheckCircle2,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import PhoneInput, {
+  isValidPhoneNumber,
+} from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import api from "../services/api";
 
 function toDateOnly(value) {
   if (!value) return null;
+
   const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
   if (match) return match[0];
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
+
   return date.toISOString().slice(0, 10);
 }
+
+const getPassengerErrors = (passenger) => {
+  const errors = {};
+
+  if (!passenger.firstName?.trim()) {
+    errors.firstName = "Ad gereklidir.";
+  }
+
+  if (!passenger.lastName?.trim()) {
+    errors.lastName = "Soyad gereklidir.";
+  }
+
+  if (passenger.nationality?.toUpperCase() === "TR") {
+    if (!/^[1-9]\d{10}$/.test(passenger.identityNumber || "")) {
+      errors.identityNumber =
+        "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+    }
+  } else if (
+    !passenger.identityNumber?.trim() ||
+    passenger.identityNumber.trim().length < 5
+  ) {
+    errors.identityNumber =
+      "Geçersiz Pasaport No (en az 5 karakter).";
+  }
+
+  if (!passenger.birthDate) {
+    errors.birthDate = "Doğum tarihi gereklidir.";
+  } else if (new Date(passenger.birthDate) >= new Date()) {
+    errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+  }
+
+  if (!passenger.email?.trim()) {
+    errors.email = "E-posta gereklidir.";
+  } else if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)
+  ) {
+    errors.email =
+      "Geçersiz e-posta formatı (örn: ad@example.com).";
+  }
+
+  if (!passenger.phone) {
+    errors.phone = "Telefon numarası gereklidir.";
+  } else if (!isValidPhoneNumber(passenger.phone)) {
+    errors.phone =
+      "Ülke formatına uymuyor (geçersiz uzunluk).";
+  }
+
+  return errors;
+};
 
 export default function ReservationFormPanel({
   hotel = {},
@@ -22,183 +90,380 @@ export default function ReservationFormPanel({
   guests = [],
   setGuests,
   termsAccepted = false,
-  setTermsAccepted
+  setTermsAccepted,
 }) {
   const { t } = useTranslation();
 
-  const [expandedGuestId, setExpandedGuestId] = useState('adult-0');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const [reservationResult, setReservationResult] = useState(null);
-
-  // Güvenli Hotel Objesi (Null-Pointer hatalarını önler)
   const safeHotel = hotel || {};
 
-  // Form verilerini yükleme ve düzenleme modu mantığı
+  const [expandedGuestId, setExpandedGuestId] =
+    useState("adult-0");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [reservationResult, setReservationResult] =
+    useState(null);
+
   useEffect(() => {
+    if (typeof setGuests !== "function") return;
+
     try {
-      const passengersList = bookingDetails?.passengers || bookingDetails?.editData?.passengers;
+      const passengersList =
+        bookingDetails?.passengers ||
+        bookingDetails?.editData?.passengers;
 
-      // 1. DÜZENLEME MODU (Formu var olan yolcu bilgileriyle doldur)
-      if (bookingDetails?.editMode && Array.isArray(passengersList) && passengersList.length > 0) {
-        const mappedGuests = passengersList.map((p, i) => ({
-          id: p.id || (p.type === 'CHILD' ? `child-${i}` : `adult-${i}`),
-          type: p.type || (p.age ? 'CHILD' : 'ADULT'),
-          firstName: p.firstName || '',
-          lastName: p.lastName || '',
-          identityNumber: p.identityNumber || p.tcNo || '',
-          email: p.email || '',
-          phone: p.phoneNumber || p.phone || '',
-          age: p.age !== undefined && p.age !== null ? p.age.toString() : ''
-        }));
+      if (
+        bookingDetails?.editMode &&
+        Array.isArray(passengersList) &&
+        passengersList.length > 0
+      ) {
+        const mappedGuests = passengersList.map(
+          (passenger, index) => ({
+            id:
+              passenger.id ||
+              (passenger.type === "CHILD"
+                ? `child-${index}`
+                : `adult-${index}`),
+            type:
+              passenger.type ||
+              (passenger.age !== undefined
+                ? "CHILD"
+                : "ADULT"),
+            firstName: passenger.firstName || "",
+            lastName: passenger.lastName || "",
+            identityNumber:
+              passenger.identityNumber ||
+              passenger.tcNo ||
+              "",
+            email: passenger.email || "",
+            phone:
+              passenger.phoneNumber ||
+              passenger.phone ||
+              "",
+            birthDate: passenger.birthDate || "",
+            gender:
+              passenger.gender ||
+              (passenger.type === "CHILD"
+                ? "CHD"
+                : "MR"),
+            nationality:
+              passenger.nationality || "TR",
+            age:
+              passenger.age !== undefined &&
+                passenger.age !== null
+                ? passenger.age.toString()
+                : "",
+          })
+        );
 
-        if (typeof setGuests === 'function') {
-          setGuests(mappedGuests);
-        }
+        setGuests(mappedGuests);
+        setExpandedGuestId(mappedGuests[0]?.id || "adult-0");
         return;
       }
 
-      // 2. YENİ REZERVASYON MODU (Sıfırdan boş alanlar oluştur)
-      if ((!guests || guests.length === 0) && typeof setGuests === 'function') {
-        const adultCount = parseInt(bookingDetails?.adultCount) || 1;
-        const childCount = parseInt(bookingDetails?.childCount) || 0;
-        const childAges = bookingDetails?.childAges || [];
+      if (!guests || guests.length === 0) {
+        const adultCount =
+          parseInt(bookingDetails?.adultCount, 10) || 1;
+        const childCount =
+          parseInt(bookingDetails?.childCount, 10) || 0;
+        const childAges =
+          bookingDetails?.childAges || [];
 
         const initialGuests = [];
 
-        for (let i = 0; i < adultCount; i++) {
+        for (let index = 0; index < adultCount; index++) {
           initialGuests.push({
-            id: `adult-${i}`,
-            type: 'ADULT',
-            firstName: '',
-            lastName: '',
-            identityNumber: '',
-            email: i === 0 ? '' : undefined,
-            phone: i === 0 ? '' : undefined,
+            id: `adult-${index}`,
+            type: "ADULT",
+            firstName: "",
+            lastName: "",
+            identityNumber: "",
+            email: "",
+            phone: "",
+            birthDate: "",
+            gender: "MR",
+            nationality: "TR",
           });
         }
 
-        for (let i = 0; i < childCount; i++) {
+        for (let index = 0; index < childCount; index++) {
           initialGuests.push({
-            id: `child-${i}`,
-            type: 'CHILD',
-            firstName: '',
-            lastName: '',
-            identityNumber: '',
-            age: childAges[i] !== undefined ? childAges[i].toString() : '',
+            id: `child-${index}`,
+            type: "CHILD",
+            firstName: "",
+            lastName: "",
+            identityNumber: "",
+            email: "",
+            phone: "",
+            birthDate: "",
+            gender: "CHD",
+            nationality: "TR",
+            age:
+              childAges[index] !== undefined
+                ? childAges[index].toString()
+                : "",
           });
         }
+
         setGuests(initialGuests);
+
+        api
+          .get("/api/reservations/prefill")
+          .then((response) => {
+            const data = response.data;
+            if (!data) return;
+
+            setGuests((previousGuests) => {
+              if (
+                !previousGuests ||
+                previousGuests.length === 0
+              ) {
+                return previousGuests;
+              }
+
+              const updatedGuests = [...previousGuests];
+
+              updatedGuests[0] = {
+                ...updatedGuests[0],
+                firstName:
+                  data.firstName ||
+                  updatedGuests[0].firstName,
+                lastName:
+                  data.lastName ||
+                  updatedGuests[0].lastName,
+                email:
+                  data.email ||
+                  updatedGuests[0].email,
+                phone:
+                  data.phoneNumber ||
+                  updatedGuests[0].phone,
+              };
+
+              return updatedGuests;
+            });
+          })
+          .catch(() => {
+            // Prefill isteği başarısız olursa form boş kalır.
+          });
       }
-    } catch (err) {
-      console.error("ReservationFormPanel useEffect hatası:", err);
+    } catch (error) {
+      console.error(
+        "ReservationFormPanel useEffect hatası:",
+        error
+      );
     }
   }, [
     bookingDetails?.editMode,
     bookingDetails?.reservationId,
-    bookingDetails?.passengers?.length
+    bookingDetails?.passengers,
+    bookingDetails?.editData?.passengers,
+    bookingDetails?.adultCount,
+    bookingDetails?.childCount,
+    hotel,
+    guests,
+    setGuests,
   ]);
 
   const handleGuestChange = (index, field, value) => {
-    if (typeof setGuests !== 'function') return;
-    setGuests(prev => {
-      const updated = [...(prev || [])];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
+    if (typeof setGuests !== "function") return;
+
+    setGuests((previousGuests) => {
+      const updatedGuests = [...(previousGuests || [])];
+
+      updatedGuests[index] = {
+        ...updatedGuests[index],
+        [field]: value,
+      };
+
+      return updatedGuests;
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const locationParts = [
+    safeHotel?.city,
+    safeHotel?.town,
+    safeHotel?.village,
+    safeHotel?.region,
+  ].filter(Boolean);
+
+  const uniqueLocationParts = [
+    ...new Set(locationParts),
+  ];
+
+  const locationText =
+    uniqueLocationParts.length > 0
+      ? uniqueLocationParts.join(", ")
+      : "";
+
+  const formattedPrice =
+    safeHotel?.price != null &&
+      !Number.isNaN(Number(safeHotel.price))
+      ? new Intl.NumberFormat("tr-TR", {
+        style: "currency",
+        currency: safeHotel.currency || "TRY",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(Number(safeHotel.price))
+      : `${safeHotel?.price || 0} ${safeHotel?.currency || "TRY"
+      }`;
+
+  const roomPriceValue =
+    safeHotel?.price != null &&
+      !Number.isNaN(Number(safeHotel.price))
+      ? Number(safeHotel.price) * 0.92
+      : null;
+
+  const taxValue =
+    safeHotel?.price != null &&
+      !Number.isNaN(Number(safeHotel.price))
+      ? Number(safeHotel.price) * 0.08
+      : null;
+
+  const formatSubPrice = (value) => {
+    if (value === null) return "-";
+
+    return new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: safeHotel?.currency || "TRY",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const adultCount =
+    parseInt(bookingDetails?.adultCount, 10) || 1;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
     if (!termsAccepted) {
-      alert("Lütfen şartlar ve koşulları kabul ediniz.");
+      alert(
+        "Lütfen şartlar ve koşulları kabul ediniz."
+      );
       return;
     }
 
-    const primaryGuest = guests?.[0];
+    for (
+      let index = 0;
+      index < (guests || []).length;
+      index++
+    ) {
+      const guest = guests[index];
+      const errors = getPassengerErrors(guest);
+      const errorKeys = Object.keys(errors);
+
+      if (errorKeys.length > 0) {
+        const guestName =
+          guest.firstName && guest.lastName
+            ? `${guest.firstName} ${guest.lastName}`
+            : `${index + 1}. Yolcu`;
+
+        alert(
+          `${guestName} bilgilerinde hata var: ${errors[errorKeys[0]]
+          }`
+        );
+        return;
+      }
+    }
+
     const payload = {
-      type: 'HOTEL',
-      itemName: safeHotel?.name || safeHotel?.hotelId || 'Otel Rezervasyonu',
-      destination: locationText || safeHotel?.city || safeHotel?.region || '-',
+      type: "HOTEL",
+      itemName:
+        safeHotel?.name ||
+        safeHotel?.hotelId ||
+        "Otel Rezervasyonu",
+      destination:
+        locationText ||
+        safeHotel?.city ||
+        safeHotel?.region ||
+        "-",
       startDate: toDateOnly(bookingDetails?.checkIn),
       endDate: toDateOnly(bookingDetails?.checkOut),
       totalPrice: Number(safeHotel?.price) || 0,
-      currency: safeHotel?.currency || 'TRY',
-      passengers: (guests || []).map((g) => ({
-        firstName: g.firstName || '',
-        lastName: g.lastName || '',
-        email: g.email || primaryGuest?.email || '',
-        phoneNumber: g.phone || primaryGuest?.phone || '',
-        identityNumber: g.identityNumber || '',
+      currency: safeHotel?.currency || "TRY",
+      passengers: (guests || []).map((guest) => ({
+        firstName: guest.firstName || "",
+        lastName: guest.lastName || "",
+        email: guest.email || "",
+        phoneNumber: guest.phone || "",
+        identityNumber: guest.identityNumber || "",
+        birthDate: guest.birthDate || null,
+        gender:
+          guest.gender ||
+          (guest.type === "CHILD" ? "CHD" : "MR"),
+        nationality: guest.nationality || "TR",
       })),
     };
 
-    setSubmitError('');
+    setSubmitError("");
     setIsSubmitting(true);
+
     try {
       let response;
-      if (bookingDetails?.editMode && bookingDetails?.reservationId) {
-        response = await api.put(`/api/reservations/${bookingDetails.reservationId}`, payload);
+
+      if (
+        bookingDetails?.editMode &&
+        bookingDetails?.reservationId
+      ) {
+        response = await api.put(
+          `/api/reservations/${bookingDetails.reservationId}`,
+          payload
+        );
       } else {
-        response = await api.post('/api/reservations', payload);
+        response = await api.post(
+          "/api/reservations",
+          payload
+        );
       }
+
       setReservationResult(response.data);
-    } catch (err) {
-      console.error('Reservation process failed', err);
-      setSubmitError(t('reservation_confirm_error'));
+    } catch (error) {
+      console.error(
+        "Reservation process failed",
+        error
+      );
+      setSubmitError(
+        t("reservation_confirm_error")
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formattedPrice = safeHotel?.price != null && !isNaN(safeHotel.price)
-    ? new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: safeHotel.currency || 'TRY',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(safeHotel.price)
-    : `${safeHotel?.price || 0} ${safeHotel?.currency || 'TRY'}`;
+  if (!hotel) return null;
 
-  const roomPriceValue = safeHotel?.price != null && !isNaN(safeHotel.price) ? safeHotel.price * 0.92 : null;
-  const taxValue = safeHotel?.price != null && !isNaN(safeHotel.price) ? safeHotel.price * 0.08 : null;
-
-  const formatSubPrice = (val) => {
-    if (val === null) return "-";
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: safeHotel?.currency || 'TRY',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(val);
-  };
-
-  const locationParts = [safeHotel?.city, safeHotel?.town, safeHotel?.village, safeHotel?.region].filter(Boolean);
-  const uniqueLocationParts = [...new Set(locationParts)];
-  const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
-
-  const adultCount = parseInt(bookingDetails?.adultCount) || 1;
-
-  // Başarılı Sonuç Ekranı
   if (reservationResult) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div className="flex flex-col h-auto max-h-[90vh] bg-slate-50 font-sans w-full max-w-xl rounded-2xl relative items-center justify-center p-8 text-center shadow-2xl overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col items-center justify-center overflow-y-auto rounded-2xl bg-slate-50 p-8 text-center font-sans shadow-2xl dark:bg-slate-900">
           <button
+            type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/10 hover:bg-black/20 text-slate-600 rounded-full transition-colors"
+            className="absolute right-4 top-4 rounded-full bg-black/10 p-2 text-slate-600 transition-colors hover:bg-black/20 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
           >
             <X size={20} />
           </button>
-          <CheckCircle2 size={48} className="text-emerald-500 mb-4" />
-          <p className="text-slate-800 font-medium mb-6 max-w-sm">
-            {t('reservation_confirm_success', { number: reservationResult.reservationNumber })}
+
+          <CheckCircle2
+            size={48}
+            className="mb-4 text-emerald-500"
+          />
+
+          <p className="mb-6 max-w-sm font-medium text-slate-800 dark:text-slate-200">
+            {bookingDetails?.editMode
+              ? "Rezervasyon başarıyla güncellendi."
+              : t("reservation_confirm_success", {
+                number:
+                  reservationResult.reservationNumber ||
+                  reservationResult.id,
+              })}
           </p>
+
           <button
+            type="button"
             onClick={onClose}
-            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl shadow-md transition-all"
+            className="rounded-xl bg-blue-500 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-600"
           >
-            {t('reservation_ok')}
+            {t("reservation_ok")}
           </button>
         </div>
       </div>
@@ -206,59 +471,81 @@ export default function ReservationFormPanel({
   }
 
   return (
-    /* fixed inset-0 z-50: Panelin her zaman ekranın en üstünde görünmesini garanti eder */
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="flex flex-col h-full bg-slate-50 font-sans w-full max-w-2xl relative shadow-2xl overflow-hidden">
-
-        {/* Header / Thumbnail */}
-        <div className="relative h-48 md:h-64 flex-shrink-0 bg-slate-800">
-          {(safeHotel?.thumbnailFull || safeHotel?.thumbnail) ? (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
+      <div className="relative flex h-full w-full max-w-2xl flex-col overflow-hidden bg-slate-50 font-sans shadow-2xl dark:bg-slate-900">
+        <div className="relative h-48 flex-shrink-0 bg-slate-800 md:h-64">
+          {safeHotel?.thumbnailFull ||
+            safeHotel?.thumbnail ? (
             <img
-              src={safeHotel.thumbnailFull || safeHotel.thumbnail}
-              alt={safeHotel.name || "Hotel"}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
+              src={
+                safeHotel.thumbnailFull ||
+                safeHotel.thumbnail
+              }
+              alt={
+                safeHotel.name ||
+                safeHotel.hotelId ||
+                "Hotel"
+              }
+              className="h-full w-full object-cover"
+              onError={(event) => {
+                event.currentTarget.style.display =
+                  "none";
               }}
             />
           ) : null}
 
-          {/* Back Button */}
           {onBack && (
             <button
+              type="button"
               onClick={onBack}
-              className="absolute top-4 left-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md flex items-center gap-1 pr-4 text-sm font-semibold"
+              className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-black/60 p-2 pr-4 text-sm font-semibold text-white transition-colors hover:bg-black/80"
             >
-              <ArrowLeft size={18} /> Geri
+              <ArrowLeft size={18} />
+              Geri
             </button>
           )}
 
-          {/* Close Button */}
           <button
+            type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md cursor-pointer"
+            className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80"
           >
             <X size={20} />
           </button>
 
-          {/* Gradient Overlay */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
-            <div className="mb-1 text-amber-400 text-xs font-bold uppercase tracking-widest drop-shadow-md">
-              {bookingDetails?.editMode ? 'Rezervasyon Düzenleme' : 'Rezervasyon Detayları'}
+            <div className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400 drop-shadow-md">
+              {bookingDetails?.editMode
+                ? "Rezervasyon Düzenleme"
+                : "Rezervasyon Detayları"}
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md leading-tight">
-              {safeHotel?.name || safeHotel?.hotelId || "Otel Rezervasyonu"}
+
+            <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md md:text-3xl">
+              {safeHotel?.name ||
+                safeHotel?.hotelId ||
+                "Otel Rezervasyonu"}
             </h2>
-            <div className="flex items-center gap-2 mt-2">
+
+            <div className="mt-2 flex items-center gap-2">
               {safeHotel?.stars && (
-                <span className="text-amber-400 text-sm flex-shrink-0 flex items-center">
-                  {safeHotel.stars} <Star size={14} className="ml-1 fill-amber-400" />
+                <span className="flex flex-shrink-0 items-center text-sm text-amber-400">
+                  {safeHotel.stars}
+                  <Star
+                    size={14}
+                    className="ml-1 fill-amber-400"
+                  />
                 </span>
               )}
+
               {locationText && (
-                <span className="text-white/90 text-sm flex items-center gap-1">
-                  <span className="text-white/40">•</span>
-                  <MapPin size={14} className="ml-1 opacity-80" />
+                <span className="flex items-center gap-1 text-sm text-white/90">
+                  <span className="text-white/40">
+                    •
+                  </span>
+                  <MapPin
+                    size={14}
+                    className="ml-1 opacity-80"
+                  />
                   {locationText}
                 </span>
               )}
@@ -266,209 +553,513 @@ export default function ReservationFormPanel({
           </div>
         </div>
 
-        {/* Form Body */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 max-w-3xl mx-auto space-y-6">
-            <form id="reservation-form" onSubmit={handleSubmit} className="space-y-6">
-
-              {/* Misafirler */}
+          <div className="mx-auto max-w-3xl space-y-6 p-6">
+            <form
+              id="reservation-form"
+              onSubmit={handleSubmit}
+              className="space-y-6"
+            >
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">Konuk Bilgileri</h3>
-                {guests && guests.map((guest, index) => {
-                  const isExpanded = expandedGuestId === guest.id;
-                  const guestTitle = guest.type === 'ADULT'
-                    ? `${index + 1}. Yetişkin`
-                    : `${index - adultCount + 1}. Çocuk`;
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Konuk Bilgileri
+                </h3>
 
-                  return (
-                    <div key={guest.id || index} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
-                      <button
-                        type="button"
-                        onClick={() => setExpandedGuestId(isExpanded ? null : guest.id)}
-                        className="w-full px-5 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
+                {(guests || []).map(
+                  (guest, index) => {
+                    const isExpanded =
+                      expandedGuestId === guest.id;
+
+                    const guestTitle =
+                      guest.type === "ADULT"
+                        ? `${index + 1}. Yetişkin`
+                        : `${index - adultCount + 1
+                        }. Çocuk`;
+
+                    const errors =
+                      getPassengerErrors(guest);
+
+                    return (
+                      <div
+                        key={guest.id || index}
+                        className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 dark:border-slate-800 dark:bg-slate-800"
                       >
-                        <div className="flex items-center gap-3">
-                          {guest.type === 'ADULT' ? <User size={18} className="text-blue-500" /> : <Baby size={18} className="text-amber-500" />}
-                          <span className="font-bold text-slate-800 text-sm">{guestTitle}</span>
-                          {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedGuestId(
+                              isExpanded
+                                ? null
+                                : guest.id
+                            )
+                          }
+                          className="flex w-full items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+                        >
+                          <div className="flex items-center gap-3">
+                            {guest.type ===
+                              "ADULT" ? (
+                              <User
+                                size={18}
+                                className="text-blue-500"
+                              />
+                            ) : (
+                              <Baby
+                                size={18}
+                                className="text-amber-500"
+                              />
+                            )}
 
-                          {!isExpanded && (guest.firstName || guest.lastName) && (
-                            <span className="text-sm text-slate-500 ml-2 border-l border-slate-200 pl-4">
-                              {guest.firstName} {guest.lastName}
+                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              {guestTitle}
                             </span>
-                          )}
-                        </div>
-                        <div className="text-slate-400">
-                          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                        </div>
-                      </button>
 
-                      {isExpanded && (
-                        <div className="p-5 border-t border-slate-100 bg-slate-50/50 space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">Ad</label>
-                              <input
-                                required
-                                type="text"
-                                value={guest.firstName || ''}
-                                onChange={(e) => handleGuestChange(index, 'firstName', e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                              />
-                            </div>
-                            <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">Soyad</label>
-                              <input
-                                required
-                                type="text"
-                                value={guest.lastName || ''}
-                                onChange={(e) => handleGuestChange(index, 'lastName', e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                              />
-                            </div>
+                            {index === 0 && (
+                              <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                İletişim
+                              </span>
+                            )}
+
+                            {!isExpanded &&
+                              (guest.firstName ||
+                                guest.lastName) && (
+                                <span className="ml-2 border-l border-slate-200 pl-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                  {guest.firstName}{" "}
+                                  {guest.lastName}
+                                </span>
+                              )}
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className={guest.type === 'CHILD' ? "col-span-1" : "col-span-2"}>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                                <ShieldCheck size={12} /> TC Kimlik No / Pasaport
-                              </label>
-                              <input
-                                required
-                                type="text"
-                                value={guest.identityNumber || ''}
-                                onChange={(e) => handleGuestChange(index, 'identityNumber', e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                          <div className="text-slate-400 dark:text-slate-500">
+                            {isExpanded ? (
+                              <ChevronUp size={20} />
+                            ) : (
+                              <ChevronDown
+                                size={20}
                               />
+                            )}
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="space-y-4 border-t border-slate-100 bg-slate-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/40">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Ad
+                                </label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={
+                                    guest.firstName ||
+                                    ""
+                                  }
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "firstName",
+                                      event.target.value
+                                    )
+                                  }
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.firstName
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    }`}
+                                />
+                                {errors.firstName && (
+                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                    {
+                                      errors.firstName
+                                    }
+                                  </span>
+                                )}
+                              </div>
+
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Soyad
+                                </label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={
+                                    guest.lastName || ""
+                                  }
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "lastName",
+                                      event.target.value
+                                    )
+                                  }
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.lastName
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    }`}
+                                />
+                                {errors.lastName && (
+                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                    {
+                                      errors.lastName
+                                    }
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            {guest.type === 'CHILD' && (
-                              <div className="col-span-1">
-                                <label className="block text-xs font-semibold text-slate-500 mb-1">Yaş</label>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Cinsiyet
+                                </label>
+                                <select
+                                  required
+                                  value={
+                                    guest.gender ||
+                                    (guest.type ===
+                                      "CHILD"
+                                      ? "CHD"
+                                      : "MR")
+                                  }
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "gender",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                >
+                                  <option value="MR">
+                                    Bay (Mr.)
+                                  </option>
+                                  <option value="MRS">
+                                    Bayan (Mrs.)
+                                  </option>
+                                  <option value="CHD">
+                                    Çocuk (Child)
+                                  </option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Doğum Tarihi
+                                </label>
+                                <input
+                                  required
+                                  type="date"
+                                  max={new Date()
+                                    .toISOString()
+                                    .split("T")[0]}
+                                  value={
+                                    guest.birthDate ||
+                                    ""
+                                  }
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "birthDate",
+                                      event.target.value
+                                    )
+                                  }
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    }`}
+                                />
+                                {errors.birthDate && (
+                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                    {
+                                      errors.birthDate
+                                    }
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Uyruk
+                                </label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={
+                                    guest.nationality ||
+                                    "TR"
+                                  }
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "nationality",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  <ShieldCheck
+                                    size={12}
+                                  />
+                                  TC Kimlik No / Pasaport
+                                </label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={
+                                    guest.identityNumber ||
+                                    ""
+                                  }
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "identityNumber",
+                                      event.target.value
+                                    )
+                                  }
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    }`}
+                                />
+                                {errors.identityNumber && (
+                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                    {
+                                      errors.identityNumber
+                                    }
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {guest.type === "CHILD" && (
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  Yaş
+                                </label>
                                 <input
                                   required
                                   type="number"
                                   min="0"
                                   max="17"
-                                  value={guest.age || ''}
-                                  onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
-                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                                  value={guest.age || ""}
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "age",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                 />
                               </div>
                             )}
-                          </div>
 
-                          {index === 0 && (
-                            <div className="pt-2 border-t border-slate-200/60 mt-4 space-y-4">
-                              <div>
-                                <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                                  <Mail size={12} /> E-posta
-                                </label>
-                                <input
-                                  required
-                                  type="email"
-                                  value={guest.email || ''}
-                                  onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
-                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                                />
+                            {index === 0 && (
+                              <div className="grid grid-cols-1 gap-4 border-t border-slate-200/60 pt-4 dark:border-slate-700 md:grid-cols-2">
+                                <div>
+                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                    <Mail size={12} />
+                                    E-posta
+                                  </label>
+                                  <input
+                                    required
+                                    type="email"
+                                    value={
+                                      guest.email || ""
+                                    }
+                                    onChange={(
+                                      event
+                                    ) =>
+                                      handleGuestChange(
+                                        index,
+                                        "email",
+                                        event.target
+                                          .value
+                                      )
+                                    }
+                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.email
+                                        ? "border-red-500 ring-1 ring-red-500"
+                                        : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                      }`}
+                                  />
+                                  {errors.email && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                      {errors.email}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                    <Phone size={12} />
+                                    Telefon
+                                  </label>
+                                  <PhoneInput
+                                    international
+                                    defaultCountry="TR"
+                                    value={
+                                      guest.phone || ""
+                                    }
+                                    onChange={(value) =>
+                                      handleGuestChange(
+                                        index,
+                                        "phone",
+                                        value || ""
+                                      )
+                                    }
+                                    className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
+                                        ? "border-red-500 ring-1 ring-red-500"
+                                        : "border-slate-200 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"
+                                      }`}
+                                    numberInputProps={{
+                                      required: true,
+                                      className:
+                                        "ml-2 w-full border-0 bg-transparent py-1 text-slate-800 outline-none focus:ring-0 dark:text-white",
+                                    }}
+                                  />
+                                  {errors.phone && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                      {errors.phone}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <div>
-                                <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                                  <Phone size={12} /> Telefon
-                                </label>
-                                <PhoneInput
-                                  international
-                                  defaultCountry="TR"
-                                  value={guest.phone || ''}
-                                  onChange={(val) => handleGuestChange(index, 'phone', val)}
-                                  className="flex items-center w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-colors"
-                                  numberInputProps={{
-                                    required: true,
-                                    className: 'bg-transparent border-0 outline-none w-full text-slate-800 focus:ring-0 ml-2 py-1',
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                )}
               </div>
 
-              {/* İptal Politikası */}
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
-                <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30">
+                <Info
+                  size={20}
+                  className="mt-0.5 flex-shrink-0 text-blue-500"
+                />
                 <div>
-                  <h4 className="font-bold text-sm text-blue-900">İptal Politikası</h4>
-                  <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                  <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300">
+                    İptal Politikası
+                  </h4>
+                  <p className="mt-1 text-xs leading-relaxed text-blue-700 dark:text-slate-300">
                     {safeHotel?.isRefundable === true
                       ? "Bu rezervasyon ücretsiz iptal edilebilir."
-                      : safeHotel?.isRefundable === false
+                      : safeHotel?.isRefundable ===
+                        false
                         ? "Bu rezervasyon iade edilemez."
                         : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
                   </p>
                 </div>
               </div>
 
-              {/* Fiyat Detayı */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Fiyat Özeti</h3>
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-800">
+                <h3 className="mb-4 border-b border-slate-100 pb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:border-slate-700 dark:text-slate-200">
+                  Fiyat Özeti
+                </h3>
+
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between items-center text-slate-600">
-                    <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
-                    <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                    <span>
+                      Oda Fiyatı (
+                      {bookingDetails?.guests ||
+                        "1 Oda"}
+                      )
+                    </span>
+                    <span className="font-medium">
+                      {formatSubPrice(
+                        roomPriceValue
+                      )}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-600">
+
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                     <span>Vergiler ve Harçlar</span>
-                    <span className="font-medium">{formatSubPrice(taxValue)}</span>
+                    <span className="font-medium">
+                      {formatSubPrice(taxValue)}
+                    </span>
                   </div>
-                  <div className="pt-3 mt-3 border-t border-slate-100 flex justify-between items-end">
-                    <span className="font-bold text-slate-800">Toplam</span>
-                    <span className="text-xl font-extrabold text-[#3B82F6]">{formattedPrice}</span>
+
+                  <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      Toplam
+                    </span>
+                    <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">
+                      {formattedPrice}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Koşullar */}
               <div className="flex items-start gap-3 p-2">
                 <input
                   type="checkbox"
                   id="terms"
                   required
-                  checked={!!termsAccepted}
-                  onChange={(e) => setTermsAccepted && setTermsAccepted(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                  checked={Boolean(termsAccepted)}
+                  onChange={(event) =>
+                    setTermsAccepted?.(
+                      event.target.checked
+                    )
+                  }
+                  className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 bg-slate-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
                 />
-                <label htmlFor="terms" className="text-xs text-slate-600 leading-relaxed cursor-pointer select-none">
-                  <span className="text-blue-600 hover:underline">Satış Sözleşmesini</span> ve <span className="text-blue-600 hover:underline">İptal/İade Koşullarını</span> okudum, anladım ve kabul ediyorum.
+
+                <label
+                  htmlFor="terms"
+                  className="cursor-pointer select-none text-xs leading-relaxed text-slate-600 dark:text-slate-400"
+                >
+                  <span className="text-blue-600 hover:underline dark:text-blue-400">
+                    Satış Sözleşmesini
+                  </span>{" "}
+                  ve{" "}
+                  <span className="text-blue-600 hover:underline dark:text-blue-400">
+                    İptal/İade Koşullarını
+                  </span>{" "}
+                  okudum, anladım ve kabul ediyorum.
                 </label>
               </div>
-
             </form>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 md:p-6 bg-white border-t border-slate-200 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sticky bottom-0 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col w-full md:w-auto text-center md:text-left">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Toplam Tutar</span>
-            <span className="text-2xl font-extrabold text-[#3B82F6] leading-none">{formattedPrice}</span>
-            {submitError && <span className="text-xs text-red-600 font-medium mt-1">{submitError}</span>}
+        <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:border-slate-800 dark:bg-slate-900 md:flex-row md:p-6">
+          <div className="flex w-full flex-col text-center md:w-auto md:text-left">
+            <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Toplam Tutar
+            </span>
+
+            <span className="text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
+              {formattedPrice}
+            </span>
+
+            {submitError && (
+              <span className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                {submitError}
+              </span>
+            )}
           </div>
+
           <button
             type="submit"
             form="reservation-form"
             disabled={!termsAccepted || isSubmitting}
-            className="w-full md:w-auto md:min-w-[240px] py-3.5 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 md:w-auto md:min-w-[240px]"
           >
             <ShieldCheck size={18} />
             {isSubmitting
-              ? t('reservation_submitting')
-              : (bookingDetails?.editMode ? 'Güncellemeyi Onayla' : 'Rezervasyonu Onayla')}
+              ? t("reservation_submitting")
+              : bookingDetails?.editMode
+                ? "Güncellemeyi Onayla"
+                : "Rezervasyonu Onayla"}
           </button>
         </div>
-
       </div>
     </div>
   );

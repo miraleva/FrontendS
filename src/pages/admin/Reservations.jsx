@@ -102,16 +102,16 @@ export default function Reservations() {
             {/* Sayfa başlığı */}
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                         Reservations
                     </h1>
 
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
                         Veritabanındaki gerçek rezervasyon kayıtlarını görüntüleyin.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-xl bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-600">
+                <div className="flex items-center gap-2 rounded-xl bg-orange-50 dark:bg-orange-950/20 px-4 py-3 text-sm font-semibold text-orange-600 dark:text-orange-400">
                     <CalendarCheck size={18} />
 
                     {reservations.length} rezervasyon
@@ -120,7 +120,7 @@ export default function Reservations() {
 
             {/* Hata mesajı */}
             {error && (
-                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 p-4 text-sm text-red-700 dark:text-red-300">
                     <AlertCircle size={18} />
 
                     {error}
@@ -128,13 +128,13 @@ export default function Reservations() {
             )}
 
             {/* Rezervasyon tablosu */}
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
                 {/* Arama alanı */}
-                <div className="border-b border-gray-100 p-5">
+                <div className="border-b border-gray-100 dark:border-slate-800 p-5">
                     <div className="relative max-w-xl">
                         <Search
                             size={18}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
                         />
 
                         <input
@@ -142,14 +142,14 @@ export default function Reservations() {
                             placeholder="Rezervasyon no, ürün veya destinasyon ara..."
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
-                            className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                            className="w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-3 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-950"
                         />
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[1100px] text-left">
-                        <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                        <thead className="bg-gray-50 dark:bg-slate-950 text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-800">
                             <tr>
                                 <th className="px-6 py-4">Rezervasyon No</th>
                                 <th className="px-6 py-4">Tip</th>
@@ -167,19 +167,19 @@ export default function Reservations() {
                             {filteredReservations.map((reservation) => (
                                 <tr
                                     key={reservation.id}
-                                    className="border-t border-gray-100 text-sm text-gray-600 hover:bg-gray-50"
+                                    className="border-t border-gray-100 dark:border-slate-800 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
                                 >
-                                    <td className="px-6 py-4 font-semibold text-gray-800">
+                                    <td className="px-6 py-4 font-semibold text-gray-800 dark:text-slate-200">
                                         {reservation.reservationNumber || "-"}
                                     </td>
 
                                     <td className="px-6 py-4">
-                                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                        <span className="rounded-full bg-blue-50 dark:bg-blue-950/40 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
                                             {reservation.type || "-"}
                                         </span>
                                     </td>
 
-                                    <td className="px-6 py-4 font-medium text-gray-800">
+                                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-slate-200">
                                         {reservation.itemName || "-"}
                                     </td>
 
@@ -201,7 +201,7 @@ export default function Reservations() {
                                             : 0}
                                     </td>
 
-                                    <td className="px-6 py-4 font-semibold text-gray-900">
+                                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
                                         {formatPrice(
                                             reservation.totalPrice,
                                             reservation.currency
@@ -211,7 +211,7 @@ export default function Reservations() {
                                     <td className="px-6 py-4">
                                         <button
                                             type="button"
-                                            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-100"
+                                            className="rounded-lg border border-gray-200 dark:border-slate-800 p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                                             aria-label="Rezervasyon detayını görüntüle"
                                         >
                                             <Eye size={16} />
@@ -224,7 +224,7 @@ export default function Reservations() {
                 </div>
 
                 {!error && filteredReservations.length === 0 && (
-                    <div className="p-10 text-center text-sm text-gray-500">
+                    <div className="p-10 text-center text-sm text-gray-500 dark:text-slate-400">
                         Rezervasyon bulunamadı.
                     </div>
                 )}
