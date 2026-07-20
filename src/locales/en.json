@@ -57,6 +57,7 @@
   "unit_person": "Person(s)",
   "unit_adult": "Adult",
   "unit_child": "Child",
+  "unit_infant": "Infant",
   "welcome_title": "Welcome Back To Sanny",
   "welcome_subtitle": "Chat with Sanny",
   "email_label": "EMAIL ADDRESS",

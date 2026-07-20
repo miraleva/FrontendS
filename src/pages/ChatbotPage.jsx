@@ -36,11 +36,14 @@ function formatPrice(price) {
 // TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
 // ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
 // gösterilir.
-function formatGuestCount(adultCount, childCount, passengerCount, t) {
+function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount) {
   if (adultCount) {
     const parts = [`${adultCount} ${t("unit_adult")}`];
     if (childCount) {
       parts.push(`${childCount} ${t("unit_child")}`);
+    }
+    if (infantCount) {
+      parts.push(`${infantCount} ${t("unit_infant")}`);
     }
     return parts.join(", ");
   }
@@ -64,6 +67,46 @@ function formatFlightDateTime(value) {
   });
 }
 
+// TourVisio GetProductInfo yanıtını HotelDetailPanel'in beklediği düz alanlara çevirir
+// (fotoğraf galerisi, açıklama metni, olanaklar/temalar isim listeleri).
+function mapProductInfoToHotelDetail(productInfo) {
+  const hotel = productInfo?.body?.hotel;
+  if (!hotel) return {};
+
+  const photoUrls = new Set();
+  if (hotel.mediaFiles) {
+    hotel.mediaFiles.forEach(m => photoUrls.add(m.urlFull || m.url));
+  }
+  (hotel.seasons || []).forEach(season => {
+    (season.mediaFiles || []).forEach(m => photoUrls.add(m.urlFull || m.url));
+  });
+
+  let description = "";
+  const firstSeason = (hotel.seasons || [])[0];
+  if (firstSeason?.textCategories) {
+    const texts = firstSeason.textCategories
+      .flatMap(cat => cat.presentations || [])
+      .map(p => p.text)
+      .filter(Boolean);
+    description = texts.join("\n\n");
+  }
+
+  const facilities = new Set();
+  if (firstSeason?.facilityCategories) {
+    firstSeason.facilityCategories.forEach(cat => {
+      (cat.facilities || []).forEach(f => { if (f.name) facilities.add(f.name); });
+    });
+  }
+
+  return {
+    address: hotel.address || null,
+    photos: [...photoUrls].filter(Boolean),
+    description: description || null,
+    facilities: [...facilities],
+    themes: (hotel.themes || []).map(t => t.name).filter(Boolean),
+  };
+}
+
 function formatBaggage(baggage, t) {
   if (!baggage || baggage === "0kg" || baggage === "0 kg") {
     return t ? t("baggage_not_included") : "Baggage not included";
@@ -83,6 +126,7 @@ export default function Index() {
   // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [selectedFlight, setSelectedFlight] = useState(null);
+  const [hotelDetailLoading, setHotelDetailLoading] = useState(false);
 
   // --- Arama Tipi ("hotel" | "flight") ---
   const [searchType, setSearchType] = useState("hotel");
@@ -191,7 +235,7 @@ export default function Index() {
                 city: c.locationOrHotelName || prev.city,
                 checkIn: c.checkInDate || c.departureDate || prev.checkIn,
                 checkOut: c.checkOutDate || prev.checkOut,
-                guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t) || prev.guests,
+                guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || prev.guests,
                 departureCity: c.departureLocation || prev.departureCity,
                 arrivalCity: c.arrivalLocation || prev.arrivalCity,
                 returnDate: c.returnDate || prev.returnDate
@@ -341,7 +385,7 @@ export default function Index() {
           city: c.locationOrHotelName || prev.city,
           checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
           checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
-          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t) || extractedFromQuery.guests || prev.guests,
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || prev.guests,
           departureCity: c.departureLocation || prev.departureCity,
           arrivalCity: c.arrivalLocation || prev.arrivalCity,
           returnDate: c.returnDate || prev.returnDate
@@ -760,7 +804,7 @@ export default function Index() {
                                   return (
                                     <button
                                       key={idx}
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setSelectedHotel(result);
                                         setActivePanel('hotelDetail');
                                         setBookingDetails(prev => ({
@@ -768,6 +812,26 @@ export default function Index() {
                                           hotelName: result.name || result.hotelId,
                                           price: formattedPrice
                                         }));
+
+                                        if (result.hotelId) {
+                                          setHotelDetailLoading(true);
+                                          try {
+                                            const detailResponse = await api.post('/api/hotels/productinfo', {
+                                              productType: 2,
+                                              ownerProvider: result.provider || 2,
+                                              product: result.hotelId,
+                                              culture: 'tr-TR'
+                                            });
+                                            const mappedDetail = mapProductInfoToHotelDetail(detailResponse.data);
+                                            setSelectedHotel(prev =>
+                                              prev && prev.hotelId === result.hotelId ? { ...prev, ...mappedDetail } : prev
+                                            );
+                                          } catch (err) {
+                                            console.log("Otel detayları yüklenemedi:", err);
+                                          } finally {
+                                            setHotelDetailLoading(false);
+                                          }
+                                        }
                                       }}
                                       className={cn(
                                         "w-full text-left bg-white border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
@@ -928,16 +992,17 @@ export default function Index() {
               className="fixed inset-0 bg-black/40 z-[100] transition-opacity backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
               onClick={() => setActivePanel(null)}
             >
-              <div 
-                className="w-full max-w-[850px] max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
+              <div
+                className="w-full max-w-[850px] h-[85vh] max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
                 onClick={(e) => e.stopPropagation()}
               >
                 {activePanel === 'hotelDetail' && (
-                  <HotelDetailPanel 
-                    hotel={selectedHotel} 
-                    bookingDetails={bookingDetails} 
-                    onClose={() => setActivePanel(null)} 
-                    onProceed={() => setActivePanel('reservation')} 
+                  <HotelDetailPanel
+                    hotel={selectedHotel}
+                    bookingDetails={bookingDetails}
+                    loadingDetail={hotelDetailLoading}
+                    onClose={() => setActivePanel(null)}
+                    onProceed={() => setActivePanel('reservation')}
                   />
                 )}
                 {activePanel === 'reservation' && (
