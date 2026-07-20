@@ -17,6 +17,7 @@ import {
   Moon   // <-- YENİ: İkon eklendi
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
+import LanguageSelector from './LanguageSelector';
 import api from '../services/api';
 import { useTheme } from './ThemeContext.jsx'; // <-- YENİ: ThemeContext import edildi
 
@@ -321,39 +322,39 @@ export default function ChatSidebar({
       <hr className="border-border dark:border-slate-800 mx-4" />
 
       {/* 8. Bottom Footer */}
-      <div className="p-4 flex items-center justify-between gap-1">
+      <div className="p-3 flex items-center justify-between gap-1">
         <div
           onClick={() => navigate('/profile')}
-          // YENİ: location.pathname kontrolü dark mod ile uyumlu hale getirildi
-          className={`flex items-center gap-3 cursor-pointer p-1.5 -m-1.5 rounded-lg transition-colors min-w-0 flex-1 ${location.pathname === '/profile' ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+          className={`flex items-center gap-2.5 cursor-pointer p-1.5 rounded-lg transition-colors min-w-0 flex-1 ${location.pathname === '/profile' ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
             }`}
           title="View Profile"
         >
-          <div className="w-9 h-9 rounded-full bg-primary/10 dark:bg-blue-500/10 border border-primary/20 dark:border-blue-500/20 flex items-center justify-center font-bold text-primary dark:text-blue-400 text-sm shadow-sm select-none">
+          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-blue-500/10 border border-primary/20 dark:border-blue-500/20 flex items-center justify-center font-bold text-primary dark:text-blue-400 text-xs shadow-sm flex-shrink-0 select-none">
             {displayUsername.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex flex-col min-w-0">
-            {/* YENİ: text-text-primary dark:text-slate-200 */}
-            <span className="text-sm font-semibold text-text-primary dark:text-slate-200 truncate max-w-[100px]" title={username}>
+            <span className="text-xs font-semibold text-text-primary dark:text-slate-200 truncate max-w-[80px]" title={username}>
               {displayUsername}
             </span>
           </div>
         </div>
 
-        {/* ======================================================== */}
-        {/* YENİ EKLENEN BÖLÜM: DİL DUYARLI TEMA DEĞİŞTİRME BUTONU       */}
-        {/* ======================================================== */}
+        {/* Dil Seçimi (LanguageSelector - Dropup) */}
+        <LanguageSelector direction="up" className="relative" />
+
+        {/* Tema Değiştirme Butonu */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-primary dark:hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
+          className="p-2 rounded-lg text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-primary dark:hover:text-slate-200 transition-colors focus:outline-none cursor-pointer flex-shrink-0"
           title={theme === 'light' ? t('theme_dark') : t('theme_light')}
         >
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
+        {/* Ayarlar Butonu */}
         <button
           onClick={() => navigate('/settings')}
-          className={`p-2 rounded-lg transition-colors focus:outline-none ${location.pathname === '/settings'
+          className={`p-2 rounded-lg transition-colors focus:outline-none flex-shrink-0 ${location.pathname === '/settings'
             ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-400'
             : 'text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-primary dark:hover:text-slate-200'
             }`}
