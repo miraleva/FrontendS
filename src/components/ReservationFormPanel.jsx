@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, User, Mail, Phone, Baby, ShieldCheck, ChevronDown, ChevronUp, MapPin, Star, Info, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import PhoneInput from 'react-phone-number-input';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import api from '../services/api';
 
@@ -111,6 +111,39 @@ export default function ReservationFormPanel({
     if (!termsAccepted) {
       alert("Lütfen şartlar ve koşulları kabul ediniz.");
       return;
+    }
+
+    const isIdentityNumberValid = (idNo, nationality) => {
+      if (!idNo) return false;
+      if (nationality?.toUpperCase() === 'TR') {
+        return /^[1-9]\d{10}$/.test(idNo);
+      }
+      return idNo.trim().length >= 5;
+    };
+
+    for (const g of (guests || [])) {
+      if (!g.firstName?.trim() || !g.lastName?.trim()) {
+        alert("Lütfen tüm konukların ad ve soyad bilgilerini giriniz.");
+        return;
+      }
+      if (!isIdentityNumberValid(g.identityNumber, g.nationality)) {
+        alert(g.nationality?.toUpperCase() === 'TR' 
+          ? "Lütfen geçerli bir 11 haneli T.C. Kimlik Numarası giriniz." 
+          : "Lütfen geçerli bir pasaport numarası giriniz (en az 5 karakter).");
+        return;
+      }
+      if (!g.birthDate || new Date(g.birthDate) >= new Date()) {
+        alert("Doğum tarihi bugünden küçük (geçmişte) olmalıdır.");
+        return;
+      }
+      if (!g.phone || !isValidPhoneNumber(g.phone)) {
+        alert("Lütfen geçerli bir telefon numarası giriniz.");
+        return;
+      }
+      if (!g.email?.trim()) {
+        alert("Lütfen tüm konukların e-posta adreslerini giriniz.");
+        return;
+      }
     }
 
     const payload = {
@@ -312,6 +345,7 @@ export default function ReservationFormPanel({
                             <input
                               required
                               type="date"
+                              max={new Date().toISOString().split('T')[0]}
                               value={guest.birthDate || ''}
                               onChange={(e) => handleGuestChange(index, 'birthDate', e.target.value)}
                               className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"

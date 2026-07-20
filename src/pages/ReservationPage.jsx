@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
 import { PanelLeftOpen, ArrowLeft, CheckCircle2, User, Baby, Mail, Phone, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
-import PhoneInput from 'react-phone-number-input';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import api from "../services/api";
 
@@ -160,15 +160,27 @@ export default function ReservationPage() {
         }
     };
 
+    const isIdentityNumberValid = (idNo, nationality) => {
+        if (!idNo) return false;
+        if (nationality?.toUpperCase() === 'TR') {
+            return /^[1-9]\d{10}$/.test(idNo);
+        }
+        return idNo.trim().length >= 5;
+    };
+
     const isPassengerFormValid = passengers.length > 0 && passengers.every((p) => {
+        const isPhoneValid = p.phone && isValidPhoneNumber(p.phone);
+        const isIdValid = isIdentityNumberValid(p.identityNumber, p.nationality);
+        const isBirthDateValid = p.birthDate && new Date(p.birthDate) < new Date();
+        
         return p.firstName?.trim() && 
             p.lastName?.trim() && 
-            p.identityNumber?.trim() && 
-            p.birthDate?.trim() && 
+            isIdValid && 
+            isBirthDateValid && 
             p.gender?.trim() && 
             p.nationality?.trim() && 
             p.email?.trim() && 
-            p.phone?.trim();
+            isPhoneValid;
     });
 
     return (
@@ -344,6 +356,7 @@ export default function ReservationPage() {
                                                                     <input
                                                                         required
                                                                         type="date"
+                                                                        max={new Date().toISOString().split('T')[0]}
                                                                         value={p.birthDate || ''}
                                                                         onChange={(e) => handlePassengerChange(index, 'birthDate', e.target.value)}
                                                                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
