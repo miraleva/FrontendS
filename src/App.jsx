@@ -13,9 +13,6 @@ import Dashboard from "./admin/pages/Dashboard.jsx";
 import ForgotPasswordPage from './pages/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/ResetPassword.jsx';
 
-
-// LanguageSelector import removed, moved to ChatSidebar
-
 import Reservations from "./pages/admin/Reservations.jsx";
 import Users from "./pages/admin/Users.jsx";
 import ChatLogs from "./pages/admin/ChatLogs.jsx";
@@ -40,17 +37,13 @@ export default function App() {
     <BrowserRouter>
       {/* Global sarmalayıcı */}
       <div className="relative min-h-screen w-full">
-
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/reservation" element={<Reservation />} />
 
-          {/* ADMIN APPLARI (BURASI GERÇEK SAYFALARI KULLANACAK) */}
+          {/* ADMIN ROTALARI */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="reservations" element={<Reservations />} />
@@ -69,7 +62,6 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/reservation" element={<Reservation />} />
-            {/* Şifremi Unuttum ve Sıfırlama Sayfalarının Rotaları */}
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>

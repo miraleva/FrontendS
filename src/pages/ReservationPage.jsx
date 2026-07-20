@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
 import { PanelLeftOpen, ArrowLeft, CheckCircle2 } from "lucide-react";
-import api from "../services/api";
+import api from "../services/api"; // API importu düzeltildi
 
 function formatPrice(price) {
     const num = Number(price);
@@ -20,7 +20,7 @@ function formatFlightDateTime(value) {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-        ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+        ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" }),
     });
 }
 
@@ -31,8 +31,6 @@ function formatBaggage(baggage, t) {
     return baggage;
 }
 
-// LocalDate (yyyy-MM-dd) bekleyen backend'e göndermek için tarih/tarih-saat
-// değerinden sadece tarih kısmını çıkarır.
 function toDateOnly(value) {
     if (!value) return null;
     const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
@@ -52,6 +50,10 @@ export default function ReservationPage() {
     const bookingDetails = location.state?.bookingDetails;
     const sessionId = location.state?.sessionId;
 
+    // Düzenleme Modu Verileri
+    const editData = location.state?.reservationData;
+    const isEditMode = location.state?.editMode || false;
+
     const [passenger, setPassenger] = useState({
         firstName: "",
         lastName: "",
@@ -59,67 +61,110 @@ export default function ReservationPage() {
         phone: "",
         identityNumber: "",
     });
+
+    // Veri Geldiğinde Formu Dolduran useEffect
+    useEffect(() => {
+        if (isEditMode && editData) {
+            const firstPassenger = editData.passengers?.[0];
+            setPassenger({
+                firstName: firstPassenger?.firstName || "",
+                lastName: firstPassenger?.lastName || "",
+                email: firstPassenger?.email || "",
+                phone: firstPassenger?.phoneNumber || firstPassenger?.phone || "",
+                identityNumber: firstPassenger?.identityNumber || "",
+            });
+        }
+    }, [isEditMode, editData]);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [reservationResult, setReservationResult] = useState(null);
 
-    // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
-    const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
+    const handleBack = () => {
+        if (isEditMode) {
+            navigate("/appointments");
+            return;
+        }
+
+        navigate(sessionId ? `/chat?sessionId=${sessionId}` : "/chat");
+    };
 
     const handlePassengerChange = (field, value) => {
         setPassenger((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleConfirm = async () => {
-        if (!selectedItem) return;
+    const isPassengerFormValid = Boolean(
+        passenger.firstName.trim() &&
+        passenger.lastName.trim() &&
+        passenger.email.trim() &&
+        passenger.phone.trim() &&
+        passenger.identityNumber.trim()
+    );
+
+    const handleConfirm = async (e) => {
+        if (e) e.preventDefault();
+        if ((!selectedItem && !isEditMode) || !isPassengerFormValid || isSubmitting) return;
+
         setSubmitError("");
 
-        const isFlight = selectedItem.airline !== undefined;
-        const startDate = isFlight
-            ? toDateOnly(selectedItem.departureTime)
-            : toDateOnly(bookingDetails?.checkIn);
-        const endDate = isFlight
-            ? toDateOnly(selectedItem.returnDepartureTime) || startDate
-            : toDateOnly(bookingDetails?.checkOut);
+        const normalizedType = editData?.type?.toUpperCase();
+
+        const isFlight = selectedItem
+            ? selectedItem.airline !== undefined
+            : normalizedType === "FLIGHT";
+
+        const startDate = selectedItem
+            ? (isFlight ? toDateOnly(selectedItem.departureTime) : toDateOnly(bookingDetails?.checkIn))
+            : editData?.startDate;
+
+        const endDate = selectedItem
+            ? (isFlight ? (toDateOnly(selectedItem.returnDepartureTime) || startDate) : toDateOnly(bookingDetails?.checkOut))
+            : editData?.endDate;
 
         const payload = {
+            sessionId: sessionId || null,
             type: isFlight ? "FLIGHT" : "HOTEL",
-            itemName: isFlight ? selectedItem.airline : (selectedItem.name || selectedItem.hotelId || "-"),
-            destination: isFlight
-                ? (bookingDetails?.arrivalCity || "-")
-                : (bookingDetails?.city || selectedItem.region || "-"),
+            itemName: selectedItem
+                ? (isFlight ? selectedItem.airline : (selectedItem.name || selectedItem.hotelId || "-"))
+                : editData?.itemName,
+            destination: selectedItem
+                ? (isFlight ? (bookingDetails?.arrivalCity || "-") : (bookingDetails?.city || selectedItem.region || "-"))
+                : editData?.destination,
             startDate,
             endDate,
-            totalPrice: Number(selectedItem.price) || 0,
-            currency: selectedItem.currency || "TRY",
+            totalPrice: selectedItem ? (Number(selectedItem.price) || 0) : editData?.totalPrice,
+            currency: selectedItem?.currency || editData?.currency || "TRY",
             passengers: [
                 {
-                    firstName: passenger.firstName,
-                    lastName: passenger.lastName,
-                    email: passenger.email,
-                    phoneNumber: passenger.phone,
-                    identityNumber: passenger.identityNumber,
+                    firstName: passenger.firstName.trim(),
+                    lastName: passenger.lastName.trim(),
+                    email: passenger.email.trim(),
+                    phoneNumber: passenger.phone.trim(),
+                    identityNumber: passenger.identityNumber.trim(),
                 },
             ],
         };
 
         setIsSubmitting(true);
         try {
-            const response = await api.post("/api/reservations", payload);
+            let response;
+            if (isEditMode && editData?.id) {
+                // Güncelleme modunda PUT atar
+                response = await api.put(`/api/reservations/${editData.id}`, payload);
+            } else {
+                // Yeni rezervasyonda POST atar
+                response = await api.post("/api/reservations", payload);
+            }
             setReservationResult(response.data);
         } catch (err) {
-            console.error("Reservation creation failed", err);
+            console.error("Reservation request failed", err);
             setSubmitError(t("reservation_confirm_error"));
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const isPassengerFormValid = passenger.firstName.trim()
-        && passenger.lastName.trim()
-        && passenger.email.trim()
-        && passenger.phone.trim()
-        && passenger.identityNumber.trim();
+    const activeItem = selectedItem || editData;
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
@@ -149,16 +194,17 @@ export default function ReservationPage() {
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
                         <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-xl rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-white/20">
-                            
+
                             <h1 className="text-[28px] font-bold text-slate-900 leading-tight mb-6">
-                                {t("reservation_title")}
+                                {isEditMode ? (t("reservation_edit_title") || "Rezervasyon Düzenle") : t("reservation_title")}
                             </h1>
 
-                            {!selectedItem ? (
+                            {!activeItem ? (
                                 <div className="text-center py-8">
                                     <p className="text-slate-800 font-medium mb-6">{t("reservation_no_item")}</p>
                                     <button
-                                        onClick={backToChat}
+                                        type="button"
+                                        onClick={handleBack}
                                         className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
                                     >
                                         <ArrowLeft size={16} />
@@ -167,60 +213,73 @@ export default function ReservationPage() {
                                 </div>
                             ) : reservationResult ? (
                                 <div className="text-center py-8">
-                                    <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-4" />
+                                    <CheckCircle2
+                                        size={48}
+                                        className="text-emerald-500 mx-auto mb-4"
+                                    />
+
                                     <p className="text-slate-800 font-medium mb-6">
-                                        {t("reservation_confirm_success", { number: reservationResult.reservationNumber })}
+                                        {isEditMode
+                                            ? "Rezervasyon başarıyla güncellendi."
+                                            : t("reservation_confirm_success", {
+                                                number:
+                                                    reservationResult.reservationNumber ||
+                                                    reservationResult.id
+                                            })}
                                     </p>
+
                                     <button
-                                        onClick={backToChat}
+                                        type="button"
+                                        onClick={handleBack}
                                         className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
                                     >
                                         <ArrowLeft size={16} />
-                                        {t("reservation_back_to_chat")}
+
+                                        {isEditMode
+                                            ? "Geçmiş Randevulara Dön"
+                                            : t("reservation_back_to_chat")}
                                     </button>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {selectedItem.airline !== undefined ? (
-                                        // Flight view
+                                <form onSubmit={handleConfirm} className="space-y-4">
+                                    {/* Uçuş / Otel Detay Görünümü */}
+                                    {selectedItem?.airline !== undefined ||
+                                        editData?.type?.toUpperCase() === "FLIGHT" ? (
                                         <div className="bg-white/50 border border-white/20 rounded-[16px] p-6">
                                             <div className="flex items-center justify-between mb-4">
-                                                <span className="font-bold text-[#1E232C] text-xl">✈️ {selectedItem.airline}</span>
-                                                <span className="text-[#3B82F6] font-bold text-xl">{formatPrice(selectedItem.price)} {selectedItem.currency}</span>
+                                                <span className="font-bold text-[#1E232C] text-xl">
+                                                    ✈️ {selectedItem?.airline || editData?.itemName}
+                                                </span>
+                                                <span className="text-[#3B82F6] font-bold text-xl">
+                                                    {formatPrice(selectedItem?.price || editData?.totalPrice)} {selectedItem?.currency || editData?.currency || "TRY"}
+                                                </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4 text-sm text-slate-800 font-medium">
-                                                <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_departure")}</span> {formatFlightDateTime(selectedItem.departureTime)}</div>
-                                                <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_arrival")}</span> {formatFlightDateTime(selectedItem.arrivalTime)}</div>
-                                                <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.transfers}</div>
-                                                <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.baggage, t)}</div>
+                                                <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_departure")}</span> {formatFlightDateTime(selectedItem?.departureTime || editData?.startDate)}</div>
+                                                <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_arrival")}</span> {formatFlightDateTime(selectedItem?.arrivalTime || editData?.endDate)}</div>
+                                                {selectedItem?.transfers && <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.transfers}</div>}
+                                                {selectedItem?.baggage && <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.baggage, t)}</div>}
                                             </div>
-                                            {selectedItem.returnDepartureTime && (
-                                                <div className="grid grid-cols-2 gap-4 text-sm text-slate-800 font-medium pt-4 mt-4 border-t border-dashed border-slate-300">
-                                                    <div className="col-span-2 font-bold">↩ {selectedItem.returnAirline || selectedItem.airline}</div>
-                                                    <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_return_departure")}</span> {formatFlightDateTime(selectedItem.returnDepartureTime)}</div>
-                                                    <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_return_arrival")}</span> {formatFlightDateTime(selectedItem.returnArrivalTime)}</div>
-                                                    <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.returnTransfers}</div>
-                                                    <div><span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.returnBaggage, t)}</div>
-                                                </div>
-                                            )}
                                         </div>
                                     ) : (
-                                        // Hotel view
                                         <div className="bg-white/50 border border-white/20 rounded-[16px] p-6">
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-[#1E232C] text-xl">🏨 {selectedItem.name || selectedItem.hotelId}</span>
-                                                    <span className="text-sm text-slate-600 mt-1">{selectedItem.region} • {selectedItem.stars}★</span>
+                                                    <span className="font-bold text-[#1E232C] text-xl">
+                                                        🏨 {selectedItem?.name || selectedItem?.hotelId || editData?.itemName}
+                                                    </span>
+                                                    <span className="text-sm text-slate-600 mt-1">
+                                                        {selectedItem?.region || editData?.destination} {selectedItem?.stars ? `• ${selectedItem.stars}★` : ""}
+                                                    </span>
                                                 </div>
-                                                <span className="text-[#3B82F6] font-bold text-xl">{formatPrice(selectedItem.price)} {selectedItem.currency}</span>
-                                            </div>
-                                            <div className="text-sm text-slate-800 font-medium pt-4 border-t border-white/30">
-                                                <span className="text-slate-500 uppercase text-xs block mb-1">{t("reservation_board_pension")}</span>
-                                                {selectedItem.boardType || selectedItem.pensionType || t("reservation_na")}
+                                                <span className="text-[#3B82F6] font-bold text-xl">
+                                                    {formatPrice(selectedItem?.price || editData?.totalPrice)} {selectedItem?.currency || editData?.currency || "TRY"}
+                                                </span>
                                             </div>
                                         </div>
                                     )}
 
+                                    {/* Yolcu Bilgileri Formu */}
                                     <div className="bg-white/50 border border-white/20 rounded-[16px] p-6 space-y-4">
                                         <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
                                             {t("reservation_passenger_info")}
@@ -285,21 +344,25 @@ export default function ReservationPage() {
 
                                     <div className="mt-8 flex justify-end gap-4">
                                         <button
-                                            onClick={backToChat}
+                                            type="button"
+                                            onClick={handleBack}
                                             disabled={isSubmitting}
                                             className="px-6 py-3 border border-slate-700/20 hover:bg-slate-700/10 text-slate-700 font-semibold rounded-[12px] transition-colors duration-200 text-[14px] disabled:opacity-50"
                                         >
                                             {t("reservation_cancel")}
                                         </button>
                                         <button
-                                            onClick={handleConfirm}
+                                            type="submit"
                                             disabled={!isPassengerFormValid || isSubmitting}
                                             className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold rounded-[12px] shadow-md transition-colors duration-200 text-[14px]"
                                         >
-                                            {isSubmitting ? t("reservation_submitting") : t("reservation_confirm_proceed")}
+                                            {isSubmitting
+                                                ? t("reservation_submitting")
+                                                : (isEditMode ? (t("reservation_update_confirm") || "Güncelle") : t("reservation_confirm_proceed"))
+                                            }
                                         </button>
                                     </div>
-                                </div>
+                                </form>
                             )}
 
                         </div>
