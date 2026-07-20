@@ -147,6 +147,10 @@ export default function Index() {
     checkIn: "",        // Otel için Giriş / Uçak için Gidiş Tarihi
     checkOut: "",       // Sadece Otel için Çıkış Tarihi
     guests: "",
+    adultCount: 1,
+    childCount: 0,
+    childAges: [],
+    passengerCount: 1,
     hotelName: "",
     price: "",
     departureCity: "",  // Uçak için: Kalkış Noktası
@@ -225,25 +229,29 @@ export default function Index() {
             }
           }
 
-          // Bu oturum için backend'de toplanmış kriterleri (kalkış/varış/yolcu/tarih)
-          // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
-          // kriter kaydından (search_criteria_json) geliyor.
-          try {
-            const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
-            const c = criteriaResponse.data;
-            if (c) {
-              setBookingDetails(prev => ({
-                ...prev,
-                city: c.locationOrHotelName || prev.city,
-                checkIn: c.checkInDate || c.departureDate || prev.checkIn,
-                checkOut: c.checkOutDate || prev.checkOut,
-                guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || prev.guests,
-                departureCity: c.departureLocation || prev.departureCity,
-                arrivalCity: c.arrivalLocation || prev.arrivalCity,
-                returnDate: c.returnDate || prev.returnDate
-              }));
-            }
-          } catch (criteriaErr) {
+            // Bu oturum için backend'de toplanmış kriterleri (kalkış/varış/yolcu/tarih)
+            // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
+            // kriter kaydından (search_criteria_json) geliyor.
+            try {
+              const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
+              const c = criteriaResponse.data;
+              if (c) {
+                setBookingDetails(prev => ({
+                  ...prev,
+                  city: c.locationOrHotelName || prev.city,
+                  checkIn: c.checkInDate || c.departureDate || prev.checkIn,
+                  checkOut: c.checkOutDate || prev.checkOut,
+                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || prev.guests,
+                  adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
+                  childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
+                  childAges: c.childAges || prev.childAges,
+                  passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
+                  departureCity: c.departureLocation || prev.departureCity,
+                  arrivalCity: c.arrivalLocation || prev.arrivalCity,
+                  returnDate: c.returnDate || prev.returnDate
+                }));
+              }
+            } catch (criteriaErr) {
             console.error("Failed to load session criteria", sessionId, criteriaErr);
           }
         } catch (err) {
@@ -257,7 +265,7 @@ export default function Index() {
       setMessages([]);
       setIsChatActive(false);
       setSearchType("hotel");
-      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
+      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
       setSelectedHotel(null);
       setSelectedFlight(null);
     }
@@ -388,6 +396,10 @@ export default function Index() {
           checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
           checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
           guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || prev.guests,
+          adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
+          childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
+          childAges: c.childAges || prev.childAges,
+          passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
           departureCity: c.departureLocation || prev.departureCity,
           arrivalCity: c.arrivalLocation || prev.arrivalCity,
           returnDate: c.returnDate || prev.returnDate
@@ -541,7 +553,7 @@ export default function Index() {
           setSearchQuery("");
           setSearchType("hotel");
           setActivePanel(null);
-          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "", returnDate: "" });
+          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
           setSelectedHotel(null);
           setSelectedFlight(null);
         }}

@@ -142,6 +142,7 @@
   "profile_dob_invalid_format": "Invalid date format. Use DD.MM.YYYY",
   "profile_dob_invalid_date": "Invalid date. Please check the values",
   "profile_dob_future": "Date of birth cannot be in the future",
+  "profile_dob_too_old": "Please enter a valid date of birth",
   "profile_back": "Back",
   "settings_title": "Settings",
   "settings_tab_travel": "Travel Preferences",

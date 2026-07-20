@@ -142,6 +142,7 @@
   "profile_dob_invalid_format": "Неверный формат даты. Используйте ДД.ММ.ГГГГ",
   "profile_dob_invalid_date": "Неверная дата. Пожалуйста, проверьте значения",
   "profile_dob_future": "Дата рождения не может быть в будущем",
+  "profile_dob_too_old": "Пожалуйста, введите корректную дату рождения",
   "profile_back": "Назад",
   "settings_title": "Настройки",
   "settings_tab_travel": "Предпочтения в путешествиях",
