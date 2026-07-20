@@ -20,8 +20,10 @@ import {
 } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
 import api from "../services/api";
+import { useTranslation } from "react-i18next";
 
 export default function PastAppointments() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedAppt, setSelectedAppt] = useState(null);
@@ -145,21 +147,21 @@ export default function PastAppointments() {
         return (
           <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-teal-50 text-teal-700 border border-teal-100">
             <CheckCircle2 size={12} />
-            Completed
+            {t('past_appointments_status_Completed')}
           </span>
         );
       case "Cancelled":
         return (
           <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-rose-50 text-rose-700 border border-rose-100">
             <XCircle size={12} />
-            Cancelled
+            {t('past_appointments_status_Cancelled')}
           </span>
         );
       case "Pending":
         return (
           <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-100 animate-pulse">
             <AlertCircle size={12} />
-            Pending
+            {t('past_appointments_status_Pending')}
           </span>
         );
       default:
@@ -173,21 +175,21 @@ export default function PastAppointments() {
         return (
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#14B8A6]">
             <CheckCircle2 size={14} />
-            <span>Completed Stay</span>
+            <span>{t('past_appointments_status_Completed_stay')}</span>
           </div>
         );
       case "Cancelled":
         return (
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#EF4444]">
             <XCircle size={14} />
-            <span>Cancelled Booking</span>
+            <span>{t('past_appointments_status_Cancelled_booking')}</span>
           </div>
         );
       case "Pending":
         return (
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F59E0B]">
             <AlertCircle size={14} className="animate-pulse" />
-            <span>Pending Incomplete Booking</span>
+            <span>{t('past_appointments_status_Pending_booking')}</span>
           </div>
         );
       default:
@@ -214,21 +216,21 @@ export default function PastAppointments() {
         return (
           <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-100">
             <span>🏨</span>
-            <span>Hotel</span>
+            <span>{t('past_appointments_badge_hotel')}</span>
           </span>
         );
       case "Flight":
         return (
           <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 border border-purple-100">
             <span>✈</span>
-            <span>Flight</span>
+            <span>{t('past_appointments_badge_flight')}</span>
           </span>
         );
       case "Transfer":
         return (
           <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium bg-teal-50 text-teal-700 border border-teal-100">
             <span>🚗</span>
-            <span>Transfer</span>
+            <span>{t('past_appointments_badge_transfer')}</span>
           </span>
         );
       default:
@@ -251,7 +253,7 @@ export default function PastAppointments() {
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
-            title="Expand Sidebar"
+            title={t('past_appointments_expand_sidebar')}
           >
             <PanelLeftOpen size={18} />
           </button>
@@ -268,16 +270,16 @@ export default function PastAppointments() {
           className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
         >
           <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-          Tarayıcınız video etiketini desteklemiyor.
+          {t('past_appointments_video_unsupported')}
         </video>
 
         <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-10 relative">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#0F172A] font-display mb-2">
-              Past Appointments
+              {t('past_appointments_title')}
             </h1>
             <p className="text-text-secondary text-sm">
-              View status and history of your past flight, hotel, and transfer reservations.
+              {t('past_appointments_desc')}
             </p>
           </div>
 
@@ -310,26 +312,26 @@ export default function PastAppointments() {
                       {/* Content details based on type */}
                       {appt.type === "Hotel" && (
                         <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div><strong>Nights:</strong> {appt.nights} nights</div>
-                          <div><strong>Guests:</strong> {appt.guests} guests</div>
-                          <div><strong>Check-in:</strong> {appt.checkIn}</div>
-                          <div><strong>Check-out:</strong> {appt.checkOut}</div>
+                          <div><strong>{t('past_appointments_card_nights')}:</strong> {appt.nights}</div>
+                          <div><strong>{t('past_appointments_card_guests')}:</strong> {appt.guests}</div>
+                          <div><strong>{t('past_appointments_card_checkin')}:</strong> {appt.checkIn}</div>
+                          <div><strong>{t('past_appointments_card_checkout')}:</strong> {appt.checkOut}</div>
                         </div>
                       )}
 
                       {appt.type === "Flight" && (
                         <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div><strong>Flight Number:</strong> {appt.flightNumber}</div>
-                          <div><strong>Seat:</strong> {appt.seat}</div>
-                          <div><strong>Class:</strong> {appt.flightClass}</div>
-                          <div><strong>Route:</strong> {appt.from} → {appt.to}</div>
+                          <div><strong>{t('past_appointments_card_flight_no')}:</strong> {appt.flightNumber}</div>
+                          <div><strong>{t('past_appointments_card_seat')}:</strong> {appt.seat}</div>
+                          <div><strong>{t('past_appointments_card_class')}:</strong> {appt.flightClass}</div>
+                          <div><strong>{t('past_appointments_card_route')}:</strong> {appt.from} → {appt.to}</div>
                         </div>
                       )}
 
                       {appt.type === "Transfer" && (
                         <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div><strong>Service:</strong> {appt.transferType}</div>
-                          <div><strong>Pickup:</strong> {appt.pickupLocation}</div>
+                          <div><strong>{t('past_appointments_card_service')}:</strong> {appt.transferType}</div>
+                          <div><strong>{t('past_appointments_card_pickup')}:</strong> {appt.pickupLocation}</div>
                         </div>
                       )}
                     </div>
@@ -347,7 +349,7 @@ export default function PastAppointments() {
                       onClick={() => handleOpenDrawer(appt)}
                       className="text-xs font-semibold px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-[#F59E0B]/10 hover:border-[#F59E0B]/30 hover:text-[#F59E0B] transition-all duration-200 focus:outline-none whitespace-nowrap self-end sm:self-auto cursor-pointer"
                     >
-                      {appt.status === "Completed" ? "Details →" : "Resume Booking →"}
+                      {appt.status === "Completed" ? t('past_appointments_btn_details') : t('past_appointments_btn_resume')}
                     </button>
                   </div>
                 </div>
@@ -377,7 +379,7 @@ export default function PastAppointments() {
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div className="space-y-1">
                 <span className="text-xs font-bold text-[#0B5FFF] uppercase tracking-wider">
-                  Reservation Info
+                  {t('past_appointments_drawer_info')}
                 </span>
                 <h2 className="text-lg font-bold text-[#0F172A] flex items-center gap-1.5">
                   {selectedAppt.type === "Hotel" && "🏨"}
@@ -399,11 +401,11 @@ export default function PastAppointments() {
               {/* Status Section */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text-secondary">Current Status</span>
+                  <span className="text-xs font-semibold text-text-secondary">{t('past_appointments_drawer_status')}</span>
                   {getStatusBadge(selectedAppt.status)}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text-secondary">Reservation Number</span>
+                  <span className="text-xs font-semibold text-text-secondary">{t('past_appointments_drawer_res_no')}</span>
                   <span className="text-xs font-bold text-[#0F172A] font-mono">{selectedAppt.resNumber}</span>
                 </div>
               </div>
@@ -411,33 +413,33 @@ export default function PastAppointments() {
               {/* Specific Content Details */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider border-b pb-1">
-                  Details
+                  {t('past_appointments_drawer_details')}
                 </h3>
 
                 {selectedAppt.type === "Hotel" && (
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Hotel Name:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_hotel_name')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.hotelName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Check-In:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_checkin')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.checkIn}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Check-Out:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_checkout')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.checkOut}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Total Nights:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.nights} nights</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_total_nights')}</span>
+                      <span className="font-semibold text-slate-800">{selectedAppt.nights}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Guest Count:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.guests} guests</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_guest_count')}</span>
+                      <span className="font-semibold text-slate-800">{selectedAppt.guests}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Payment Status:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_payment')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.paymentStatus}</span>
                     </div>
                   </div>
@@ -446,23 +448,23 @@ export default function PastAppointments() {
                 {selectedAppt.type === "Flight" && (
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Flight Number:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_flight_no')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.flightNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Route:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_route')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.from} → {selectedAppt.to}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Seat Assignment:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_seat_assignment')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.seat}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Flight Class:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_flight_class')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.flightClass}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Payment Status:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_payment')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.paymentStatus}</span>
                     </div>
                   </div>
@@ -471,20 +473,20 @@ export default function PastAppointments() {
                 {selectedAppt.type === "Transfer" && (
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Service Type:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_service_type')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.transferType}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Pickup Location:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_pickup_location')}</span>
                       <span className="font-semibold text-slate-800">{selectedAppt.pickupLocation}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Driver Status:</span>
+                      <span className="text-text-secondary">{t('past_appointments_drawer_driver_status')}</span>
                       <span className="font-semibold text-[#EF4444]">{selectedAppt.driverStatus}</span>
                     </div>
                     {selectedAppt.cancelReason && (
                       <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 mt-2">
-                        <span className="text-xs font-bold text-rose-700 block mb-1">Cancellation Reason:</span>
+                        <span className="text-xs font-bold text-rose-700 block mb-1">{t('past_appointments_drawer_cancel_reason')}</span>
                         <span className="text-xs text-rose-700">{selectedAppt.cancelReason}</span>
                       </div>
                     )}
@@ -495,15 +497,15 @@ export default function PastAppointments() {
               {/* Context-aware message box */}
               {selectedAppt.status === "Cancelled" && (
                 <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 text-sm text-amber-800 space-y-1">
-                  <span className="font-bold block">Incomplete Reservation</span>
-                  <span>This reservation wasn't completed. Would you like to continue where you left off?</span>
+                  <span className="font-bold block">{t('past_appointments_drawer_incomplete')}</span>
+                  <span>{t('past_appointments_drawer_incomplete_cancel_desc')}</span>
                 </div>
               )}
 
               {selectedAppt.status === "Pending" && (
                 <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 text-sm text-amber-800 space-y-1 animate-pulse">
-                  <span className="font-bold block">Incomplete Reservation</span>
-                  <span>You left before completing your booking.</span>
+                  <span className="font-bold block">{t('past_appointments_drawer_incomplete')}</span>
+                  <span>{t('past_appointments_drawer_incomplete_pending_desc')}</span>
                 </div>
               )}
             </div>
@@ -517,28 +519,28 @@ export default function PastAppointments() {
                     className="w-full py-2.5 rounded-lg font-semibold bg-[#0B5FFF] text-white hover:bg-[#0B5FFF]/90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
                   >
                     <Download size={16} />
-                    Download PDF Receipt
+                    {t('past_appointments_drawer_btn_download')}
                   </button>
                   <button 
                     onClick={() => navigate("/chat")}
                     className="w-full py-2 rounded-lg font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
                   >
                     <MessageSquare size={14} />
-                    View Originating Conversation
+                    {t('past_appointments_drawer_btn_view_conv')}
                   </button>
                   <div className="grid grid-cols-2 gap-2">
                     <button 
                       onClick={() => navigate("/chat")}
                       className="py-2 rounded-lg font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all text-xs cursor-pointer"
                     >
-                      Book Again
+                      {t('past_appointments_drawer_btn_book_again')}
                     </button>
                     <button 
                       onClick={() => {}}
                       className="py-2 rounded-lg font-semibold bg-white border border-slate-200 text-[#14B8A6] hover:bg-teal-50 hover:border-teal-200 transition-all flex items-center justify-center gap-1 text-xs cursor-pointer"
                     >
                       <PhoneCall size={12} />
-                      Support
+                      {t('past_appointments_drawer_btn_support')}
                     </button>
                   </div>
                 </>
@@ -551,13 +553,13 @@ export default function PastAppointments() {
                     className="w-full py-2.5 rounded-lg font-semibold bg-[#0B5FFF] text-white hover:bg-[#0B5FFF]/90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
                   >
                     <RefreshCw size={16} />
-                    Continue Booking
+                    {t('past_appointments_drawer_btn_continue')}
                   </button>
                   <button 
                     onClick={() => navigate("/chat")}
                     className="w-full py-2 rounded-lg font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all text-xs cursor-pointer"
                   >
-                    Start New Booking
+                    {t('past_appointments_drawer_btn_start_new')}
                   </button>
                 </>
               )}
@@ -569,7 +571,7 @@ export default function PastAppointments() {
                     className="w-full py-2.5 rounded-lg font-semibold bg-[#0B5FFF] text-white hover:bg-[#0B5FFF]/90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm cursor-pointer"
                   >
                     <MessageSquare size={16} />
-                    Resume Chat
+                    {t('past_appointments_drawer_btn_resume_chat')}
                   </button>
                 </>
               )}
