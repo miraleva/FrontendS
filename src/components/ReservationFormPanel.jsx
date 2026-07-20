@@ -65,7 +65,32 @@ export default function ReservationFormPanel({
           age: childAges[i] !== undefined ? childAges[i].toString() : '',
         });
       }
+
+      // Önce boş liste ile formu aç, sonra profil verisini getir
       setGuests(initialGuests);
+
+      // Kullanıcının profil bilgilerini çekip ilk yetişkini doldur
+      api.get('/api/reservations/prefill')
+        .then((res) => {
+          const data = res.data;
+          if (!data) return;
+          setGuests((prev) => {
+            if (!prev || prev.length === 0) return prev;
+            const updated = [...prev];
+            updated[0] = {
+              ...updated[0],
+              firstName: data.firstName      || updated[0].firstName,
+              lastName:  data.lastName       || updated[0].lastName,
+              email:     data.email          || updated[0].email,
+              phone:     data.phoneNumber    || updated[0].phone,
+              // identityNumber backend'de yok, boş kalır
+            };
+            return updated;
+          });
+        })
+        .catch(() => {
+          // Giriş yapılmamışsa veya istek başarısız olursa form boş başlar
+        });
     }
   }, [hotel, bookingDetails, guests, setGuests]);
 

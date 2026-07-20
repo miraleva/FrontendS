@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
@@ -62,6 +62,26 @@ export default function ReservationPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [reservationResult, setReservationResult] = useState(null);
+
+    // Sayfa yüklendiğinde backend'den profil bilgilerini alarak formu önceden doldur
+    useEffect(() => {
+        const fetchPrefill = async () => {
+            try {
+                const response = await api.get("/api/reservations/prefill");
+                const data = response.data;
+                setPassenger((prev) => ({
+                    firstName:      data.firstName      || prev.firstName,
+                    lastName:       data.lastName       || prev.lastName,
+                    email:          data.email          || prev.email,
+                    phone:          data.phoneNumber    || prev.phone,
+                    identityNumber: prev.identityNumber, // backend'de yok, boş kalır
+                }));
+            } catch {
+                // Kullanıcı giriş yapmamışsa veya istek başarısız olursa form boş başlar
+            }
+        };
+        fetchPrefill();
+    }, []);
 
     // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
     const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
