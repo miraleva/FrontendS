@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
-import { PanelLeftOpen, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { PanelLeftOpen, ArrowLeft, CheckCircle2, User, Baby, Mail, Phone, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import api from "../services/api";
 
 function formatPrice(price) {
@@ -31,8 +33,6 @@ function formatBaggage(baggage, t) {
     return baggage;
 }
 
-// LocalDate (yyyy-MM-dd) bekleyen backend'e göndermek için tarih/tarih-saat
-// değerinden sadece tarih kısmını çıkarır.
 function toDateOnly(value) {
     if (!value) return null;
     const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
@@ -52,29 +52,73 @@ export default function ReservationPage() {
     const bookingDetails = location.state?.bookingDetails;
     const sessionId = location.state?.sessionId;
 
-    const [passenger, setPassenger] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        identityNumber: "",
-    });
+    const isFlight = selectedItem?.airline !== undefined;
+    const adultCount = isFlight 
+        ? (parseInt(bookingDetails?.passengerCount) || 1) 
+        : (parseInt(bookingDetails?.adultCount) || 1);
+    const childCount = isFlight 
+        ? 0 
+        : (parseInt(bookingDetails?.childCount) || 0);
+    const childAges = isFlight 
+        ? [] 
+        : (bookingDetails?.childAges || []);
+
+    const [passengers, setPassengers] = useState([]);
+    const [expandedGuestId, setExpandedGuestId] = useState('adult-0');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [reservationResult, setReservationResult] = useState(null);
 
-    // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
     const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
 
-    const handlePassengerChange = (field, value) => {
-        setPassenger((prev) => ({ ...prev, [field]: value }));
+    useEffect(() => {
+        if (selectedItem) {
+            const initialPassengers = [];
+            for (let i = 0; i < adultCount; i++) {
+                initialPassengers.push({
+                    id: `adult-${i}`,
+                    type: 'ADULT',
+                    firstName: '',
+                    lastName: '',
+                    identityNumber: '',
+                    email: '',
+                    phone: '',
+                    birthDate: '',
+                    gender: 'MR',
+                    nationality: 'TR',
+                });
+            }
+            for (let i = 0; i < childCount; i++) {
+                initialPassengers.push({
+                    id: `child-${i}`,
+                    type: 'CHILD',
+                    firstName: '',
+                    lastName: '',
+                    identityNumber: '',
+                    email: '',
+                    phone: '',
+                    birthDate: '',
+                    gender: 'MR',
+                    nationality: 'TR',
+                    age: childAges[i] !== undefined ? childAges[i].toString() : '',
+                });
+            }
+            setPassengers(initialPassengers);
+        }
+    }, [selectedItem, bookingDetails, adultCount, childCount, childAges]);
+
+    const handlePassengerChange = (index, field, value) => {
+        setPassengers((prev) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
     };
 
     const handleConfirm = async () => {
         if (!selectedItem) return;
         setSubmitError("");
 
-        const isFlight = selectedItem.airline !== undefined;
         const startDate = isFlight
             ? toDateOnly(selectedItem.departureTime)
             : toDateOnly(bookingDetails?.checkIn);
@@ -92,15 +136,16 @@ export default function ReservationPage() {
             endDate,
             totalPrice: Number(selectedItem.price) || 0,
             currency: selectedItem.currency || "TRY",
-            passengers: [
-                {
-                    firstName: passenger.firstName,
-                    lastName: passenger.lastName,
-                    email: passenger.email,
-                    phoneNumber: passenger.phone,
-                    identityNumber: passenger.identityNumber,
-                },
-            ],
+            passengers: passengers.map((p) => ({
+                firstName: p.firstName,
+                lastName: p.lastName,
+                email: p.email || '',
+                phoneNumber: p.phone || '',
+                identityNumber: p.identityNumber,
+                birthDate: p.birthDate,
+                gender: p.gender,
+                nationality: p.nationality,
+            })),
         };
 
         setIsSubmitting(true);
@@ -115,11 +160,16 @@ export default function ReservationPage() {
         }
     };
 
-    const isPassengerFormValid = passenger.firstName.trim()
-        && passenger.lastName.trim()
-        && passenger.email.trim()
-        && passenger.phone.trim()
-        && passenger.identityNumber.trim();
+    const isPassengerFormValid = passengers.length > 0 && passengers.every((p) => {
+        return p.firstName?.trim() && 
+            p.lastName?.trim() && 
+            p.identityNumber?.trim() && 
+            p.birthDate?.trim() && 
+            p.gender?.trim() && 
+            p.nationality?.trim() && 
+            p.email?.trim() && 
+            p.phone?.trim();
+    });
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
@@ -182,7 +232,6 @@ export default function ReservationPage() {
                             ) : (
                                 <div className="space-y-4">
                                     {selectedItem.airline !== undefined ? (
-                                        // Flight view
                                         <div className="bg-white/50 border border-white/20 rounded-[16px] p-6">
                                             <div className="flex items-center justify-between mb-4">
                                                 <span className="font-bold text-[#1E232C] text-xl">✈️ {selectedItem.airline}</span>
@@ -205,7 +254,6 @@ export default function ReservationPage() {
                                             )}
                                         </div>
                                     ) : (
-                                        // Hotel view
                                         <div className="bg-white/50 border border-white/20 rounded-[16px] p-6">
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="flex flex-col">
@@ -221,62 +269,165 @@ export default function ReservationPage() {
                                         </div>
                                     )}
 
-                                    <div className="bg-white/50 border border-white/20 rounded-[16px] p-6 space-y-4">
-                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                                    <div className="space-y-4">
+                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">
                                             {t("reservation_passenger_info")}
                                         </h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_first_name")}</label>
-                                                <input
-                                                    required
-                                                    type="text"
-                                                    value={passenger.firstName}
-                                                    onChange={(e) => handlePassengerChange("firstName", e.target.value)}
-                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_last_name")}</label>
-                                                <input
-                                                    required
-                                                    type="text"
-                                                    value={passenger.lastName}
-                                                    onChange={(e) => handlePassengerChange("lastName", e.target.value)}
-                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_email")}</label>
-                                                <input
-                                                    required
-                                                    type="email"
-                                                    value={passenger.email}
-                                                    onChange={(e) => handlePassengerChange("email", e.target.value)}
-                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_phone")}</label>
-                                                <input
-                                                    required
-                                                    type="tel"
-                                                    value={passenger.phone}
-                                                    onChange={(e) => handlePassengerChange("phone", e.target.value)}
-                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
-                                                />
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_identity_number")}</label>
-                                                <input
-                                                    required
-                                                    type="text"
-                                                    value={passenger.identityNumber}
-                                                    onChange={(e) => handlePassengerChange("identityNumber", e.target.value)}
-                                                    className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
-                                                />
-                                            </div>
-                                        </div>
+                                        {passengers.map((p, index) => {
+                                            const isExpanded = expandedGuestId === p.id;
+                                            const guestTitle = p.type === 'ADULT' 
+                                                ? `${index + 1}. ${t("unit_adult")}` 
+                                                : `${index - adultCount + 1}. ${t("unit_child")}`;
+
+                                            return (
+                                                <div key={p.id} className="bg-white/50 border border-white/20 rounded-[16px] shadow-sm overflow-hidden transition-all duration-200">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setExpandedGuestId(isExpanded ? null : p.id)}
+                                                        className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/10 transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            {p.type === 'ADULT' ? <User size={18} className="text-[#3B82F6]"/> : <Baby size={18} className="text-amber-500"/>}
+                                                            <span className="font-bold text-slate-800 text-sm">{guestTitle}</span>
+                                                            
+                                                            {!isExpanded && (p.firstName || p.lastName) && (
+                                                                <span className="text-sm text-slate-600 ml-2 border-l border-slate-300 pl-4 font-medium">
+                                                                    {p.firstName} {p.lastName}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-slate-500">
+                                                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                        </div>
+                                                    </button>
+
+                                                    {isExpanded && (
+                                                        <div className="p-5 border-t border-white/20 bg-white/20 space-y-4">
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_first_name")}</label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={p.firstName}
+                                                                        onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    />
+                                                                </div>
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">{t("reservation_last_name")}</label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={p.lastName}
+                                                                        onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Cinsiyet</label>
+                                                                    <select
+                                                                        required
+                                                                        value={p.gender || 'MR'}
+                                                                        onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    >
+                                                                        <option value="MR">Bay (Mr.)</option>
+                                                                        <option value="MRS">Bayan (Mrs.)</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Doğum Tarihi</label>
+                                                                    <input
+                                                                        required
+                                                                        type="date"
+                                                                        value={p.birthDate || ''}
+                                                                        onChange={(e) => handlePassengerChange(index, 'birthDate', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Uyruk</label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={p.nationality || 'TR'}
+                                                                        onChange={(e) => handlePassengerChange(index, 'nationality', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    />
+                                                                </div>
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                                                        <ShieldCheck size={12}/> {t("reservation_identity_number")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={p.identityNumber}
+                                                                        onChange={(e) => handlePassengerChange(index, 'identityNumber', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                                                        <Mail size={12}/> {t("reservation_email")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="email"
+                                                                        value={p.email || ''}
+                                                                        onChange={(e) => handlePassengerChange(index, 'email', e.target.value)}
+                                                                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                    />
+                                                                </div>
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                                                        <Phone size={12}/> {t("reservation_phone")}
+                                                                    </label>
+                                                                    <PhoneInput
+                                                                        international
+                                                                        defaultCountry="TR"
+                                                                        value={p.phone || ''}
+                                                                        onChange={(val) => handlePassengerChange(index, 'phone', val)}
+                                                                        className="flex items-center w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-[#3B82F6]/50 focus-within:border-[#3B82F6] transition-colors"
+                                                                        numberInputProps={{
+                                                                            required: true,
+                                                                            className: 'bg-transparent border-0 outline-none w-full text-slate-800 focus:ring-0 ml-2 py-1',
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            {p.type === 'CHILD' && (
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 mb-1">Yaş</label>
+                                                                        <input
+                                                                            required
+                                                                            type="number"
+                                                                            min="0"
+                                                                            max="17"
+                                                                            value={p.age}
+                                                                            onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
+                                                                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     {submitError && (

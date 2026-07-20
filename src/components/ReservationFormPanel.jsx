@@ -31,17 +31,14 @@ export default function ReservationFormPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [reservationResult, setReservationResult] = useState(null);
-
   useEffect(() => {
     if (!guests && hotel) {
-      // Fallback to 1 adult if counts are missing
       const adultCount = parseInt(bookingDetails?.adultCount) || 1;
       const childCount = parseInt(bookingDetails?.childCount) || 0;
       const childAges = bookingDetails?.childAges || [];
 
       const initialGuests = [];
       
-      // Add adults
       for (let i = 0; i < adultCount; i++) {
         initialGuests.push({
           id: `adult-${i}`,
@@ -49,12 +46,14 @@ export default function ReservationFormPanel({
           firstName: '',
           lastName: '',
           identityNumber: '',
-          email: i === 0 ? '' : undefined,
-          phone: i === 0 ? '' : undefined,
+          email: '',
+          phone: '',
+          birthDate: '',
+          gender: 'MR',
+          nationality: 'TR',
         });
       }
 
-      // Add children
       for (let i = 0; i < childCount; i++) {
         initialGuests.push({
           id: `child-${i}`,
@@ -62,6 +61,11 @@ export default function ReservationFormPanel({
           firstName: '',
           lastName: '',
           identityNumber: '',
+          email: '',
+          phone: '',
+          birthDate: '',
+          gender: 'MR',
+          nationality: 'TR',
           age: childAges[i] !== undefined ? childAges[i].toString() : '',
         });
       }
@@ -109,7 +113,6 @@ export default function ReservationFormPanel({
       return;
     }
 
-    const primaryGuest = guests?.[0];
     const payload = {
       type: 'HOTEL',
       itemName: hotel.name || hotel.hotelId || '-',
@@ -121,9 +124,12 @@ export default function ReservationFormPanel({
       passengers: (guests || []).map((g) => ({
         firstName: g.firstName,
         lastName: g.lastName,
-        email: g.email || primaryGuest?.email || '',
-        phoneNumber: g.phone || primaryGuest?.phone || '',
+        email: g.email || '',
+        phoneNumber: g.phone || '',
         identityNumber: g.identityNumber,
+        birthDate: g.birthDate,
+        gender: g.gender,
+        nationality: g.nationality,
       })),
     };
 
@@ -263,7 +269,6 @@ export default function ReservationFormPanel({
                         {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                       </div>
                     </button>
-
                     {isExpanded && (
                       <div className="p-5 border-t border-slate-100 bg-slate-50/50 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -290,7 +295,42 @@ export default function ReservationFormPanel({
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                          <div className={guest.type === 'CHILD' ? "col-span-1" : "col-span-2"}>
+                          <div className="col-span-1">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Cinsiyet</label>
+                            <select
+                              required
+                              value={guest.gender || 'MR'}
+                              onChange={(e) => handleGuestChange(index, 'gender', e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                            >
+                              <option value="MR">Bay (Mr.)</option>
+                              <option value="MRS">Bayan (Mrs.)</option>
+                            </select>
+                          </div>
+                          <div className="col-span-1">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Doğum Tarihi</label>
+                            <input
+                              required
+                              type="date"
+                              value={guest.birthDate || ''}
+                              onChange={(e) => handleGuestChange(index, 'birthDate', e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="col-span-1">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Uyruk</label>
+                            <input
+                              required
+                              type="text"
+                              value={guest.nationality || 'TR'}
+                              onChange={(e) => handleGuestChange(index, 'nationality', e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                            />
+                          </div>
+                          <div className="col-span-1">
                             <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
                               <ShieldCheck size={12}/> TC Kimlik No / Pasaport
                             </label>
@@ -302,7 +342,41 @@ export default function ReservationFormPanel({
                               className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                             />
                           </div>
-                          {guest.type === 'CHILD' && (
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="col-span-1">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                              <Mail size={12}/> E-posta
+                            </label>
+                            <input
+                              required
+                              type="email"
+                              value={guest.email || ''}
+                              onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                              <Phone size={12}/> Telefon
+                            </label>
+                            <PhoneInput
+                              international
+                              defaultCountry="TR"
+                              value={guest.phone || ''}
+                              onChange={(val) => handleGuestChange(index, 'phone', val)}
+                              className="flex items-center w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-colors"
+                              numberInputProps={{
+                                required: true,
+                                className: 'bg-transparent border-0 outline-none w-full text-slate-800 focus:ring-0 ml-2 py-1',
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {guest.type === 'CHILD' && (
+                          <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
                               <label className="block text-xs font-semibold text-slate-500 mb-1">Yaş</label>
                               <input
@@ -313,39 +387,6 @@ export default function ReservationFormPanel({
                                 value={guest.age}
                                 onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
                                 className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {index === 0 && (
-                          <div className="pt-2 border-t border-slate-200/60 mt-4 space-y-4">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                                <Mail size={12}/> E-posta
-                              </label>
-                              <input
-                                required
-                                type="email"
-                                value={guest.email}
-                                onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                                <Phone size={12}/> Telefon
-                              </label>
-                              <PhoneInput
-                                international
-                                defaultCountry="TR"
-                                value={guest.phone}
-                                onChange={(val) => handleGuestChange(index, 'phone', val)}
-                                className="flex items-center w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-colors"
-                                numberInputProps={{
-                                  required: true,
-                                  className: 'bg-transparent border-0 outline-none w-full text-slate-800 focus:ring-0 ml-2 py-1',
-                                }}
                               />
                             </div>
                           </div>
