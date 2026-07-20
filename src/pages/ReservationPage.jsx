@@ -53,14 +53,14 @@ export default function ReservationPage() {
     const sessionId = location.state?.sessionId;
 
     const isFlight = selectedItem?.airline !== undefined;
-    const adultCount = isFlight 
-        ? (parseInt(bookingDetails?.passengerCount) || 1) 
+    const adultCount = isFlight
+        ? (parseInt(bookingDetails?.passengerCount) || 1)
         : (parseInt(bookingDetails?.adultCount) || 1);
-    const childCount = isFlight 
-        ? 0 
+    const childCount = isFlight
+        ? 0
         : (parseInt(bookingDetails?.childCount) || 0);
-    const childAges = isFlight 
-        ? [] 
+    const childAges = isFlight
+        ? []
         : (bookingDetails?.childAges || []);
 
     const [passengers, setPassengers] = useState([]);
@@ -69,6 +69,27 @@ export default function ReservationPage() {
     const [submitError, setSubmitError] = useState("");
     const [reservationResult, setReservationResult] = useState(null);
 
+    // Sayfa yüklendiğinde backend'den profil bilgilerini alarak formu önceden doldur
+    useEffect(() => {
+        const fetchPrefill = async () => {
+            try {
+                const response = await api.get("/api/reservations/prefill");
+                const data = response.data;
+                setPassenger((prev) => ({
+                    firstName: data.firstName || prev.firstName,
+                    lastName: data.lastName || prev.lastName,
+                    email: data.email || prev.email,
+                    phone: data.phoneNumber || prev.phone,
+                    identityNumber: prev.identityNumber, // backend'de yok, boş kalır
+                }));
+            } catch {
+                // Kullanıcı giriş yapmamışsa veya istek başarısız olursa form boş başlar
+            }
+        };
+        fetchPrefill();
+    }, []);
+
+    // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
     const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
 
     useEffect(() => {
@@ -172,14 +193,14 @@ export default function ReservationPage() {
         const isPhoneValid = p.phone && isValidPhoneNumber(p.phone);
         const isIdValid = isIdentityNumberValid(p.identityNumber, p.nationality);
         const isBirthDateValid = p.birthDate && new Date(p.birthDate) < new Date();
-        
-        return p.firstName?.trim() && 
-            p.lastName?.trim() && 
-            isIdValid && 
-            isBirthDateValid && 
-            p.gender?.trim() && 
-            p.nationality?.trim() && 
-            p.email?.trim() && 
+
+        return p.firstName?.trim() &&
+            p.lastName?.trim() &&
+            isIdValid &&
+            isBirthDateValid &&
+            p.gender?.trim() &&
+            p.nationality?.trim() &&
+            p.email?.trim() &&
             isPhoneValid;
     });
 
@@ -211,7 +232,7 @@ export default function ReservationPage() {
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
                         <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-xl rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-white/20">
-                            
+
                             <h1 className="text-[28px] font-bold text-slate-900 leading-tight mb-6">
                                 {t("reservation_title")}
                             </h1>
@@ -287,8 +308,8 @@ export default function ReservationPage() {
                                         </h2>
                                         {passengers.map((p, index) => {
                                             const isExpanded = expandedGuestId === p.id;
-                                            const guestTitle = p.type === 'ADULT' 
-                                                ? `${index + 1}. ${t("unit_adult")}` 
+                                            const guestTitle = p.type === 'ADULT'
+                                                ? `${index + 1}. ${t("unit_adult")}`
                                                 : `${index - adultCount + 1}. ${t("unit_child")}`;
 
                                             return (
@@ -299,9 +320,9 @@ export default function ReservationPage() {
                                                         className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/10 transition-colors"
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            {p.type === 'ADULT' ? <User size={18} className="text-[#3B82F6]"/> : <Baby size={18} className="text-amber-500"/>}
+                                                            {p.type === 'ADULT' ? <User size={18} className="text-[#3B82F6]" /> : <Baby size={18} className="text-amber-500" />}
                                                             <span className="font-bold text-slate-800 text-sm">{guestTitle}</span>
-                                                            
+
                                                             {!isExpanded && (p.firstName || p.lastName) && (
                                                                 <span className="text-sm text-slate-600 ml-2 border-l border-slate-300 pl-4 font-medium">
                                                                     {p.firstName} {p.lastName}
@@ -377,7 +398,7 @@ export default function ReservationPage() {
                                                                 </div>
                                                                 <div className="col-span-1">
                                                                     <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                                                                        <ShieldCheck size={12}/> {t("reservation_identity_number")}
+                                                                        <ShieldCheck size={12} /> {t("reservation_identity_number")}
                                                                     </label>
                                                                     <input
                                                                         required
@@ -392,7 +413,7 @@ export default function ReservationPage() {
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div className="col-span-1">
                                                                     <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                                                                        <Mail size={12}/> {t("reservation_email")}
+                                                                        <Mail size={12} /> {t("reservation_email")}
                                                                     </label>
                                                                     <input
                                                                         required
@@ -404,7 +425,7 @@ export default function ReservationPage() {
                                                                 </div>
                                                                 <div className="col-span-1">
                                                                     <label className="block text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                                                                        <Phone size={12}/> {t("reservation_phone")}
+                                                                        <Phone size={12} /> {t("reservation_phone")}
                                                                     </label>
                                                                     <PhoneInput
                                                                         international
