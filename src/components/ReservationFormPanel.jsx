@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, User, Mail, Phone, Baby, ShieldCheck, ChevronDown, ChevronUp, MapPin, Star, Info, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import PhoneInput from 'react-phone-number-input';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import api from '../services/api';
 
@@ -14,10 +14,46 @@ function toDateOnly(value) {
   return date.toISOString().slice(0, 10);
 }
 
-export default function ReservationFormPanel({ 
-  hotel, 
-  bookingDetails, 
-  onClose, 
+const getPassengerErrors = (p, isValidPhoneNumber) => {
+  const errors = {};
+  if (!p.firstName?.trim()) errors.firstName = "Ad gereklidir.";
+  if (!p.lastName?.trim()) errors.lastName = "Soyad gereklidir.";
+
+  if (p.nationality?.toUpperCase() === 'TR') {
+    if (!/^[1-9]\d{10}$/.test(p.identityNumber)) {
+      errors.identityNumber = "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+    }
+  } else {
+    if (!p.identityNumber?.trim() || p.identityNumber.trim().length < 5) {
+      errors.identityNumber = "Geçersiz Pasaport No (en az 5 karakter).";
+    }
+  }
+
+  if (!p.birthDate) {
+    errors.birthDate = "Doğum tarihi gereklidir.";
+  } else if (new Date(p.birthDate) >= new Date()) {
+    errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+  }
+
+  if (!p.email?.trim()) {
+    errors.email = "E-posta gereklidir.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) {
+    errors.email = "Geçersiz e-posta formatı (örn: ad@example.com).";
+  }
+
+  if (!p.phone) {
+    errors.phone = "Telefon numarası gereklidir.";
+  } else if (!isValidPhoneNumber(p.phone)) {
+    errors.phone = "Ülke formatına uymuyor (geçersiz uzunluk).";
+  }
+
+  return errors;
+};
+
+export default function ReservationFormPanel({
+  hotel,
+  bookingDetails,
+  onClose,
   onBack,
   guests,
   setGuests,
@@ -31,17 +67,14 @@ export default function ReservationFormPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [reservationResult, setReservationResult] = useState(null);
-
   useEffect(() => {
     if (!guests && hotel) {
-      // Fallback to 1 adult if counts are missing
       const adultCount = parseInt(bookingDetails?.adultCount) || 1;
       const childCount = parseInt(bookingDetails?.childCount) || 0;
       const childAges = bookingDetails?.childAges || [];
 
       const initialGuests = [];
-      
-      // Add adults
+
       for (let i = 0; i < adultCount; i++) {
         initialGuests.push({
           id: `adult-${i}`,
@@ -49,12 +82,14 @@ export default function ReservationFormPanel({
           firstName: '',
           lastName: '',
           identityNumber: '',
-          email: i === 0 ? '' : undefined,
-          phone: i === 0 ? '' : undefined,
+          email: '',
+          phone: '',
+          birthDate: '',
+          gender: 'MR',
+          nationality: 'TR',
         });
       }
 
-      // Add children
       for (let i = 0; i < childCount; i++) {
         initialGuests.push({
           id: `child-${i}`,
@@ -62,10 +97,40 @@ export default function ReservationFormPanel({
           firstName: '',
           lastName: '',
           identityNumber: '',
+          email: '',
+          phone: '',
+          birthDate: '',
+          gender: 'CHD',
+          nationality: 'TR',
           age: childAges[i] !== undefined ? childAges[i].toString() : '',
         });
       }
+
+      // Önce boş liste ile formu aç, sonra profil verisini getir
       setGuests(initialGuests);
+
+      // Kullanıcının profil bilgilerini çekip ilk yetişkini doldur
+      api.get('/api/reservations/prefill')
+        .then((res) => {
+          const data = res.data;
+          if (!data) return;
+          setGuests((prev) => {
+            if (!prev || prev.length === 0) return prev;
+            const updated = [...prev];
+            updated[0] = {
+              ...updated[0],
+              firstName: data.firstName || updated[0].firstName,
+              lastName: data.lastName || updated[0].lastName,
+              email: data.email || updated[0].email,
+              phone: data.phoneNumber || updated[0].phone,
+              // identityNumber backend'de yok, boş kalır
+            };
+            return updated;
+          });
+        })
+        .catch(() => {
+          // Giriş yapılmamışsa veya istek başarısız olursa form boş başlar
+        });
     }
   }, [hotel, bookingDetails, guests, setGuests]);
 
@@ -109,7 +174,25 @@ export default function ReservationFormPanel({
       return;
     }
 
-    const primaryGuest = guests?.[0];
+    const isIdentityNumberValid = (idNo, nationality) => {
+      if (!idNo) return false;
+      if (nationality?.toUpperCase() === 'TR') {
+        return /^[1-9]\d{10}$/.test(idNo);
+      }
+      return idNo.trim().length >= 5;
+    };
+
+    for (let i = 0; i < (guests || []).length; i++) {
+      const g = guests[i];
+      const errors = getPassengerErrors(g, isValidPhoneNumber);
+      const errorKeys = Object.keys(errors);
+      if (errorKeys.length > 0) {
+        const guestName = g.firstName && g.lastName ? `${g.firstName} ${g.lastName}` : `${i + 1}. Yolcu`;
+        alert(`${guestName} bilgilerinde hata var: ${errors[errorKeys[0]]}`);
+        return;
+      }
+    }
+
     const payload = {
       type: 'HOTEL',
       itemName: hotel.name || hotel.hotelId || '-',
@@ -121,9 +204,12 @@ export default function ReservationFormPanel({
       passengers: (guests || []).map((g) => ({
         firstName: g.firstName,
         lastName: g.lastName,
-        email: g.email || primaryGuest?.email || '',
-        phoneNumber: g.phone || primaryGuest?.phone || '',
+        email: g.email || '',
+        phoneNumber: g.phone || '',
         identityNumber: g.identityNumber,
+        birthDate: g.birthDate,
+        gender: g.gender,
+        nationality: g.nationality,
       })),
     };
 
@@ -142,11 +228,11 @@ export default function ReservationFormPanel({
 
   const formattedPrice = hotel.price != null && !isNaN(hotel.price)
     ? new Intl.NumberFormat('tr-TR', {
-        style: 'currency',
-        currency: hotel.currency || 'TRY',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(hotel.price)
+      style: 'currency',
+      currency: hotel.currency || 'TRY',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(hotel.price)
     : `${hotel.price} ${hotel.currency || 'TRY'}`;
 
   // Fake itemized pricing since API doesn't provide splits yet
@@ -171,7 +257,7 @@ export default function ReservationFormPanel({
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 font-sans w-full relative">
-      
+
       {/* Header / Thumbnail (Matches HotelDetailPanel) */}
       <div className="relative h-48 md:h-64 flex-shrink-0 bg-slate-200 dark:bg-slate-800">
         {(hotel.thumbnailFull || hotel.thumbnail) ? (
@@ -179,12 +265,12 @@ export default function ReservationFormPanel({
             src={hotel.thumbnailFull || hotel.thumbnail}
             alt={hotel.name || "Hotel"}
             className="w-full h-full object-cover"
-            onError={(e) => { 
-              e.currentTarget.style.display = 'none'; 
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
             }}
           />
         ) : null}
-        
+
         {/* Back Button */}
         {onBack && (
           <button
@@ -202,7 +288,7 @@ export default function ReservationFormPanel({
         >
           <X size={20} />
         </button>
-        
+
         {/* Gradient Overlay for Text */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
           <div className="mb-1 text-amber-400 text-xs font-bold uppercase tracking-widest drop-shadow-md">Rezervasyon Detayları</div>
@@ -230,14 +316,14 @@ export default function ReservationFormPanel({
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 max-w-3xl mx-auto space-y-6">
           <form id="reservation-form" onSubmit={handleSubmit} className="space-y-6">
-            
+
             {/* Guests Accordion */}
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Konuk Bilgileri</h3>
               {guests && guests.map((guest, index) => {
                 const isExpanded = expandedGuestId === guest.id;
-                const guestTitle = guest.type === 'ADULT' 
-                  ? `${index + 1}. Yetişkin` 
+                const guestTitle = guest.type === 'ADULT'
+                  ? `${index + 1}. Yetişkin`
                   : `${index - adultCount + 1}. Çocuk`;
 
                 return (
@@ -248,10 +334,10 @@ export default function ReservationFormPanel({
                       className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        {guest.type === 'ADULT' ? <User size={18} className="text-blue-500"/> : <Baby size={18} className="text-amber-500"/>}
+                        {guest.type === 'ADULT' ? <User size={18} className="text-blue-500" /> : <Baby size={18} className="text-amber-500" />}
                         <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
                         {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
-                        
+
                         {/* Summary when collapsed */}
                         {!isExpanded && (guest.firstName || guest.lastName) && (
                           <span className="text-sm text-slate-500 dark:text-slate-400 ml-2 border-l border-slate-200 dark:border-slate-700 pl-4">
@@ -292,7 +378,7 @@ export default function ReservationFormPanel({
                         <div className="grid grid-cols-2 gap-4">
                           <div className={guest.type === 'CHILD' ? "col-span-1" : "col-span-2"}>
                             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                              <ShieldCheck size={12}/> TC Kimlik No / Pasaport
+                              <ShieldCheck size={12} /> TC Kimlik No / Pasaport
                             </label>
                             <input
                               required
@@ -319,27 +405,27 @@ export default function ReservationFormPanel({
                         </div>
 
                         {index === 0 && (
-                          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700 mt-4 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-700">
                             <div>
                               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                                <Mail size={12}/> E-posta
+                                <Mail size={12} /> E-posta
                               </label>
                               <input
                                 required
                                 type="email"
-                                value={guest.email}
+                                value={guest.email || ''}
                                 onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                               />
                             </div>
                             <div>
                               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                                <Phone size={12}/> Telefon
+                                <Phone size={12} /> Telefon
                               </label>
                               <PhoneInput
                                 international
                                 defaultCountry="TR"
-                                value={guest.phone}
+                                value={guest.phone || ''}
                                 onChange={(val) => handleGuestChange(index, 'phone', val)}
                                 className="flex items-center w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-colors"
                                 numberInputProps={{
@@ -358,75 +444,75 @@ export default function ReservationFormPanel({
             </div>
 
             {/* Cancellation Policy Block */}
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex items-start gap-3">
-              <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
-                <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
-                  {hotel.isRefundable === true 
-                    ? "Bu rezervasyon ücretsiz iptal edilebilir." 
-                    : hotel.isRefundable === false 
-                      ? "Bu rezervasyon iade edilemez." 
-                      : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
-                </p>
-              </div>
-            </div>
+                                      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex items-start gap-3">
+                                        <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                          <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
+                                          <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
+                                            {hotel.isRefundable === true
+                                              ? "Bu rezervasyon ücretsiz iptal edilebilir."
+                                              : hotel.isRefundable === false
+                                                ? "Bu rezervasyon iade edilemez."
+                                                : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
+                                          </p>
+                                        </div>
+                                      </div>
 
-            {/* Price Breakdown */}
-            <div className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
-                  <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>Vergiler ve Harçlar</span>
-                  <span className="font-medium">{formatSubPrice(taxValue)}</span>
-                </div>
-                <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">Toplam</span>
-                  <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
-                </div>
-              </div>
-            </div>
+                                      {/* Price Breakdown */}
+                                      <div className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
+                                        <div className="space-y-3 text-sm">
+                                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                                            <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
+                                            <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                                            <span>Vergiler ve Harçlar</span>
+                                            <span className="font-medium">{formatSubPrice(taxValue)}</span>
+                                          </div>
+                                          <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
+                                            <span className="font-bold text-slate-800 dark:text-slate-200">Toplam</span>
+                                            <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
+                                          </div>
+                                        </div>
+                                      </div>
 
-            {/* Terms and Conditions */}
-            <div className="flex items-start gap-3 p-2">
-              <input 
-                type="checkbox" 
-                id="terms" 
-                required
-                checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-1 w-4 h-4 text-blue-600 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <label htmlFor="terms" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
-                <span className="text-blue-600 dark:text-blue-400 hover:underline">Satış Sözleşmesini</span> ve <span className="text-blue-600 dark:text-blue-400 hover:underline">İptal/İade Koşullarını</span> okudum, anladım ve kabul ediyorum.
-              </label>
-            </div>
+                                      {/* Terms and Conditions */}
+                                      <div className="flex items-start gap-3 p-2">
+                                        <input
+                                          type="checkbox"
+                                          id="terms"
+                                          required
+                                          checked={termsAccepted}
+                                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                                          className="mt-1 w-4 h-4 text-blue-600 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2"
+                                        />
+                                        <label htmlFor="terms" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
+                                          <span className="text-blue-600 dark:text-blue-400 hover:underline">Satış Sözleşmesini</span> ve <span className="text-blue-600 dark:text-blue-400 hover:underline">İptal/İade Koşullarını</span> okudum, anladım ve kabul ediyorum.
+                                        </label>
+                                      </div>
 
-          </form>
+                                    </form>
         </div>
       </div>
 
-      {/* Sticky Footer / Action */}
-      <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sticky bottom-0 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex flex-col w-full md:w-auto text-center md:text-left">
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Toplam Tutar</span>
-          <span className="text-2xl font-extrabold text-[#3B82F6] dark:text-blue-400 leading-none">{formattedPrice}</span>
-          {submitError && <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-1">{submitError}</span>}
-        </div>
-        <button
-          type="submit"
-          form="reservation-form"
-          disabled={!termsAccepted || isSubmitting}
-          className="w-full md:w-auto md:min-w-[240px] py-3.5 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-        >
-          <ShieldCheck size={18} />
-          {isSubmitting ? t('reservation_submitting') : 'Rezervasyonu Onayla'}
-        </button>
-      </div>
-    </div>
-  );
+                        {/* Sticky Footer / Action */}
+                        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sticky bottom-0 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+                          <div className="flex flex-col w-full md:w-auto text-center md:text-left">
+                            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Toplam Tutar</span>
+                            <span className="text-2xl font-extrabold text-[#3B82F6] dark:text-blue-400 leading-none">{formattedPrice}</span>
+                            {submitError && <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-1">{submitError}</span>}
+                          </div>
+                          <button
+                            type="submit"
+                            form="reservation-form"
+                            disabled={!termsAccepted || isSubmitting}
+                            className="w-full md:w-auto md:min-w-[240px] py-3.5 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                          >
+                            <ShieldCheck size={18} />
+                            {isSubmitting ? t('reservation_submitting') : 'Rezervasyonu Onayla'}
+                          </button>
+                        </div>
+                      </div>
+                    );
 }

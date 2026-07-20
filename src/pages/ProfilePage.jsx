@@ -200,6 +200,9 @@ export default function Profile() {
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
             return t("profile_dob_invalid_date");
         }
+        if (year < 1906) {
+            return t("profile_dob_too_old");
+        }
         if (date > now) {
             return t("profile_dob_future");
         }
@@ -213,6 +216,8 @@ export default function Profile() {
         if (field === "firstName" || field === "lastName") {
             if (!trimmedVal) {
                 err = t("required_error");
+            } else if (trimmedVal.length > 25) {
+                err = t("name_max_error");
             } else {
                 const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
                 if (!nameRegex.test(trimmedVal)) {
@@ -442,6 +447,7 @@ export default function Profile() {
                                                 value={formData.firstName}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("firstName")}
+                                                maxLength={25}
                                                 className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.firstName && (
@@ -470,6 +476,7 @@ export default function Profile() {
                                                 value={formData.lastName}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("lastName")}
+                                                maxLength={25}
                                                 className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.lastName && (

@@ -65,9 +65,13 @@ export default function SignupPage() {
       return t('required_error');
     } else {
       if (field === 'name' || field === 'lastname') {
-        const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
-        if (!nameRegex.test(trimmedVal)) {
-          err = t('letters_error');
+        if (trimmedVal.length > 25) {
+          err = t('name_max_error');
+        } else {
+          const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
+          if (!nameRegex.test(trimmedVal)) {
+            err = t('letters_error');
+          }
         }
       } else if (field === 'email') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -241,7 +245,7 @@ export default function SignupPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur('name')}
                   placeholder={t('first_name_placeholder')}
-                  maxLength={40}
+                  maxLength={25}
                   className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
                 />
               </div>
@@ -269,7 +273,7 @@ export default function SignupPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur('lastname')}
                   placeholder={t('last_name_placeholder')}
-                  maxLength={40}
+                  maxLength={25}
                   className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
                 />
               </div>
