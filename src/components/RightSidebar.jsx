@@ -84,7 +84,7 @@ export default function RightSidebar({
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkin")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.checkIn || t("panel_checkin_placeholder")}
+                    {bookingDetails.checkIn ? formatFlightDateTime(bookingDetails.checkIn) : t("panel_checkin_placeholder")}
                   </span>
                 </div>
               </div>
@@ -95,7 +95,7 @@ export default function RightSidebar({
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkout")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.checkOut ? "text-slate-800" : "text-slate-400 italic"}`}>
-                    {bookingDetails.checkOut || t("panel_checkout_placeholder")}
+                    {bookingDetails.checkOut ? formatFlightDateTime(bookingDetails.checkOut) : t("panel_checkout_placeholder")}
                   </span>
                 </div>
               </div>
