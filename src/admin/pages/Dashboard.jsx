@@ -75,10 +75,10 @@ export default function Dashboard() {
         <div className="space-y-8">
             {/* BAŞLIK ALANI */}
             <div className="pb-2">
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                     {t('dashboard_title', 'Dashboard')}
                 </h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                     {t('dashboard_subtitle', 'You can monitor system performance and recent transactions here.')}
                 </p>
             </div>
@@ -90,10 +90,10 @@ export default function Dashboard() {
                     return (
                         <div
                             key={index}
-                            className="rounded-2xl border border-gray-150 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200"
+                            className="rounded-2xl border border-gray-150 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm hover:shadow-md transition-all duration-200"
                         >
                             <div className="flex items-center justify-between mb-4">
-                                <div className="inline-flex rounded-xl bg-orange-50 p-3 text-orange-500">
+                                <div className="inline-flex rounded-xl bg-orange-50 dark:bg-orange-950/20 p-3 text-orange-500">
                                     <Icon size={24} />
                                 </div>
                                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${card.badgeColor}`}>
@@ -101,10 +101,10 @@ export default function Dashboard() {
                                 </span>
                             </div>
 
-                            <p className="text-sm font-medium text-gray-400">
+                            <p className="text-sm font-medium text-gray-400 dark:text-slate-400">
                                 {t(card.key, card.defaultLabel)}
                             </p>
-                            <p className="mt-2 text-3xl font-bold text-gray-900 tracking-tight">
+                            <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                                 {card.value}
                             </p>
                         </div>
@@ -113,13 +113,13 @@ export default function Dashboard() {
             </div>
 
             {/* SON REZERVASYONLAR TABLOSU */}
-            <div className="bg-white rounded-2xl border border-gray-250 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-250 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-bold text-gray-900">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                             {t('recent_reservations_title', 'Recent Reservations')}
                         </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                             {t('recent_reservations_subtitle', 'The latest reservation records added to the system.')}
                         </p>
                     </div>
@@ -131,22 +131,22 @@ export default function Dashboard() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
-                            <tr className="bg-gray-50/70 border-b border-gray-150 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <tr className="bg-gray-50/70 dark:bg-slate-950 border-b border-gray-150 dark:border-slate-800 text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-wider">
                                 <th className="px-6 py-4">{t('table_col_reservation', 'RESERVATION')}</th>
                                 <th className="px-6 py-4">{t('table_col_client', 'CLIENT')}</th>
                                 <th className="px-6 py-4">{t('table_col_tour', 'TOUR')}</th>
                                 <th className="px-6 py-4">{t('table_col_date', 'DATE')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-sm text-gray-700 dark:text-slate-300">
                             {recentReservations.map((res) => (
-                                <tr key={res.id} className="hover:bg-gray-50/40 transition-colors">
-                                    <td className="px-6 py-4 font-semibold text-gray-900">{res.id}</td>
-                                    <td className="px-6 py-4 text-gray-600 font-medium">{res.client}</td>
-                                    <td className="px-6 py-4 text-gray-500">
+                                <tr key={res.id} className="hover:bg-gray-50/40 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">{res.id}</td>
+                                    <td className="px-6 py-4 text-gray-600 dark:text-slate-300 font-medium">{res.client}</td>
+                                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
                                         {t(res.tourKey, res.defaultTour)}
                                     </td>
-                                    <td className="px-6 py-4 text-gray-500">{res.date}</td>
+                                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{res.date}</td>
                                 </tr>
                             ))}
                         </tbody>

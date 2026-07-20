@@ -237,7 +237,7 @@ export default function PastAppointments() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
+    <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans relative">
       {/* Collapsible Chat Sidebar */}
       <ChatSidebar 
         isOpen={isSidebarOpen} 
@@ -250,7 +250,7 @@ export default function PastAppointments() {
         {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
+            className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
             title="Expand Sidebar"
           >
             <PanelLeftOpen size={18} />
@@ -265,7 +265,7 @@ export default function PastAppointments() {
           muted
           playsInline
           preload="auto"
-          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-lg"
         >
           <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
           Tarayıcınız video etiketini desteklemiyor.
@@ -273,43 +273,43 @@ export default function PastAppointments() {
 
         <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-10 relative">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[#0F172A] font-display mb-2">
+            <h1 className="text-3xl font-bold text-[#0F172A] dark:text-slate-100 font-display mb-2">
               Past Appointments
             </h1>
-            <p className="text-text-secondary text-sm">
+            <p className="text-text-secondary dark:text-slate-400 text-sm">
               View status and history of your past flight, hotel, and transfer reservations.
             </p>
           </div>
 
           {/* Stepper Timeline list container */}
-          <div className="relative border-l-[2px] border-slate-200 ml-6 pl-8 space-y-6 py-2">
+          <div className="relative border-l-[2px] border-slate-200 dark:border-slate-800 ml-6 pl-8 space-y-6 py-2">
             {(appointments.length > 0 ? appointments : mockAppointments).map((appt) => (
               <div key={appt.id} className="relative group">
                 {/* 44px timeline bullet */}
-                <div className="absolute -left-[54px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center shadow-sm z-10 transition-all duration-200 group-hover:border-[#0B5FFF]/40 group-hover:scale-105">
+                <div className="absolute -left-[54px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm z-10 transition-all duration-200 group-hover:border-[#0B5FFF]/40 group-hover:scale-105">
                   {getIcon(appt.type)}
                 </div>
 
                 {/* Main Card Component */}
                 <div 
-                  className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-4"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         {getCategoryBadge(appt.type)}
-                        <span className="text-[11px] text-text-secondary font-medium flex items-center gap-1">
+                        <span className="text-[11px] text-text-secondary dark:text-slate-400 font-medium flex items-center gap-1">
                           <Calendar size={12} />
                           {appt.date}
                         </span>
                       </div>
-                      <h3 className="font-bold text-[#0F172A] text-lg leading-tight">
+                      <h3 className="font-bold text-[#0F172A] dark:text-slate-100 text-lg leading-tight">
                         {appt.title}
                       </h3>
 
                       {/* Content details based on type */}
                       {appt.type === "Hotel" && (
-                        <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <div className="text-xs text-text-secondary dark:text-slate-400 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
                           <div><strong>Nights:</strong> {appt.nights} nights</div>
                           <div><strong>Guests:</strong> {appt.guests} guests</div>
                           <div><strong>Check-in:</strong> {appt.checkIn}</div>
@@ -318,7 +318,7 @@ export default function PastAppointments() {
                       )}
 
                       {appt.type === "Flight" && (
-                        <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <div className="text-xs text-text-secondary dark:text-slate-400 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
                           <div><strong>Flight Number:</strong> {appt.flightNumber}</div>
                           <div><strong>Seat:</strong> {appt.seat}</div>
                           <div><strong>Class:</strong> {appt.flightClass}</div>
@@ -327,7 +327,7 @@ export default function PastAppointments() {
                       )}
 
                       {appt.type === "Transfer" && (
-                        <div className="text-xs text-text-secondary grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <div className="text-xs text-text-secondary dark:text-slate-400 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60">
                           <div><strong>Service:</strong> {appt.transferType}</div>
                           <div><strong>Pickup:</strong> {appt.pickupLocation}</div>
                         </div>
@@ -336,16 +336,16 @@ export default function PastAppointments() {
 
                     <div className="flex flex-col sm:items-end justify-between sm:justify-start gap-3 flex-shrink-0">
                       {getStatusBadge(appt.status)}
-                      <span className="text-sm font-bold text-[#0F172A]">{appt.price}</span>
+                      <span className="text-sm font-bold text-[#0F172A] dark:text-slate-100">{appt.price}</span>
                     </div>
                   </div>
 
                   {/* Status row + Details button */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                     {getStatusRow(appt.status)}
                     <button 
                       onClick={() => handleOpenDrawer(appt)}
-                      className="text-xs font-semibold px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-[#F59E0B]/10 hover:border-[#F59E0B]/30 hover:text-[#F59E0B] transition-all duration-200 focus:outline-none whitespace-nowrap self-end sm:self-auto cursor-pointer"
+                      className="text-xs font-semibold px-4 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-[#F59E0B]/10 dark:hover:bg-[#F59E0B]/20 hover:border-[#F59E0B]/30 hover:text-[#F59E0B] transition-all duration-200 focus:outline-none whitespace-nowrap self-end sm:self-auto cursor-pointer"
                     >
                       {appt.status === "Completed" ? "Details →" : "Resume Booking →"}
                     </button>
@@ -367,19 +367,19 @@ export default function PastAppointments() {
 
       {/* Side Sliding Drawer */}
       <div 
-        className={`fixed right-0 top-0 h-screen w-full sm:w-[400px] bg-white shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 h-screen w-full sm:w-[400px] bg-white dark:bg-slate-900 shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
           isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {selectedAppt && (
           <>
             {/* Drawer Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850">
               <div className="space-y-1">
-                <span className="text-xs font-bold text-[#0B5FFF] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0B5FFF] dark:text-blue-400 uppercase tracking-wider">
                   Reservation Info
                 </span>
-                <h2 className="text-lg font-bold text-[#0F172A] flex items-center gap-1.5">
+                <h2 className="text-lg font-bold text-[#0F172A] dark:text-slate-100 flex items-center gap-1.5">
                   {selectedAppt.type === "Hotel" && "🏨"}
                   {selectedAppt.type === "Flight" && "✈"}
                   {selectedAppt.type === "Transfer" && "🚗"}
@@ -388,7 +388,7 @@ export default function PastAppointments() {
               </div>
               <button 
                 onClick={handleCloseDrawer}
-                className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors focus:outline-none cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -397,48 +397,48 @@ export default function PastAppointments() {
             {/* Drawer Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Status Section */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text-secondary">Current Status</span>
+                  <span className="text-xs font-semibold text-text-secondary dark:text-slate-400">Current Status</span>
                   {getStatusBadge(selectedAppt.status)}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text-secondary">Reservation Number</span>
-                  <span className="text-xs font-bold text-[#0F172A] font-mono">{selectedAppt.resNumber}</span>
+                  <span className="text-xs font-semibold text-text-secondary dark:text-slate-400">Reservation Number</span>
+                  <span className="text-xs font-bold text-[#0F172A] dark:text-slate-100 font-mono">{selectedAppt.resNumber}</span>
                 </div>
               </div>
 
               {/* Specific Content Details */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider border-b pb-1">
+                <h3 className="text-sm font-bold text-[#0F172A] dark:text-slate-100 uppercase tracking-wider border-b dark:border-slate-800 pb-1">
                   Details
                 </h3>
 
                 {selectedAppt.type === "Hotel" && (
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Hotel Name:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.hotelName}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Hotel Name:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.hotelName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Check-In:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.checkIn}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Check-In:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.checkIn}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Check-Out:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.checkOut}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Check-Out:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.checkOut}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Total Nights:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.nights} nights</span>
+                      <span className="text-text-secondary dark:text-slate-400">Total Nights:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.nights} nights</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Guest Count:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.guests} guests</span>
+                      <span className="text-text-secondary dark:text-slate-400">Guest Count:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.guests} guests</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Payment Status:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.paymentStatus}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Payment Status:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.paymentStatus}</span>
                     </div>
                   </div>
                 )}
@@ -446,24 +446,24 @@ export default function PastAppointments() {
                 {selectedAppt.type === "Flight" && (
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Flight Number:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.flightNumber}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Flight Number:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.flightNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Route:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.from} → {selectedAppt.to}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Route:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.from} → {selectedAppt.to}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Seat Assignment:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.seat}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Seat Assignment:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.seat}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Flight Class:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.flightClass}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Flight Class:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.flightClass}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Payment Status:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.paymentStatus}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Payment Status:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.paymentStatus}</span>
                     </div>
                   </div>
                 )}
@@ -471,21 +471,21 @@ export default function PastAppointments() {
                 {selectedAppt.type === "Transfer" && (
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Service Type:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.transferType}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Service Type:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.transferType}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Pickup Location:</span>
-                      <span className="font-semibold text-slate-800">{selectedAppt.pickupLocation}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Pickup Location:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppt.pickupLocation}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Driver Status:</span>
-                      <span className="font-semibold text-[#EF4444]">{selectedAppt.driverStatus}</span>
+                      <span className="text-text-secondary dark:text-slate-400">Driver Status:</span>
+                      <span className="font-semibold text-[#EF4444] dark:text-rose-400">{selectedAppt.driverStatus}</span>
                     </div>
                     {selectedAppt.cancelReason && (
-                      <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 mt-2">
-                        <span className="text-xs font-bold text-rose-700 block mb-1">Cancellation Reason:</span>
-                        <span className="text-xs text-rose-700">{selectedAppt.cancelReason}</span>
+                      <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 rounded-lg p-3 mt-2">
+                        <span className="text-xs font-bold text-rose-700 dark:text-rose-400 block mb-1">Cancellation Reason:</span>
+                        <span className="text-xs text-rose-700 dark:text-rose-300">{selectedAppt.cancelReason}</span>
                       </div>
                     )}
                   </div>
@@ -494,14 +494,14 @@ export default function PastAppointments() {
 
               {/* Context-aware message box */}
               {selectedAppt.status === "Cancelled" && (
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 text-sm text-amber-800 space-y-1">
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300 space-y-1">
                   <span className="font-bold block">Incomplete Reservation</span>
                   <span>This reservation wasn't completed. Would you like to continue where you left off?</span>
                 </div>
               )}
 
               {selectedAppt.status === "Pending" && (
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 text-sm text-amber-800 space-y-1 animate-pulse">
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300 space-y-1 animate-pulse">
                   <span className="font-bold block">Incomplete Reservation</span>
                   <span>You left before completing your booking.</span>
                 </div>
@@ -509,7 +509,7 @@ export default function PastAppointments() {
             </div>
 
             {/* Drawer Footer Actions */}
-            <div className="p-5 border-t border-slate-100 space-y-2 bg-slate-50">
+            <div className="p-5 border-t border-slate-100 dark:border-slate-800 space-y-2 bg-slate-50 dark:bg-slate-900">
               {selectedAppt.status === "Completed" && (
                 <>
                   <button 
@@ -521,7 +521,7 @@ export default function PastAppointments() {
                   </button>
                   <button 
                     onClick={() => navigate("/chat")}
-                    className="w-full py-2 rounded-lg font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
+                    className="w-full py-2 rounded-lg font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
                   >
                     <MessageSquare size={14} />
                     View Originating Conversation
@@ -529,13 +529,13 @@ export default function PastAppointments() {
                   <div className="grid grid-cols-2 gap-2">
                     <button 
                       onClick={() => navigate("/chat")}
-                      className="py-2 rounded-lg font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all text-xs cursor-pointer"
+                      className="py-2 rounded-lg font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-xs cursor-pointer"
                     >
                       Book Again
                     </button>
                     <button 
                       onClick={() => {}}
-                      className="py-2 rounded-lg font-semibold bg-white border border-slate-200 text-[#14B8A6] hover:bg-teal-50 hover:border-teal-200 transition-all flex items-center justify-center gap-1 text-xs cursor-pointer"
+                      className="py-2 rounded-lg font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#14B8A6] dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/30 hover:border-teal-200 transition-all flex items-center justify-center gap-1 text-xs cursor-pointer"
                     >
                       <PhoneCall size={12} />
                       Support
@@ -555,7 +555,7 @@ export default function PastAppointments() {
                   </button>
                   <button 
                     onClick={() => navigate("/chat")}
-                    className="w-full py-2 rounded-lg font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all text-xs cursor-pointer"
+                    className="w-full py-2 rounded-lg font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-xs cursor-pointer"
                   >
                     Start New Booking
                   </button>

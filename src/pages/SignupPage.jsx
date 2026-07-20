@@ -205,15 +205,15 @@ export default function SignupPage() {
           playsInline
           preload="auto"
           onTimeUpdate={handleTimeUpdate}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-md"
         />
       </div>
 
       {/* Dark Overlay */}
-      <div className="fixed inset-0 w-screen h-screen bg-black/40 -z-10" />
+      <div className="fixed inset-0 w-screen h-screen bg-black/40 dark:bg-black/70 -z-10" />
 
       {/* Glassmorphism Container */}
-      <div className="w-full max-w-[550px] bg-white/5 backdrop-blur-sm border border-white/20 rounded-[32px] shadow-2xl p-6 md:p-8 animate-fade-in my-8">
+      <div className="w-full max-w-[550px] bg-white/5 dark:bg-slate-900/90 backdrop-blur-sm dark:backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-[32px] shadow-2xl p-6 md:p-8 animate-fade-in my-8">
         <div className="text-center mb-8">
           <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-white mb-2 font-display">
             {t('create_account_title')}

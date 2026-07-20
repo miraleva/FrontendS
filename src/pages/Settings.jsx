@@ -164,7 +164,7 @@ export default function Settings() {
     };
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
+        <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans relative">
             {/* Collapsible Chat Sidebar */}
             <ChatSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
@@ -174,8 +174,8 @@ export default function Settings() {
                 {!isSidebarOpen && (
                     <button
                         onClick={() => setIsSidebarOpen(true)}
-                        className="absolute top-[16px] left-[16px] z-30 p-[8px] bg-white border border-slate-200 rounded-[12px] shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer"
-                        title="Expand Sidebar"
+                        className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
+                        title="Open Sidebar"
                     >
                         <PanelLeftOpen size={18} />
                     </button>
@@ -187,21 +187,21 @@ export default function Settings() {
                     loop
                     muted
                     playsInline
-                    className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+                    className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-lg"
                 >
                     <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
                     Your browser does not support the video tag.
                 </video>
 
                 {/* Dark Overlay Layer */}
-                <div className="absolute top-0 left-0 w-full h-full bg-black/20 z-10 pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-full bg-black/20 dark:bg-black/60 z-10 pointer-events-none" />
 
                 {/* Scrollable Container holding the Glass Card */}
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[850px] mt-[16px] md:mt-[24px]">
                         {/* Settings Main Glass Card */}
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-xl rounded-[20px] shadow-xl p-[24px] md:p-[40px] border border-white/20">
-                            <h1 className="text-[32px] font-bold text-slate-900 mb-[32px]">
+                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] dark:from-slate-900/80 dark:to-slate-900/60 backdrop-blur-xl rounded-[20px] shadow-xl p-[24px] md:p-[40px] border border-white/20 dark:border-slate-800">
+                            <h1 className="text-[32px] font-bold text-slate-900 dark:text-white mb-[32px]">
                                 {t("settings_title")}
                             </h1>
 
@@ -214,7 +214,7 @@ export default function Settings() {
                                             onClick={() => setActiveTab(tab.id)}
                                             className={`w-full px-[16px] py-[12px] text-left text-[14px] font-semibold rounded-[12px] transition-all border cursor-pointer focus:outline-none ${activeTab === tab.id
                                                 ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
-                                                : "bg-white/20 text-slate-800 border-white/10 hover:bg-white/30 backdrop-blur-sm"
+                                                : "bg-white/20 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border-white/10 dark:border-slate-700/60 hover:bg-white/30 dark:hover:bg-slate-800/90 backdrop-blur-sm"
                                                 }`}
                                         >
                                             {t(`settings_tab_${tab.id}`)}
@@ -230,13 +230,13 @@ export default function Settings() {
                                             <div>
                                                 <div className="flex items-center gap-[8px] mb-[24px]">
                                                     <Plane className="w-[24px] h-[24px] text-[#F59E0B]" />
-                                                    <h2 className="text-[22px] font-extrabold text-slate-900">
+                                                    <h2 className="text-[22px] font-extrabold text-slate-900 dark:text-slate-100">
                                                         {t("settings_flight_prefs")}
                                                     </h2>
                                                 </div>
                                                 <div className="space-y-[20px]">
                                                     <div>
-                                                        <label className="block text-[14px] font-semibold text-slate-800 mb-[12px]">
+                                                        <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-300 mb-[12px]">
                                                             {t("settings_seat_selection")}
                                                         </label>
                                                         <div className="flex gap-[12px] flex-wrap">
@@ -246,7 +246,7 @@ export default function Settings() {
                                                                     onClick={() => setFlightPrefs({ ...flightPrefs, seat })}
                                                                     className={`px-[24px] py-[12px] rounded-[12px] text-[14px] font-semibold transition-all border cursor-pointer ${flightPrefs.seat === seat
                                                                         ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md"
-                                                                        : "bg-white/50 text-slate-800 border-white/20 hover:bg-white/80"
+                                                                        : "bg-white/50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-white/20 dark:border-slate-700 hover:bg-white/80 dark:hover:bg-slate-700"
                                                                         }`}
                                                                 >
                                                                     {t(`settings_seat_${seat}`)}

@@ -23,7 +23,7 @@ export default function LanguageSelector({ className = "fixed top-4 right-4 z-50
       <button
         type="button"
         onClick={() => setIsLangOpen(!isLangOpen)}
-        className="bg-[#F0F4F8]/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-1.5 text-[#f07c24] text-[16px] font-bold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-[#F0F4F8]/30 focus:outline-none"
+        className="bg-[#F0F4F8]/20 dark:bg-slate-900/40 backdrop-blur-sm border border-white/30 dark:border-slate-800/40 rounded-full px-4 py-1.5 text-[#f07c24] text-[16px] font-bold flex items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-[#F0F4F8]/30 dark:hover:bg-slate-900/60 focus:outline-none"
       >
         <span>{currentLangLabel}</span>
         <svg
@@ -38,7 +38,7 @@ export default function LanguageSelector({ className = "fixed top-4 right-4 z-50
       </button>
 
       {isLangOpen && (
-        <div className="absolute right-0 mt-2 w-28 bg-[#F0F4F8]/95 backdrop-blur-md border border-white/50 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in">
+        <div className="absolute right-0 mt-2 w-28 bg-[#F0F4F8]/95 dark:bg-slate-900/95 backdrop-blur-md border border-white/50 dark:border-slate-800/50 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in">
           {['en', 'tr', 'ru', 'de'].map((lang) => (
             <button
               key={lang}
@@ -51,7 +51,7 @@ export default function LanguageSelector({ className = "fixed top-4 right-4 z-50
               }}
               className={`w-full text-left px-4 py-2 text-[15px] transition-colors duration-150 ${i18n.language?.startsWith(lang)
                 ? 'bg-[#0096C7] text-white font-bold'
-                : 'text-[#023E8A] hover:bg-[#0096C7]/10'
+                : 'text-[#023E8A] dark:text-slate-200 hover:bg-[#0096C7]/10 dark:hover:bg-[#0096C7]/20'
                 }`}
             >
               {lang.toUpperCase()}

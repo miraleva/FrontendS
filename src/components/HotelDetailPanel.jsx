@@ -94,9 +94,9 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
   }
 
   return (
-    <div className="flex flex-col h-full bg-white font-sans w-full relative">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 font-sans w-full relative">
       {/* Header / Fotoğraf Galerisi */}
-      <div className="relative h-48 md:h-64 flex-shrink-0 bg-slate-200">
+      <div className="relative h-48 md:h-64 flex-shrink-0 bg-slate-200 dark:bg-slate-800">
         {photos.length > 0 ? (
           <img
             key={photoIndex}
@@ -185,16 +185,16 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
 
         {/* Açıklama */}
         {plainDescription && (
-          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4">
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Info size={12} />
               Otel Hakkında
             </h3>
-            <p className="text-sm text-slate-600 leading-relaxed">{displayedDescription}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{displayedDescription}</p>
             {isDescriptionLong && (
               <button
                 onClick={() => setDescriptionExpanded(v => !v)}
-                className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700"
+                className="mt-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
               >
                 {descriptionExpanded ? "Daha az göster" : "Devamını oku"}
               </button>
@@ -205,12 +205,12 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {/* Core Info Row */}
         <div className="flex flex-wrap gap-3">
           {(hotel.boardName || hotel.boardType || hotel.pensionType) && (
-            <div className="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+            <div className="px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
               {hotel.boardName || hotel.boardType || hotel.pensionType}
             </div>
           )}
           {hotel.roomName && (
-            <div className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold flex items-center gap-1.5 border border-blue-100">
+            <div className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 text-sm font-semibold flex items-center gap-1.5 border border-blue-100 dark:border-blue-900/50">
               <BedDouble size={14} />
               {hotel.roomName}
             </div>
@@ -218,11 +218,11 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         </div>
 
         {/* Booking Context (from chat context) */}
-        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col gap-3">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Arama Detayları</h3>
+        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 flex flex-col gap-3">
+          <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Arama Detayları</h3>
           <div className="flex flex-wrap gap-y-3 gap-x-6">
             {bookingDetails?.checkIn && (
-              <div className="flex items-center gap-2 text-sm text-slate-700">
+              <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <Calendar size={16} className="text-blue-500" />
                 <span className="font-semibold">{formatDate(bookingDetails.checkIn)}</span>
                 {bookingDetails.checkOut && (
@@ -234,7 +234,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
               </div>
             )}
             {bookingDetails?.guests && (
-              <div className="flex items-center gap-2 text-sm text-slate-700">
+              <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <Users size={16} className="text-blue-500" />
                 <span className="font-semibold">{bookingDetails.guests}</span>
               </div>
@@ -245,10 +245,10 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {/* Themes/Badges */}
         {themesList.length > 0 && (
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Temalar</h3>
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Temalar</h3>
             <div className="flex flex-wrap gap-2">
               {themesList.map((theme, i) => (
-                <span key={i} className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-md text-xs font-semibold">
+                <span key={i} className="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50 rounded-md text-xs font-semibold">
                   {theme}
                 </span>
               ))}
@@ -259,10 +259,10 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {/* Facilities */}
         {facilitiesList.length > 0 && (
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Olanaklar</h3>
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Olanaklar</h3>
             <div className="grid grid-cols-2 gap-2">
               {facilitiesList.map((facility, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                <div key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
                   <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
                   <span className="leading-tight">{facility}</span>
                 </div>
@@ -273,7 +273,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
 
         {/* Detaylar hâlâ yükleniyorsa (açıklama/olanaklar henüz gelmediyse) küçük bir gösterge */}
         {loadingDetail && !plainDescription && facilitiesList.length === 0 && themesList.length === 0 && (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
             <Loader2 size={14} className="animate-spin" />
             Otel detayları yükleniyor...
           </div>
@@ -282,11 +282,11 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
       </div>
 
       {/* Footer / Action */}
-      <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+      <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         <div className="flex items-end justify-between mb-4">
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toplam Fiyat</span>
-            <span className="text-2xl font-extrabold text-[#3B82F6]">{formattedPrice}</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Toplam Fiyat</span>
+            <span className="text-2xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
           </div>
         </div>
         <button

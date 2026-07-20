@@ -40,20 +40,20 @@ export default function SearchChats() {
   const getBadgeStyle = (category) => {
     switch (category) {
       case 'General SOP':
-        return 'bg-slate-100 text-slate-700 border border-slate-200';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
       case 'Hotel':
-        return 'bg-blue-50 text-blue-700 border border-blue-100';
+        return 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50';
       case 'Flight':
-        return 'bg-purple-50 text-purple-700 border border-purple-100';
+        return 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-900/50';
       case 'Transfer':
-        return 'bg-teal-50 text-teal-700 border border-teal-100';
+        return 'bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-900/50';
       default:
-        return 'bg-gray-100 text-gray-700 border border-gray-200';
+        return 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700';
     }
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg font-sans">
+    <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans">
       {/* Collapsible Chat Sidebar */}
       <ChatSidebar 
         isOpen={isSidebarOpen} 
@@ -67,7 +67,7 @@ export default function SearchChats() {
         {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-all duration-200 focus:outline-none"
+            className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
             title="Expand Sidebar"
           >
             <PanelLeftOpen size={18} />
@@ -82,7 +82,7 @@ export default function SearchChats() {
           muted
           playsInline
           preload="auto"
-          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+          className="fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-lg"
         >
           <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
           Tarayıcınız video etiketini desteklemiyor.
@@ -90,57 +90,57 @@ export default function SearchChats() {
 
         <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-10 relative">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[#0F172A] font-display mb-2">
+            <h1 className="text-3xl font-bold text-[#0F172A] dark:text-slate-100 font-display mb-2">
               Search Chats
             </h1>
-            <p className="text-text-secondary text-sm">
+            <p className="text-text-secondary dark:text-slate-400 text-sm">
               Search across your active, recent, and archived chat sessions.
             </p>
           </div>
 
           {/* Search Box */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-6 flex items-center gap-3">
-            <Search className="text-slate-400" size={20} />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm mb-6 flex items-center gap-3">
+            <Search className="text-slate-400 dark:text-slate-500" size={20} />
             <input 
               type="text" 
               placeholder="Search by keyword, hotel name, flight code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent text-text-primary placeholder-slate-400 focus:outline-none text-base font-medium"
+              className="w-full bg-transparent text-text-primary dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-base font-medium"
               autoFocus
             />
           </div>
 
           {/* Results List */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
             {filteredSessions.length > 0 ? (
               filteredSessions.map((session) => (
                 <div 
                   key={session.id}
                   onClick={() => navigate('/chat')}
-                  className="p-5 hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between group"
+                  className="p-5 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all flex items-center justify-between group"
                 >
                   <div className="space-y-1.5 min-w-0">
-                    <h3 className="font-bold text-[#0F172A] group-hover:text-primary transition-colors text-base truncate pr-4">
+                    <h3 className="font-bold text-[#0F172A] dark:text-slate-100 group-hover:text-primary transition-colors text-base truncate pr-4">
                       {session.title}
                     </h3>
                     <div className="flex items-center gap-3">
                       <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${getBadgeStyle(session.category)}`}>
                         {session.category}
                       </span>
-                      <span className="text-xs text-text-secondary">
+                      <span className="text-xs text-text-secondary dark:text-slate-400">
                         Last active: {session.date}
                       </span>
                     </div>
                   </div>
                   
-                  <div className="flex items-center text-slate-400 group-hover:text-primary transition-all pr-1">
+                  <div className="flex items-center text-slate-400 dark:text-slate-500 group-hover:text-primary transition-all pr-1">
                     <ChevronRight size={20} className="transform group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-8 text-center text-text-secondary text-sm font-medium">
+              <div className="p-8 text-center text-text-secondary dark:text-slate-400 text-sm font-medium">
                 No chat sessions found matching "{searchQuery}"
               </div>
             )}

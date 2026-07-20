@@ -7,7 +7,7 @@ export default function MainLayout() {
   const hideGlobalLayout = location.pathname.startsWith('/chat') || location.pathname === '/appointments' || location.pathname === '/profile';
 
   return (
-    <div className="min-h-screen flex bg-bg">
+    <div className="min-h-screen flex bg-bg dark:bg-slate-950">
       {!hideGlobalLayout && <Sidebar />}
       <div className="flex-1 flex flex-col min-w-0">
         {!hideGlobalLayout && <Header />}
