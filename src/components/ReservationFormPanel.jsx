@@ -14,6 +14,42 @@ function toDateOnly(value) {
   return date.toISOString().slice(0, 10);
 }
 
+const getPassengerErrors = (p, isValidPhoneNumber) => {
+  const errors = {};
+  if (!p.firstName?.trim()) errors.firstName = "Ad gereklidir.";
+  if (!p.lastName?.trim()) errors.lastName = "Soyad gereklidir.";
+  
+  if (p.nationality?.toUpperCase() === 'TR') {
+    if (!/^[1-9]\d{10}$/.test(p.identityNumber)) {
+      errors.identityNumber = "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+    }
+  } else {
+    if (!p.identityNumber?.trim() || p.identityNumber.trim().length < 5) {
+      errors.identityNumber = "Geçersiz Pasaport No (en az 5 karakter).";
+    }
+  }
+  
+  if (!p.birthDate) {
+    errors.birthDate = "Doğum tarihi gereklidir.";
+  } else if (new Date(p.birthDate) >= new Date()) {
+    errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+  }
+  
+  if (!p.email?.trim()) {
+    errors.email = "E-posta gereklidir.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) {
+    errors.email = "Geçersiz e-posta formatı (örn: ad@example.com).";
+  }
+  
+  if (!p.phone) {
+    errors.phone = "Telefon numarası gereklidir.";
+  } else if (!isValidPhoneNumber(p.phone)) {
+    errors.phone = "Ülke formatına uymuyor (geçersiz uzunluk).";
+  }
+  
+  return errors;
+};
+
 export default function ReservationFormPanel({ 
   hotel, 
   bookingDetails, 
@@ -64,7 +100,7 @@ export default function ReservationFormPanel({
           email: '',
           phone: '',
           birthDate: '',
-          gender: 'MR',
+          gender: 'CHD',
           nationality: 'TR',
           age: childAges[i] !== undefined ? childAges[i].toString() : '',
         });
@@ -146,27 +182,13 @@ export default function ReservationFormPanel({
       return idNo.trim().length >= 5;
     };
 
-    for (const g of (guests || [])) {
-      if (!g.firstName?.trim() || !g.lastName?.trim()) {
-        alert("Lütfen tüm konukların ad ve soyad bilgilerini giriniz.");
-        return;
-      }
-      if (!isIdentityNumberValid(g.identityNumber, g.nationality)) {
-        alert(g.nationality?.toUpperCase() === 'TR' 
-          ? "Lütfen geçerli bir 11 haneli T.C. Kimlik Numarası giriniz." 
-          : "Lütfen geçerli bir pasaport numarası giriniz (en az 5 karakter).");
-        return;
-      }
-      if (!g.birthDate || new Date(g.birthDate) >= new Date()) {
-        alert("Doğum tarihi bugünden küçük (geçmişte) olmalıdır.");
-        return;
-      }
-      if (!g.phone || !isValidPhoneNumber(g.phone)) {
-        alert("Lütfen geçerli bir telefon numarası giriniz.");
-        return;
-      }
-      if (!g.email?.trim()) {
-        alert("Lütfen tüm konukların e-posta adreslerini giriniz.");
+    for (let i = 0; i < (guests || []).length; i++) {
+      const g = guests[i];
+      const errors = getPassengerErrors(g, isValidPhoneNumber);
+      const errorKeys = Object.keys(errors);
+      if (errorKeys.length > 0) {
+        const guestName = g.firstName && g.lastName ? `${g.firstName} ${g.lastName}` : `${i + 1}. Yolcu`;
+        alert(`${guestName} bilgilerinde hata var: ${errors[errorKeys[0]]}`);
         return;
       }
     }
@@ -327,131 +349,141 @@ export default function ReservationFormPanel({
                         {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                       </div>
                     </button>
-                    {isExpanded && (
-                      <div className="p-5 border-t border-slate-100 bg-slate-50/50 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Ad</label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.firstName}
-                              onChange={(e) => handleGuestChange(index, 'firstName', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Soyad</label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.lastName}
-                              onChange={(e) => handleGuestChange(index, 'lastName', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Cinsiyet</label>
-                            <select
-                              required
-                              value={guest.gender || 'MR'}
-                              onChange={(e) => handleGuestChange(index, 'gender', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            >
-                              <option value="MR">Bay (Mr.)</option>
-                              <option value="MRS">Bayan (Mrs.)</option>
-                            </select>
-                          </div>
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Doğum Tarihi</label>
-                            <input
-                              required
-                              type="date"
-                              max={new Date().toISOString().split('T')[0]}
-                              value={guest.birthDate || ''}
-                              onChange={(e) => handleGuestChange(index, 'birthDate', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Uyruk</label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.nationality || 'TR'}
-                              onChange={(e) => handleGuestChange(index, 'nationality', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                              <ShieldCheck size={12}/> TC Kimlik No / Pasaport
-                            </label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.identityNumber}
-                              onChange={(e) => handleGuestChange(index, 'identityNumber', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                              <Mail size={12}/> E-posta
-                            </label>
-                            <input
-                              required
-                              type="email"
-                              value={guest.email || ''}
-                              onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                              <Phone size={12}/> Telefon
-                            </label>
-                            <PhoneInput
-                              international
-                              defaultCountry="TR"
-                              value={guest.phone || ''}
-                              onChange={(val) => handleGuestChange(index, 'phone', val)}
-                              className="flex items-center w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-colors"
-                              numberInputProps={{
-                                required: true,
-                                className: 'bg-transparent border-0 outline-none w-full text-slate-800 focus:ring-0 ml-2 py-1',
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {guest.type === 'CHILD' && (
+                    {isExpanded && (() => {
+                      const errors = getPassengerErrors(guest, isValidPhoneNumber);
+                      return (
+                        <div className="p-5 border-t border-slate-100 bg-slate-50/50 space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">Yaş</label>
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Ad</label>
                               <input
                                 required
-                                type="number"
-                                min="0"
-                                max="17"
-                                value={guest.age}
-                                onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
+                                type="text"
+                                value={guest.firstName}
+                                onChange={(e) => handleGuestChange(index, 'firstName', e.target.value)}
+                                className={`w-full bg-white border ${errors.firstName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 focus:ring-amber-500/50 focus:border-amber-500'} rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.firstName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.firstName}</span>}
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Soyad</label>
+                              <input
+                                required
+                                type="text"
+                                value={guest.lastName}
+                                onChange={(e) => handleGuestChange(index, 'lastName', e.target.value)}
+                                className={`w-full bg-white border ${errors.lastName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 focus:ring-amber-500/50 focus:border-amber-500'} rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.lastName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.lastName}</span>}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Cinsiyet</label>
+                              <select
+                                required
+                                value={guest.gender || 'MR'}
+                                onChange={(e) => handleGuestChange(index, 'gender', e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                              >
+                                <option value="MR">Bay (Mr.)</option>
+                                <option value="MRS">Bayan (Mrs.)</option>
+                                <option value="CHD">Çocuk (Child)</option>
+                              </select>
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Doğum Tarihi</label>
+                              <input
+                                required
+                                type="date"
+                                max={new Date().toISOString().split('T')[0]}
+                                value={guest.birthDate || ''}
+                                onChange={(e) => handleGuestChange(index, 'birthDate', e.target.value)}
+                                className={`w-full bg-white border ${errors.birthDate ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 focus:ring-amber-500/50 focus:border-amber-500'} rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.birthDate && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.birthDate}</span>}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Uyruk</label>
+                              <input
+                                required
+                                type="text"
+                                value={guest.nationality || 'TR'}
+                                onChange={(e) => handleGuestChange(index, 'nationality', e.target.value)}
                                 className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                               />
                             </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                                <ShieldCheck size={12}/> TC Kimlik No / Pasaport
+                              </label>
+                              <input
+                                required
+                                type="text"
+                                value={guest.identityNumber}
+                                onChange={(e) => handleGuestChange(index, 'identityNumber', e.target.value)}
+                                className={`w-full bg-white border ${errors.identityNumber ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 focus:ring-amber-500/50 focus:border-amber-500'} rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.identityNumber && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.identityNumber}</span>}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    )}
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                                <Mail size={12}/> E-posta
+                              </label>
+                              <input
+                                required
+                                type="email"
+                                value={guest.email || ''}
+                                onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
+                                className={`w-full bg-white border ${errors.email ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 focus:ring-amber-500/50 focus:border-amber-500'} rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.email && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.email}</span>}
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                                <Phone size={12}/> Telefon
+                              </label>
+                              <PhoneInput
+                                international
+                                defaultCountry="TR"
+                                value={guest.phone || ''}
+                                onChange={(val) => handleGuestChange(index, 'phone', val)}
+                                className={`flex items-center w-full bg-white border ${errors.phone ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-200 focus-within:ring-amber-500/50 focus-within:border-amber-500'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
+                                numberInputProps={{
+                                  required: true,
+                                  className: 'bg-transparent border-0 outline-none w-full text-slate-800 focus:ring-0 ml-2 py-1',
+                                }}
+                              />
+                              {errors.phone && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.phone}</span>}
+                            </div>
+                          </div>
+
+                          {guest.type === 'CHILD' && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="col-span-1">
+                                <label className="block text-xs font-semibold text-slate-500 mb-1">Yaş</label>
+                                <input
+                                  required
+                                  type="number"
+                                  min="0"
+                                  max="17"
+                                  value={guest.age}
+                                  onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
+                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
