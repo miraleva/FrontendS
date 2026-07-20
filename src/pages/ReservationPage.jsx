@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ChatSidebar from "../components/ChatSidebar";
@@ -6,6 +6,7 @@ import { PanelLeftOpen, ArrowLeft, CheckCircle2, User, Baby, Mail, Phone, Shield
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import api from "../services/api";
+import { useTheme } from "../components/ThemeContext";
 
 function formatPrice(price) {
     const num = Number(price);
@@ -44,9 +45,19 @@ function toDateOnly(value) {
 
 export default function ReservationPage() {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
+        }
+    }, [theme]);
 
     const selectedItem = location.state?.selectedItem;
     const bookingDetails = location.state?.bookingDetails;
@@ -228,12 +239,30 @@ export default function ReservationPage() {
     });
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
+        <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+            {/* Katman 1 (z-0): Background Video */}
+            <video
+                ref={videoRef}
+                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            />
+
+            {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+            {/* Katman 3 (z-30): Sidebar */}
             <ChatSidebar
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
-            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+
+            {/* Katman 3 (z-20): Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
                 {!isSidebarOpen && (
                     <button
                         onClick={() => setIsSidebarOpen(true)}
@@ -244,16 +273,10 @@ export default function ReservationPage() {
                     </button>
                 )}
 
-                <video autoPlay loop muted playsInline className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-lg">
-                    <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-
-                <div className="absolute top-0 left-0 w-full h-full bg-black/20 dark:bg-black/60 z-10 pointer-events-none" />
-
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] dark:from-slate-900/60 dark:to-slate-900/40 backdrop-blur-xl rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-white/20 dark:border-slate-800/40">
+                        {/* Main Reservation Card */}
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-slate-200 dark:border-slate-800">
                             
                             <h1 className="text-[28px] font-bold text-slate-900 dark:text-white leading-tight mb-6">
                                 {t("reservation_title")}

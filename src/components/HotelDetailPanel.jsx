@@ -117,7 +117,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
 
         {/* Detay yüklenirken küçük bir gösterge (galeri zaten thumbnail ile açılmış olur) */}
         {loadingDetail && (
-          <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/50 text-white text-xs px-2.5 py-1.5 rounded-full backdrop-blur-md">
+          <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full">
             <Loader2 size={12} className="animate-spin" />
             Fotoğraflar yükleniyor
           </div>
@@ -128,13 +128,13 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
           <>
             <button
               onClick={goToPrevPhoto}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md"
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={goToNextPhoto}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
             >
               <ChevronRight size={18} />
             </button>
@@ -153,7 +153,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md"
+          className="absolute top-4 right-4 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
         >
           <X size={20} />
         </button>

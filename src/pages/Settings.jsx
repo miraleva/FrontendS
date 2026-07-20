@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Eye, EyeOff, PanelLeftOpen } from "lucide-react";
+import { Eye, EyeOff, PanelLeftOpen } from "lucide-react";
 import ChatSidebar from "../components/ChatSidebar";
 import api from "../services/api";
+import { useTheme } from "../components/ThemeContext";
 
 export default function Settings() {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState("localization");
+
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
+        }
+    }, [theme]);
 
     const [localizationSettings, setLocalizationSettings] = useState(() => {
         try {
@@ -27,25 +38,9 @@ export default function Settings() {
         }
     });
 
-    const [securitySettings, setSecuritySettings] = useState({
-        savedCards: [
-            { id: "1", cardType: "Visa", lastFour: "4242" },
-            { id: "2", cardType: "Mastercard", lastFour: "8888" },
-        ],
-        twoFactorEnabled: false,
-    });
-
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newCard, setNewCard] = useState({
-        cardType: "",
-        lastFour: "",
-        formattedNumber: "",
-        expiry: ""
-    });
-    const [cardToDelete, setCardToDelete] = useState(null);
 
     const tabs = [
         { id: "localization" },
@@ -103,23 +98,30 @@ export default function Settings() {
         alert(t("settings_cancel"));
     };
 
-    const handleCloseModal = () => {
-        setNewCard({
-            cardType: "",
-            lastFour: "",
-            formattedNumber: "",
-            expiry: ""
-        });
-        setIsModalOpen(false);
-    };
+
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-bg dark:bg-slate-950 font-sans relative">
-            {/* Collapsible Chat Sidebar */}
+        <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+            {/* Katman 1 (z-0): Background Video */}
+            <video
+                ref={videoRef}
+                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            />
+
+            {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+            {/* Katman 3 (z-30): Sidebar */}
             <ChatSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+            {/* Katman 3 (z-20): Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
                 {/* Toggle open button when sidebar is collapsed */}
                 {!isSidebarOpen && (
                     <button
@@ -131,26 +133,11 @@ export default function Settings() {
                     </button>
                 )}
 
-                {/* Background Video */}
-                <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none opacity-100 dark:opacity-30 dark:brightness-[0.4] blur-none dark:blur-lg"
-                >
-                    <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-
-                {/* Dark Overlay Layer */}
-                <div className="absolute top-0 left-0 w-full h-full bg-black/20 dark:bg-black/60 z-10 pointer-events-none" />
-
-                {/* Scrollable Container holding the Glass Card */}
+                {/* Scrollable Container holding the Form Card */}
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[850px] mt-[16px] md:mt-[24px]">
-                        {/* Settings Main Glass Card */}
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] dark:from-slate-900/80 dark:to-slate-900/60 backdrop-blur-xl rounded-[20px] shadow-xl p-[24px] md:p-[40px] border border-white/20 dark:border-slate-800">
+                        {/* Settings Main Form Card */}
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[24px] md:p-[40px] border border-slate-200 dark:border-slate-800">
                             <h1 className="text-[32px] font-bold text-slate-900 dark:text-white mb-[32px]">
                                 {t("settings_title")}
                             </h1>
@@ -164,7 +151,7 @@ export default function Settings() {
                                             onClick={() => setActiveTab(tab.id)}
                                             className={`w-full px-[16px] py-[12px] text-left text-[14px] font-semibold rounded-[12px] transition-all border cursor-pointer focus:outline-none ${activeTab === tab.id
                                                 ? "bg-[#F59E0B] text-white border-[#F59E0B] shadow-md shadow-[#F59E0B]/20"
-                                                : "bg-white/20 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border-white/10 dark:border-slate-700/60 hover:bg-white/30 dark:hover:bg-slate-800/90 backdrop-blur-sm"
+                                                : "bg-slate-100 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-800/90"
                                                 }`}
                                         >
                                             {t(`settings_tab_${tab.id}`)}
@@ -184,7 +171,7 @@ export default function Settings() {
                                                 <select
                                                     value={localizationSettings.currency}
                                                     onChange={(e) => setLocalizationSettings({ ...localizationSettings, currency: e.target.value })}
-                                                    className="w-full rounded-[12px] bg-slate-100/80 dark:bg-slate-800 backdrop-blur-md px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 cursor-pointer text-[14px]"
+                                                    className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 cursor-pointer text-[14px]"
                                                 >
                                                     <option value="try" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Turkish Lira (₺)</option>
                                                     <option value="usd" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">US Dollar ($)</option>
@@ -200,7 +187,7 @@ export default function Settings() {
                                                 <select
                                                     value={localizationSettings.timezone}
                                                     onChange={(e) => setLocalizationSettings({ ...localizationSettings, timezone: e.target.value })}
-                                                    className="w-full rounded-[12px] bg-slate-100/80 dark:bg-slate-800 backdrop-blur-md px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 cursor-pointer text-[14px]"
+                                                    className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 cursor-pointer text-[14px]"
                                                 >
                                                     <option value="europe/istanbul" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Europe/Istanbul (GMT+3)</option>
                                                     <option value="europe/london" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Europe/London (GMT+0)</option>
@@ -214,7 +201,7 @@ export default function Settings() {
                                     {/* 2. Notifications Tab */}
                                     {activeTab === "notifications" && (
                                         <div className="space-y-[24px]">
-                                            <div className="flex items-center justify-between bg-white/20 dark:bg-slate-800/50 backdrop-blur-md p-[16px] rounded-[12px] border border-white/20 dark:border-slate-700/60">
+                                            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/50 p-[16px] rounded-[12px] border border-slate-200 dark:border-slate-700/60">
                                                 <div>
                                                     <h3 className="font-bold text-slate-900 dark:text-slate-100 text-[16px]">
                                                         {t("settings_price_alerts")}
@@ -225,7 +212,7 @@ export default function Settings() {
                                                 </div>
                                                 <button
                                                     onClick={() => setNotificationSettings({ ...notificationSettings, priceAlerts: !notificationSettings.priceAlerts })}
-                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 dark:border-slate-700 cursor-pointer ${notificationSettings.priceAlerts ? "bg-[#F59E0B]" : "bg-white/40 dark:bg-slate-700"
+                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-slate-300 dark:border-slate-700 cursor-pointer ${notificationSettings.priceAlerts ? "bg-[#F59E0B]" : "bg-slate-200 dark:bg-slate-700"
                                                         }`}
                                                 >
                                                     <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.priceAlerts ? "translate-x-[28px]" : "translate-x-[2px]"
@@ -233,7 +220,7 @@ export default function Settings() {
                                                 </button>
                                             </div>
 
-                                            <div className="flex items-center justify-between bg-white/20 dark:bg-slate-800/50 backdrop-blur-md p-[16px] rounded-[12px] border border-white/20 dark:border-slate-700/60">
+                                            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/50 p-[16px] rounded-[12px] border border-slate-200 dark:border-slate-700/60">
                                                 <div>
                                                     <h3 className="font-bold text-slate-900 dark:text-slate-100 text-[16px]">
                                                         {t("settings_booking_confirmations")}
@@ -244,7 +231,7 @@ export default function Settings() {
                                                 </div>
                                                 <button
                                                     onClick={() => setNotificationSettings({ ...notificationSettings, bookingConfirmations: !notificationSettings.bookingConfirmations })}
-                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-white/20 dark:border-slate-700 cursor-pointer ${notificationSettings.bookingConfirmations ? "bg-[#F59E0B]" : "bg-white/40 dark:bg-slate-700"
+                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-slate-300 dark:border-slate-700 cursor-pointer ${notificationSettings.bookingConfirmations ? "bg-[#F59E0B]" : "bg-slate-200 dark:bg-slate-700"
                                                         }`}
                                                 >
                                                     <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.bookingConfirmations ? "translate-x-[28px]" : "translate-x-[2px]"
@@ -254,92 +241,57 @@ export default function Settings() {
                                         </div>
                                     )}
 
-                                    {/* 3. Security & Billing Tab */}
+                                    {/* 3. Güvenlik Tab */}
                                     {activeTab === "security" && (
-                                        <div className="space-y-[32px]">
-                                            <div>
-                                                <h2 className="text-[20px] font-bold text-slate-900 dark:text-slate-100 mb-[16px]">
-                                                    {t("settings_saved_cards")}
-                                                </h2>
-                                                <div className="space-y-[12px] mb-[16px]">
-                                                    {securitySettings.savedCards.map((card) => (
-                                                        <div
-                                                            key={card.id}
-                                                            className="flex items-center justify-between bg-gradient-to-r from-slate-900/90 to-slate-800/90 backdrop-blur-md text-white px-[24px] py-[16px] rounded-[12px] shadow-lg border border-white/10"
+                                        <div className="space-y-[24px]">
+                                            <h2 className="text-[20px] font-bold text-slate-900 dark:text-slate-100 mb-[8px]">
+                                                {t("settings_account_security")}
+                                            </h2>
+                                            <div className="space-y-[20px]">
+                                                <div>
+                                                    <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
+                                                        {t("settings_change_password")}
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showPassword ? "text" : "password"}
+                                                            value={newPassword}
+                                                            onChange={(e) => setNewPassword(e.target.value)}
+                                                            placeholder={t("settings_change_password_placeholder")}
+                                                            className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 pr-[48px] font-medium text-[14px]"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-[16px] top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer"
                                                         >
-                                                            <div>
-                                                                <p className="font-semibold text-[15px]">{card.cardType}</p>
-                                                                <p className="text-[13px] text-slate-300 mt-[4px]">**** **** **** {card.lastFour}</p>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => setCardToDelete(card.id)}
-                                                                className="text-red-400 hover:text-red-300 font-semibold transition-colors text-[14px] cursor-pointer"
-                                                            >
-                                                                {t("settings_remove_card")}
-                                                            </button>
-                                                        </div>
-                                                    ))}
+                                                            {showPassword ? (
+                                                                <Eye className="w-[20px] h-[20px]" />
+                                                            ) : (
+                                                                <EyeOff className="w-[20px] h-[20px]" />
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => setIsModalOpen(true)}
-                                                    className="w-full flex items-center justify-center gap-[8px] bg-[#F59E0B] hover:bg-[#F59E0B]/90 text-white font-semibold py-[12px] rounded-[12px] transition-all shadow-md text-[14px] cursor-pointer"
-                                                >
-                                                    <Plus className="w-[20px] h-[20px]" /> {t("settings_add_card")}
-                                                </button>
-                                            </div>
 
-                                            <hr className="border-white/10 dark:border-slate-800" />
-
-                                            <div>
-                                                <h2 className="text-[20px] font-bold text-slate-900 dark:text-slate-100 mb-[24px]">
-                                                    {t("settings_account_security")}
-                                                </h2>
-                                                <div className="space-y-[20px]">
-                                                    <div>
-                                                        <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
-                                                            {t("settings_change_password")}
-                                                        </label>
-                                                        <div className="relative">
-                                                            <input
-                                                                type={showPassword ? "text" : "password"}
-                                                                value={newPassword}
-                                                                onChange={(e) => setNewPassword(e.target.value)}
-                                                                placeholder={t("settings_change_password_placeholder")}
-                                                                className="w-full rounded-[12px] bg-slate-100/80 dark:bg-slate-800 backdrop-blur-md px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 pr-[48px] font-medium text-[14px]"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setShowPassword(!showPassword)}
-                                                                className="absolute right-[16px] top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer"
-                                                            >
-                                                                {showPassword ? (
-                                                                    <Eye className="w-[20px] h-[20px]" />
-                                                                ) : (
-                                                                    <EyeOff className="w-[20px] h-[20px]" />
-                                                                )}
-                                                            </button>
-                                                        </div>
+                                                <div>
+                                                    <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
+                                                        {t("Yeni Şifreyi Tekrar Girin")}
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showPassword ? "text" : "password"}
+                                                            value={confirmPassword}
+                                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                                            placeholder={t("Yeni şifrenizi tekrar girin")}
+                                                            className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 pr-[48px] font-medium text-[14px]"
+                                                        />
                                                     </div>
-
-                                                    <div>
-                                                        <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
-                                                            {t("Yeni Şifreyi Tekrar Girin")}
-                                                        </label>
-                                                        <div className="relative">
-                                                            <input
-                                                                type={showPassword ? "text" : "password"}
-                                                                value={confirmPassword}
-                                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                                placeholder={t("Yeni şifrenizi tekrar girin")}
-                                                                className="w-full rounded-[12px] bg-slate-100/80 dark:bg-slate-800 backdrop-blur-md px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 pr-[48px] font-medium text-[14px]"
-                                                            />
-                                                        </div>
-                                                        {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                                                            <p className="text-red-600 dark:text-red-400 text-[12px] font-semibold mt-[6px]">
-                                                                {t("Şifreler birbiriyle eşleşmiyor.")}
-                                                            </p>
-                                                        )}
-                                                    </div>
+                                                    {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                                                        <p className="text-red-600 dark:text-red-400 text-[12px] font-semibold mt-[6px]">
+                                                            {t("Şifreler birbiriyle eşleşmiyor.")}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -351,7 +303,7 @@ export default function Settings() {
                             <div className="mt-[48px] flex justify-end gap-[16px]">
                                 <button
                                     onClick={handleCancel}
-                                    className="px-[32px] py-[12px] rounded-[12px] text-slate-800 dark:text-slate-200 font-bold hover:bg-white/20 dark:hover:bg-slate-800/60 transition-all border border-transparent hover:border-white/20 dark:hover:border-slate-700 backdrop-blur-sm text-[14px] cursor-pointer"
+                                    className="px-[32px] py-[12px] rounded-[12px] text-slate-800 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-300 dark:border-slate-700 text-[14px] cursor-pointer"
                                 >
                                     {t("settings_cancel")}
                                 </button>
@@ -367,160 +319,7 @@ export default function Settings() {
                 </div>
             </div>
 
-            {/* Modal: Add card */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px]">
-                    <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                        onClick={handleCloseModal}
-                    />
-                    <div className="relative w-full max-w-[448px] bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[20px] p-[24px] md:p-[32px] shadow-2xl border border-white/20 dark:border-slate-800 z-10 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="text-[20px] font-bold text-slate-900 dark:text-slate-100 mb-[24px]">
-                            {t("settings_add_card_title")}
-                        </h3>
-                        <div className="space-y-[16px]">
-                            <div>
-                                <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[8px]">{t("settings_card_number")}</label>
-                                <input
-                                    type="text"
-                                    maxLength="19"
-                                    placeholder="4111 2222 3333 4444"
-                                    value={newCard.formattedNumber}
-                                    onChange={(e) => {
-                                        let rawVal = e.target.value.replace(/\D/g, '');
-                                        let formattedVal = rawVal.match(/.{1,4}/g)?.join(' ') || '';
-                                        let detectedType = "";
-                                        if (rawVal.startsWith("5") || rawVal.startsWith("2")) {
-                                            detectedType = "Mastercard";
-                                        } else if (rawVal.startsWith("3")) {
-                                            detectedType = "American Express";
-                                        } else if (rawVal.startsWith("4")) {
-                                            detectedType = "Visa";
-                                        } else if (rawVal.length > 0) {
-                                            detectedType = "Credit Card";
-                                        }
-                                        setNewCard({
-                                            cardType: detectedType,
-                                            lastFour: rawVal.length >= 4 ? rawVal.slice(-4) : "",
-                                            formattedNumber: formattedVal,
-                                            expiry: newCard.expiry
-                                        });
-                                    }}
-                                    className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 font-medium tracking-wider text-[14px]"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-[16px]">
-                                <div>
-                                    <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[8px]">{t("settings_expiry_date")}</label>
-                                    <input
-                                        type="text"
-                                        maxLength="5"
-                                        placeholder="MM/YY"
-                                        value={newCard.expiry}
-                                        onChange={(e) => {
-                                            let rawVal = e.target.value.replace(/\D/g, '');
-                                            let formattedExpiry = "";
-                                            if (rawVal.length > 0) {
-                                                if (rawVal.length === 1 && parseInt(rawVal) > 1) {
-                                                    rawVal = "0" + rawVal;
-                                                }
-                                                if (rawVal.length >= 2) {
-                                                    let month = rawVal.slice(0, 2);
-                                                    if (parseInt(month) > 12) month = "12";
-                                                    if (parseInt(month) === 0) month = "01";
-                                                    formattedExpiry = month + (rawVal.length > 2 ? "/" + rawVal.slice(2, 4) : "");
-                                                } else {
-                                                    formattedExpiry = rawVal;
-                                                }
-                                            }
-                                            setNewCard({
-                                                ...newCard,
-                                                expiry: formattedExpiry
-                                            });
-                                        }}
-                                        className="w-full text-center rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 font-medium tracking-wider text-[14px]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[8px]">{t("settings_cvc")}</label>
-                                    <input
-                                        type="password"
-                                        placeholder="***"
-                                        maxLength="3"
-                                        className="w-full text-center rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 font-medium text-[14px]"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-[32px] flex justify-end gap-[12px]">
-                            <button
-                                onClick={handleCloseModal}
-                                className="px-[20px] py-[10px] rounded-[12px] text-slate-800 dark:text-slate-200 font-bold hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-all border border-transparent text-[14px]"
-                            >
-                                {t("settings_cancel")}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (!newCard.lastFour || newCard.lastFour.length < 4) {
-                                        alert("Please enter a valid card number.");
-                                        return;
-                                    }
-                                    setSecuritySettings({
-                                        ...securitySettings,
-                                        savedCards: [
-                                            ...securitySettings.savedCards,
-                                            { id: Date.now().toString(), cardType: newCard.cardType || "Credit Card", lastFour: newCard.lastFour }
-                                        ]
-                                    });
-                                    handleCloseModal();
-                                }}
-                                className="px-[20px] py-[10px] rounded-[12px] bg-[#F59E0B] hover:bg-[#F59E0B]/90 text-white font-bold transition-all shadow-md text-[14px] cursor-pointer"
-                            >
-                                {t("settings_add_card_btn")}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
-            {/* Modal: Delete card */}
-            {cardToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px]">
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                        onClick={() => setCardToDelete(null)}
-                    />
-                    <div className="relative w-full max-w-[384px] bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[20px] p-[24px] shadow-2xl border border-white/20 dark:border-slate-800 z-10 text-center animate-in fade-in zoom-in-95 duration-150">
-                        <h3 className="text-[20px] font-bold text-slate-900 dark:text-slate-100 mb-[8px]">
-                            {t("settings_remove_card_title")}
-                        </h3>
-                        <p className="text-[14px] text-slate-700 dark:text-slate-300 mb-[24px]">
-                            {t("settings_remove_card_desc")}
-                        </p>
-                        <div className="flex gap-[12px] justify-center">
-                            <button
-                                onClick={() => setCardToDelete(null)}
-                                className="flex-1 px-[20px] py-[10px] rounded-[12px] text-slate-800 dark:text-slate-200 font-bold hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-all border border-transparent text-[14px] cursor-pointer"
-                            >
-                                {t("settings_cancel")}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const updatedCards = securitySettings.savedCards.filter(c => c.id !== cardToDelete);
-                                    setSecuritySettings({
-                                        ...securitySettings,
-                                        savedCards: updatedCards
-                                    });
-                                    setCardToDelete(null);
-                                }}
-                                className="flex-1 px-[20px] py-[10px] rounded-[12px] bg-[#EF4444] hover:bg-[#EF4444]/90 text-white font-bold transition-all shadow-md text-[14px] cursor-pointer"
-                            >
-                                {t("settings_delete_btn")}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

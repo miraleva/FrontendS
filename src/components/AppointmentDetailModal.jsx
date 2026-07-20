@@ -80,7 +80,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 z-[100] transition-opacity backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 z-[100] transition-opacity flex items-center justify-center p-4 sm:p-6"
       onClick={onClose}
     >
       <div
@@ -273,7 +273,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
 
         {/* Confirmation Overlay */}
         {showCancelConfirm && (
-          <div className="absolute inset-0 z-50 bg-slate-800/40 dark:bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 z-50 bg-slate-800/40 dark:bg-slate-950/70 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl w-full max-w-[340px] flex flex-col items-center text-center border border-slate-100 dark:border-slate-800 transform scale-100 animate-in zoom-in-95 duration-200">
               <div className="w-14 h-14 bg-rose-50 dark:bg-rose-950/50 rounded-full flex items-center justify-center mb-4 border-4 border-white dark:border-slate-800 shadow-sm">
                 <AlertCircle size={28} className="text-rose-600 dark:text-rose-400" />
