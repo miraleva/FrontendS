@@ -15,10 +15,9 @@ export default function ResetPasswordPage() {
 
     useEffect(() => {
         if (videoRef.current) {
-            videoRef.current.load();
             videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
         }
-    }, [theme]);
+    }, []);
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token'); // URL'den token'ı alıyoruz
     const navigate = useNavigate();
@@ -89,7 +88,7 @@ export default function ResetPasswordPage() {
             {/* Katman 1 (z-0): Background Video */}
             <video
                 ref={videoRef}
-                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                src="/videos/background.mp4"
                 autoPlay
                 loop
                 muted
@@ -99,10 +98,10 @@ export default function ResetPasswordPage() {
             />
 
             {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
-            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+            <div className="fixed inset-0 z-10 pointer-events-none bg-white/5 dark:bg-black/65" />
 
             {/* Katman 3 (z-20): Form Panel */}
-            <div className="relative z-20 w-full max-w-[550px] bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
+            <div className="relative z-20 w-full max-w-[550px] bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
                 <div className="text-center mb-8">
                     <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-display">
                         {t('reset_password_title')}
