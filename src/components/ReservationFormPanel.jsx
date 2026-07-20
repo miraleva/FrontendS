@@ -350,169 +350,218 @@ export default function ReservationFormPanel({
                       </div>
                     </button>
 
-                    {isExpanded && (
-                      <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ad</label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.firstName}
-                              onChange={(e) => handleGuestChange(index, 'firstName', e.target.value)}
-                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                          <div className="col-span-1">
-                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Soyad</label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.lastName}
-                              onChange={(e) => handleGuestChange(index, 'lastName', e.target.value)}
-                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className={guest.type === 'CHILD' ? "col-span-1" : "col-span-2"}>
-                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                              <ShieldCheck size={12} /> TC Kimlik No / Pasaport
-                            </label>
-                            <input
-                              required
-                              type="text"
-                              value={guest.identityNumber}
-                              onChange={(e) => handleGuestChange(index, 'identityNumber', e.target.value)}
-                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                            />
-                          </div>
-                          {guest.type === 'CHILD' && (
+                    {isExpanded && (() => {
+                      const errors = getPassengerErrors(guest, isValidPhoneNumber);
+                      return (
+                        <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Yaş</label>
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ad</label>
                               <input
                                 required
-                                type="number"
-                                min="0"
-                                max="17"
-                                value={guest.age}
-                                onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
+                                type="text"
+                                value={guest.firstName}
+                                onChange={(e) => handleGuestChange(index, 'firstName', e.target.value)}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.firstName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.firstName}</span>}
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Soyad</label>
+                              <input
+                                required
+                                type="text"
+                                value={guest.lastName}
+                                onChange={(e) => handleGuestChange(index, 'lastName', e.target.value)}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.lastName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.lastName}</span>}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Cinsiyet</label>
+                              <select
+                                required
+                                value={guest.gender || 'MR'}
+                                onChange={(e) => handleGuestChange(index, 'gender', e.target.value)}
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                              >
+                                <option value="MR">Bay (Mr.)</option>
+                                <option value="MRS">Bayan (Mrs.)</option>
+                                <option value="CHD">Çocuk (Child)</option>
+                              </select>
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Doğum Tarihi</label>
+                              <input
+                                required
+                                type="date"
+                                max={new Date().toISOString().split('T')[0]}
+                                value={guest.birthDate || ''}
+                                onChange={(e) => handleGuestChange(index, 'birthDate', e.target.value)}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.birthDate && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.birthDate}</span>}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Uyruk</label>
+                              <input
+                                required
+                                type="text"
+                                value={guest.nationality || 'TR'}
+                                onChange={(e) => handleGuestChange(index, 'nationality', e.target.value)}
                                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                               />
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                <ShieldCheck size={12} /> TC Kimlik No / Pasaport
+                              </label>
+                              <input
+                                required
+                                type="text"
+                                value={guest.identityNumber}
+                                onChange={(e) => handleGuestChange(index, 'identityNumber', e.target.value)}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                              />
+                              {errors.identityNumber && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.identityNumber}</span>}
+                            </div>
+                          </div>
+
+                          {guest.type === 'CHILD' && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="col-span-1">
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Yaş</label>
+                                <input
+                                  required
+                                  type="number"
+                                  min="0"
+                                  max="17"
+                                  value={guest.age}
+                                  onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
+                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {index === 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-700">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                  <Mail size={12} /> E-posta
+                                </label>
+                                <input
+                                  required
+                                  type="email"
+                                  value={guest.email || ''}
+                                  onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
+                                  className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                />
+                                {errors.email && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.email}</span>}
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                  <Phone size={12} /> Telefon
+                                </label>
+                                <PhoneInput
+                                  international
+                                  defaultCountry="TR"
+                                  value={guest.phone || ''}
+                                  onChange={(val) => handleGuestChange(index, 'phone', val)}
+                                  className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-200 dark:border-slate-700 focus-within:ring-amber-500/50 focus-within:border-amber-500'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
+                                  numberInputProps={{
+                                    required: true,
+                                    className: 'bg-transparent border-0 outline-none w-full text-slate-800 dark:text-white focus:ring-0 ml-2 py-1',
+                                  }}
+                                />
+                                {errors.phone && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.phone}</span>}
+                              </div>
                             </div>
                           )}
                         </div>
-
-                        {index === 0 && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-700">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                                <Mail size={12} /> E-posta
-                              </label>
-                              <input
-                                required
-                                type="email"
-                                value={guest.email || ''}
-                                onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
-                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                                <Phone size={12} /> Telefon
-                              </label>
-                              <PhoneInput
-                                international
-                                defaultCountry="TR"
-                                value={guest.phone || ''}
-                                onChange={(val) => handleGuestChange(index, 'phone', val)}
-                                className="flex items-center w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition-colors"
-                                numberInputProps={{
-                                  required: true,
-                                  className: 'bg-transparent border-0 outline-none w-full text-slate-800 dark:text-white focus:ring-0 ml-2 py-1',
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}
             </div>
 
             {/* Cancellation Policy Block */}
-                                      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex items-start gap-3">
-                                        <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                          <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
-                                          <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
-                                            {hotel.isRefundable === true
-                                              ? "Bu rezervasyon ücretsiz iptal edilebilir."
-                                              : hotel.isRefundable === false
-                                                ? "Bu rezervasyon iade edilemez."
-                                                : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
-                                          </p>
-                                        </div>
-                                      </div>
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex items-start gap-3">
+              <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
+                <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
+                  {hotel.isRefundable === true
+                    ? "Bu rezervasyon ücretsiz iptal edilebilir."
+                    : hotel.isRefundable === false
+                      ? "Bu rezervasyon iade edilemez."
+                      : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
+                </p>
+              </div>
+            </div>
 
-                                      {/* Price Breakdown */}
-                                      <div className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
-                                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
-                                        <div className="space-y-3 text-sm">
-                                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                                            <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
-                                            <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
-                                          </div>
-                                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                                            <span>Vergiler ve Harçlar</span>
-                                            <span className="font-medium">{formatSubPrice(taxValue)}</span>
-                                          </div>
-                                          <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
-                                            <span className="font-bold text-slate-800 dark:text-slate-200">Toplam</span>
-                                            <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
-                                          </div>
-                                        </div>
-                                      </div>
+            {/* Price Breakdown */}
+            <div className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
+                  <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span>Vergiler ve Harçlar</span>
+                  <span className="font-medium">{formatSubPrice(taxValue)}</span>
+                </div>
+                <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">Toplam</span>
+                  <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
+                </div>
+              </div>
+            </div>
 
-                                      {/* Terms and Conditions */}
-                                      <div className="flex items-start gap-3 p-2">
-                                        <input
-                                          type="checkbox"
-                                          id="terms"
-                                          required
-                                          checked={termsAccepted}
-                                          onChange={(e) => setTermsAccepted(e.target.checked)}
-                                          className="mt-1 w-4 h-4 text-blue-600 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2"
-                                        />
-                                        <label htmlFor="terms" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
-                                          <span className="text-blue-600 dark:text-blue-400 hover:underline">Satış Sözleşmesini</span> ve <span className="text-blue-600 dark:text-blue-400 hover:underline">İptal/İade Koşullarını</span> okudum, anladım ve kabul ediyorum.
-                                        </label>
-                                      </div>
+            {/* Terms and Conditions */}
+            <div className="flex items-start gap-3 p-2">
+              <input
+                type="checkbox"
+                id="terms"
+                required
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-1 w-4 h-4 text-blue-600 bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <label htmlFor="terms" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
+                <span className="text-blue-600 dark:text-blue-400 hover:underline">Satış Sözleşmesini</span> ve <span className="text-blue-600 dark:text-blue-400 hover:underline">İptal/İade Koşullarını</span> okudum, anladım ve kabul ediyorum.
+              </label>
+            </div>
 
-                                    </form>
+          </form>
         </div>
       </div>
 
-                        {/* Sticky Footer / Action */}
-                        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sticky bottom-0 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
-                          <div className="flex flex-col w-full md:w-auto text-center md:text-left">
-                            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Toplam Tutar</span>
-                            <span className="text-2xl font-extrabold text-[#3B82F6] dark:text-blue-400 leading-none">{formattedPrice}</span>
-                            {submitError && <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-1">{submitError}</span>}
-                          </div>
-                          <button
-                            type="submit"
-                            form="reservation-form"
-                            disabled={!termsAccepted || isSubmitting}
-                            className="w-full md:w-auto md:min-w-[240px] py-3.5 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                          >
-                            <ShieldCheck size={18} />
-                            {isSubmitting ? t('reservation_submitting') : 'Rezervasyonu Onayla'}
-                          </button>
-                        </div>
-                      </div>
-                    );
+      {/* Sticky Footer / Action */}
+      <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sticky bottom-0 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col w-full md:w-auto text-center md:text-left">
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Toplam Tutar</span>
+          <span className="text-2xl font-extrabold text-[#3B82F6] dark:text-blue-400 leading-none">{formattedPrice}</span>
+          {submitError && <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-1">{submitError}</span>}
+        </div>
+        <button
+          type="submit"
+          form="reservation-form"
+          disabled={!termsAccepted || isSubmitting}
+          className="w-full md:w-auto md:min-w-[240px] py-3.5 px-6 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <ShieldCheck size={18} />
+          {isSubmitting ? t('reservation_submitting') : 'Rezervasyonu Onayla'}
+        </button>
+      </div>
+    </div>
+  );
 }
