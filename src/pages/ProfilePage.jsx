@@ -447,9 +447,8 @@ export default function Profile() {
                                                 value={formData.firstName}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("firstName")}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                                 maxLength={25}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.firstName && (
                                                 <p className="text-[14px] text-red-400 pl-[16px] mt-[4px]">
@@ -477,9 +476,8 @@ export default function Profile() {
                                                 value={formData.lastName}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("lastName")}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                                 maxLength={25}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.lastName && (
                                                 <p className="text-[14px] text-red-400 pl-[16px] mt-[4px]">
