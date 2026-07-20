@@ -66,20 +66,20 @@ export default function Tours() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                         Tours
                     </h1>
 
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
                         Tur paketlerini görüntüleyin ve yönetin.
                     </p>
                 </div>
 
                 <button
                     type="button"
-                    className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors cursor-pointer"
                 >
                     <Plus size={18} />
                     Yeni Tur Ekle
@@ -90,20 +90,20 @@ export default function Tours() {
                 {tours.map((tour) => (
                     <div
                         key={tour.id}
-                        className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                        className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
                     >
-                        <div className="flex h-36 items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50">
-                            <MapPin size={42} className="text-orange-400" />
+                        <div className="flex h-36 items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 dark:from-slate-800 dark:to-slate-850">
+                            <MapPin size={42} className="text-orange-400 dark:text-orange-500" />
                         </div>
 
                         <div className="p-5">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-gray-900">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {tour.name}
                                     </h2>
 
-                                    <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                                    <p className="mt-1 flex items-center gap-1 text-sm text-gray-500 dark:text-slate-400">
                                         <MapPin size={15} />
                                         {tour.location}
                                     </p>
@@ -111,8 +111,8 @@ export default function Tours() {
 
                                 <span
                                     className={`rounded-full px-3 py-1 text-xs font-semibold ${tour.status === 'Aktif'
-                                            ? 'bg-emerald-50 text-emerald-700'
-                                            : 'bg-gray-100 text-gray-500'
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+                                            : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
                                         }`}
                                 >
                                     {tour.status}
@@ -120,24 +120,24 @@ export default function Tours() {
                             </div>
 
                             <div className="mt-5 grid grid-cols-2 gap-3">
-                                <div className="rounded-xl bg-gray-50 p-3">
-                                    <p className="flex items-center gap-1 text-xs text-gray-400">
+                                <div className="rounded-xl bg-gray-50 dark:bg-slate-850/50 p-3 border border-slate-100 dark:border-slate-800/40">
+                                    <p className="flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
                                         <Calendar size={14} />
                                         Tarih
                                     </p>
 
-                                    <p className="mt-1 text-sm font-semibold text-gray-800">
+                                    <p className="mt-1 text-sm font-semibold text-gray-800 dark:text-slate-200">
                                         {tour.date}
                                     </p>
                                 </div>
 
-                                <div className="rounded-xl bg-gray-50 p-3">
-                                    <p className="flex items-center gap-1 text-xs text-gray-400">
+                                <div className="rounded-xl bg-gray-50 dark:bg-slate-850/50 p-3 border border-slate-100 dark:border-slate-800/40">
+                                    <p className="flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
                                         <Users size={14} />
                                         Kapasite
                                     </p>
 
-                                    <p className="mt-1 text-sm font-semibold text-gray-800">
+                                    <p className="mt-1 text-sm font-semibold text-gray-800 dark:text-slate-200">
                                         {tour.capacity} kişi
                                     </p>
                                 </div>
@@ -145,7 +145,7 @@ export default function Tours() {
 
                             <div className="mt-5 flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs text-gray-400 dark:text-slate-500">
                                         Kişi başı
                                     </p>
 
@@ -157,7 +157,7 @@ export default function Tours() {
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
-                                        className="rounded-xl border border-gray-200 p-2.5 text-gray-500 hover:bg-gray-50"
+                                        className="rounded-xl border border-gray-200 dark:border-slate-800 p-2.5 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                                         aria-label="Turu düzenle"
                                     >
                                         <Pencil size={17} />
@@ -166,7 +166,7 @@ export default function Tours() {
                                     <button
                                         type="button"
                                         onClick={() => deleteTour(tour.id)}
-                                        className="rounded-xl border border-red-200 p-2.5 text-red-500 hover:bg-red-50"
+                                        className="rounded-xl border border-red-200 dark:border-red-900/40 p-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
                                         aria-label="Turu sil"
                                     >
                                         <Trash2 size={17} />

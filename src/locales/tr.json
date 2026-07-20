@@ -266,5 +266,7 @@
   "table_col_date": "TARİH",
   "tour_cappadocia": "Kapadokya Turu",
   "tour_antalya": "Antalya Tatili",
-  "tour_blacksea": "Karadeniz Turu"
+  "tour_blacksea": "Karadeniz Turu",
+  "theme_light": "Açık Tema",
+  "theme_dark": "Karanlık Tema"
 }

@@ -264,5 +264,12 @@
   "table_col_date": "DATUM",
   "tour_cappadocia": "Kappadokien-Tour",
   "tour_antalya": "Antalya-Urlaub",
-  "tour_blacksea": "Schwarzmeer-Tour"
+  "tour_blacksea": "Schwarzmeer-Tour",
+  "new_chat": "Neuer Chat",
+  "search_chats": "Chats durchsuchen...",
+  "no_matches": "Keine Übereinstimmungen",
+  "profile_settings": "Einstellungen",
+  "profile_logout": "Abmelden",
+  "theme_light": "Heller Modus",
+  "theme_dark": "Dunkler Modus"
 }

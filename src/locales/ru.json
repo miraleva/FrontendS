@@ -269,5 +269,7 @@
   "table_col_date": "ДАТА",
   "tour_cappadocia": "Тур в Каппадокию",
   "tour_antalya": "Отдых в Анталии",
-  "tour_blacksea": "Тур по Черному морю"
+  "tour_blacksea": "Тур по Черному морю",
+  "theme_light": "Светлая тема",
+  "theme_dark": "Темная тема"
 }

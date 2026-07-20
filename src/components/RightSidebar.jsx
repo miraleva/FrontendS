@@ -32,15 +32,15 @@ export default function RightSidebar({
   if (!isRightSidebarOpen) return null;
 
   return (
-    <div className="hidden lg:flex w-[320px] h-full border-l border-white/20 bg-white/10 backdrop-blur-xl p-6 flex-col justify-between animate-slide-in relative z-20">
+    <div className="hidden lg:flex w-[320px] h-full border-l border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900 backdrop-blur-xl p-6 flex-col justify-between animate-slide-in relative z-20">
       <div className="space-y-6">
 
         {/* Panel Başlığı */}
-        <div className="flex flex-col gap-3 pb-4 border-b border-white/10">
+        <div className="flex flex-col gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex justify-between items-center w-full">
             <button
               onClick={() => setIsRightSidebarOpen(false)}
-              className="p-1.5 hover:bg-slate-100/50 rounded-lg transition-colors text-slate-500 hover:text-slate-800 focus:outline-none cursor-pointer"
+              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
               title="Collapse Panel"
             >
               <PanelRightClose size={18} />
@@ -49,12 +49,12 @@ export default function RightSidebar({
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 flex-shrink-0">
+            <div className="p-2 rounded-lg bg-amber-500/20 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex-shrink-0">
               <Sparkles size={18} className="animate-pulse" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-800 text-sm">{t("panel_title")}</h3>
-              <p className="text-[10px] text-slate-500">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">{t("panel_title")}</h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 {searchType === "hotel" ? t("panel_subtitle_hotel") : t("panel_subtitle_flight")}
               </p>
             </div>
@@ -62,50 +62,50 @@ export default function RightSidebar({
         </div>
 
         {/* Kart Görünümü */}
-        <div className="bg-white/70 border border-white/40 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
 
           {/* ================= OTEL MODU ALANLARI ================= */}
           {searchType === "hotel" && (
             <>
               {/* Nerede */}
               <div className="flex items-start gap-3">
-                <MapPin size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                <MapPin size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_where")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.city ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_where")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.city ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.city || t("panel_where_placeholder")}
                   </span>
                 </div>
               </div>
 
               {/* Giriş Tarihi */}
-              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                <Calendar size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Calendar size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkin")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_checkin")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.checkIn ? formatFlightDateTime(bookingDetails.checkIn) : t("panel_checkin_placeholder")}
                   </span>
                 </div>
               </div>
 
               {/* Çıkış Tarihi */}
-              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                <Calendar size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Calendar size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_checkout")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.checkOut ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_checkout")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.checkOut ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.checkOut ? formatFlightDateTime(bookingDetails.checkOut) : t("panel_checkout_placeholder")}
                   </span>
                 </div>
               </div>
 
               {/* Seçilen Otel */}
-              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                <Hotel size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Hotel size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_selected_hotel")}</span>
-                  <span className={`text-sm font-semibold block truncate ${bookingDetails.hotelName ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_selected_hotel")}</span>
+                  <span className={`text-sm font-semibold block truncate ${bookingDetails.hotelName ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.hotelName || t("panel_selected_hotel_placeholder")}
                   </span>
                 </div>
@@ -119,35 +119,35 @@ export default function RightSidebar({
               {/* Kalkış Noktası */}
               <div className="flex items-start gap-3">
                 <div className="relative mt-1 flex-shrink-0">
-                  <Plane size={18} className="text-slate-400 rotate-45" />
+                  <Plane size={18} className="text-slate-400 dark:text-slate-500 rotate-45" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_departure_location")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.departureCity ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_departure_location")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.departureCity ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.departureCity || t("panel_departure_location_placeholder")}
                   </span>
                 </div>
               </div>
 
               {/* Varış Noktası */}
-              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
                 <div className="relative mt-1 flex-shrink-0">
                   <Plane size={18} className="text-[#3B82F6] rotate-90" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_arrival_location")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.arrivalCity ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_arrival_location")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.arrivalCity ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.arrivalCity || t("panel_arrival_location_placeholder")}
                   </span>
                 </div>
               </div>
 
               {/* Gidiş Tarihi */}
-              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                <Calendar size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Calendar size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_departure_date")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_departure_date")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.checkIn ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.checkIn ? formatFlightDateTime(bookingDetails.checkIn) : t("panel_departure_date_placeholder")}
                   </span>
                 </div>
@@ -155,11 +155,11 @@ export default function RightSidebar({
 
               {/* Dönüş Tarihi — sadece gidiş-dönüş uçuşlarında gösterilir */}
               {bookingDetails.returnDate && (
-                <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
+                <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
                   <Calendar size={18} className="text-[#3B82F6] mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_return_date")}</span>
-                    <span className="text-sm font-semibold text-slate-800 truncate block">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_return_date")}</span>
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate block">
                       {formatFlightDateTime(bookingDetails.returnDate)}
                     </span>
                   </div>
@@ -167,11 +167,11 @@ export default function RightSidebar({
               )}
 
               {/* Seçilen Havayolu */}
-              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                <Plane size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Plane size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">{t("panel_selected_airline")}</span>
-                  <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800" : "text-slate-400 italic"}`}>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_selected_airline")}</span>
+                  <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.airline || t("panel_selected_airline_placeholder")}
                   </span>
                 </div>
@@ -180,13 +180,13 @@ export default function RightSidebar({
           )}
 
           {/* ================= ORTAK ALAN: YOLCU / KONUK SAYISI ================= */}
-          <div className="flex items-start gap-3 pt-3 border-t border-slate-200">
-            <Users size={18} className="text-slate-400 mt-0.5 flex-shrink-0" />
+          <div className="flex items-start gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <Users size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-[10px] text-slate-400 block font-bold uppercase">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">
                 {searchType === "hotel" ? t("panel_guest_count") : t("panel_passenger_count")}
               </span>
-              <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800" : "text-slate-400 italic"}`}>
+              <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                 {bookingDetails.guests || t("panel_count_placeholder")}
               </span>
             </div>
@@ -194,9 +194,9 @@ export default function RightSidebar({
 
           {/* Fiyat Bilgisi */}
           {bookingDetails.price && (
-            <div className="pt-3 border-t border-dashed border-slate-200 flex justify-between items-center">
-              <span className="text-xs text-slate-500 font-bold">{t("panel_total_amount")}</span>
-              <span className="text-sm font-extrabold text-amber-600">{bookingDetails.price}</span>
+            <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-800 flex justify-between items-center">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{t("panel_total_amount")}</span>
+              <span className="text-sm font-extrabold text-amber-600 dark:text-amber-400">{bookingDetails.price}</span>
             </div>
           )}
 
@@ -205,8 +205,8 @@ export default function RightSidebar({
 
       {/* Alt Bilgi & CTA */}
       <div className="space-y-3">
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
-          <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+        <div className="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 dark:border-amber-500/10 rounded-xl p-3 text-center">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
             {t("panel_footer_hint")}
           </p>
         </div>

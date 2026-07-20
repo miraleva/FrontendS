@@ -269,5 +269,7 @@
   "table_col_date": "DATE",
   "tour_cappadocia": "Cappadocia Tour",
   "tour_antalya": "Antalya Holiday",
-  "tour_blacksea": "Black Sea Tour"
+  "tour_blacksea": "Black Sea Tour",
+  "theme_light": "Light Mode",
+  "theme_dark": "Dark Mode"
 }
