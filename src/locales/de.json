@@ -142,6 +142,7 @@
   "profile_dob_invalid_format": "Ungültiges Datumsformat. Verwenden Sie TT.MM.JJJJ",
   "profile_dob_invalid_date": "Ungültiges Datum. Überprüfen Sie die Werte",
   "profile_dob_future": "Das Geburtsdatum darf nicht in der Zukunft liegen",
+  "profile_dob_too_old": "Bitte geben Sie ein gültiges Geburtsdatum ein",
   "profile_back": "Zurück",
   "settings_title": "Einstellungen",
   "settings_tab_travel": "Reisepräferenzen",
@@ -317,5 +318,12 @@
   "past_appointments_drawer_btn_support": "Support",
   "past_appointments_drawer_btn_continue": "Buchung fortsetzen",
   "past_appointments_drawer_btn_start_new": "Neue Buchung starten",
-  "past_appointments_drawer_btn_resume_chat": "Chat fortsetzen"
+  "past_appointments_drawer_btn_resume_chat": "Chat fortsetzen",
+  "new_chat": "Neuer Chat",
+  "search_chats": "Chats durchsuchen...",
+  "no_matches": "Keine Übereinstimmungen",
+  "profile_settings": "Einstellungen",
+  "profile_logout": "Abmelden",
+  "theme_light": "Heller Modus",
+  "theme_dark": "Dunkler Modus"
 }

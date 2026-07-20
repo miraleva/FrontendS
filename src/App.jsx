@@ -12,7 +12,7 @@ import AdminLayout from './admin/AdminLayout.jsx';
 import Dashboard from "./admin/pages/Dashboard.jsx";
 import ForgotPasswordPage from './pages/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/ResetPassword.jsx';
-
+import { ThemeProvider } from './components/ThemeContext.jsx';
 
 // LanguageSelector import removed, moved to ChatSidebar
 
@@ -37,44 +37,45 @@ function HistoryPagePlaceholder() {
 // ==========================================
 export default function App() {
   return (
-    <BrowserRouter>
-      {/* Global sarmalayıcı */}
-      <div className="relative min-h-screen w-full">
+    <ThemeProvider> {/* 1. Tema Sağlayıcısını en dışa ekledik */}
+      <BrowserRouter>
+        {/* Global sarmalayıcı (Burası dark mod geçişlerinde rengin değişeceği yer) */}
+        <div className="relative min-h-screen w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-200">
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/reservation" element={<Reservation />} />
-
-          {/* ADMIN APPLARI (BURASI GERÇEK SAYFALARI KULLANACAK) */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="reservations" element={<Reservations />} />
-            <Route path="users" element={<Users />} />
-            <Route path="chats" element={<ChatLogs />} />
-            <Route path="tours" element={<Tours />} />
-          </Route>
-
-          {/* KULLANICI ROTALARI */}
-          <Route element={<MainLayout />}>
-            <Route path="/chat" element={<ChatbotPage />} />
-            <Route path="/chat/search" element={<SearchChats />} />
-            <Route path="/appointments" element={<PastAppointments />} />
-            <Route path="/documents" element={<DocumentPagePlaceholder />} />
-            <Route path="/history" element={<HistoryPagePlaceholder />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/reservation" element={<Reservation />} />
-            {/* Şifremi Unuttum ve Sıfırlama Sayfalarının Rotaları */}
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-          </Route>
-        </Routes>
-      </div>
-    </BrowserRouter>
+
+            {/* ADMIN APPLARI (BURASI GERÇEK SAYFALARI KULLANACAK) */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="reservations" element={<Reservations />} />
+              <Route path="users" element={<Users />} />
+              <Route path="chats" element={<ChatLogs />} />
+              <Route path="tours" element={<Tours />} />
+            </Route>
+
+            {/* KULLANICI ROTALARI */}
+            <Route element={<MainLayout />}>
+              <Route path="/chat" element={<ChatbotPage />} />
+              <Route path="/chat/search" element={<SearchChats />} />
+              <Route path="/appointments" element={<PastAppointments />} />
+              <Route path="/documents" element={<DocumentPagePlaceholder />} />
+              <Route path="/history" element={<HistoryPagePlaceholder />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/reservation" element={<Reservation />} />
+              {/* Şifremi Unuttum ve Sıfırlama Sayfalarının Rotaları */}
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+            </Route>
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </ThemeProvider> /* 2. Kapanış etiketini ekledik */
   );
 }

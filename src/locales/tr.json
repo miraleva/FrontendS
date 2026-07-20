@@ -142,6 +142,7 @@
   "profile_dob_invalid_format": "Geçersiz tarih formatı. DD.MM.YYYY kullanın",
   "profile_dob_invalid_date": "Geçersiz tarih. Değerleri kontrol edin",
   "profile_dob_future": "Doğum tarihi gelecekte bir tarih olamaz",
+  "profile_dob_too_old": "Lütfen geçerli bir doğum tarihi giriniz",
   "profile_back": "Geri",
   "settings_title": "Ayarlar",
   "settings_tab_travel": "Seyahat Tercihleri",
@@ -319,5 +320,7 @@
   "past_appointments_drawer_btn_support": "Destek",
   "past_appointments_drawer_btn_continue": "Rezervasyona Devam Et",
   "past_appointments_drawer_btn_start_new": "Yeni Rezervasyon Başlat",
-  "past_appointments_drawer_btn_resume_chat": "Sohbete Devam Et"
+  "past_appointments_drawer_btn_resume_chat": "Sohbete Devam Et",
+  "theme_light": "Açık Tema",
+  "theme_dark": "Karanlık Tema"
 }

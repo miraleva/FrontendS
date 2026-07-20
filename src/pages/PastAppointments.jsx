@@ -1,3 +1,4 @@
+// TODO: dark mode desteği eklenecek — bkz. diğer sayfalardaki dark: class kullanımı
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
