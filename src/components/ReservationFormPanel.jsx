@@ -580,16 +580,16 @@ export default function ReservationFormPanel({
                       getPassengerErrors(guest);
 
                     return (
-                      <div key={guest.id} className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
+                      <div key={guest.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
                         <button
                           type="button"
                           onClick={() => setExpandedGuestId(isExpanded ? null : guest.id)}
-                          className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                          className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors rounded-t-xl"
                         >
                           <div className="flex items-center gap-3">
-                            {guest.type === 'ADULT' ? <User size={18} className="text-blue-500" /> : <Baby size={18} className="text-amber-500" />}
+                            {guest.type === 'ADULT' ? <User size={18} className="text-blue-500 dark:text-slate-200" /> : <Baby size={18} className="text-amber-500 dark:text-amber-300" />}
                             <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
-                            {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
+                            {index === 0 && <span className="ml-2 text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
 
                             {/* Summary when collapsed */}
                             {!isExpanded && (guest.firstName || guest.lastName) && (
@@ -598,7 +598,7 @@ export default function ReservationFormPanel({
                               </span>
                             )}
                           </div>
-                          <div className="text-slate-400 dark:text-slate-500">
+                          <div className="text-slate-400 dark:text-slate-400">
                             {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                           </div>
                         </button>
@@ -877,7 +877,7 @@ export default function ReservationFormPanel({
                           </div>
 
                           {/* Price Breakdown */ }
-            <div className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">

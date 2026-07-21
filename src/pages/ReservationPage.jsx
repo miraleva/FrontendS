@@ -869,24 +869,30 @@ export default function ReservationPage() {
                                                                     : passenger.id
                                                             )
                                                         }
-                                                        className="flex w-full items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/50"
+                                                        className="flex w-full items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/80"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             {passenger.type === "ADULT" ? (
                                                                 <User
                                                                     size={18}
-                                                                    className="text-[#3B82F6]"
+                                                                    className="text-blue-500 dark:text-slate-200"
                                                                 />
                                                             ) : (
                                                                 <Baby
                                                                     size={18}
-                                                                    className="text-amber-500"
+                                                                    className="text-amber-500 dark:text-amber-300"
                                                                 />
                                                             )}
 
                                                             <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
                                                                 {guestTitle}
                                                             </span>
+
+                                                            {index === 0 && (
+                                                                <span className="ml-2 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                                                    İletişim
+                                                                </span>
+                                                            )}
 
                                                             {!isExpanded &&
                                                                 (passenger.firstName ||
@@ -898,7 +904,7 @@ export default function ReservationPage() {
                                                                 )}
                                                         </div>
 
-                                                        <div className="text-slate-400 dark:text-slate-500">
+                                                        <div className="text-slate-400 dark:text-slate-400">
                                                             {isExpanded ? (
                                                                 <ChevronUp size={20} />
                                                             ) : (
