@@ -358,23 +358,23 @@ export default function ReservationPage() {
                                                 : `${index - adultCount + 1}. ${t("unit_child")}`;
 
                                             return (
-                                                <div key={p.id} className="bg-white/50 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/40 rounded-[16px] shadow-sm overflow-hidden transition-all duration-200">
+                                                <div key={p.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-[16px] shadow-sm overflow-hidden transition-all duration-200">
                                                     <button
                                                         type="button"
                                                         onClick={() => setExpandedGuestId(isExpanded ? null : p.id)}
-                                                        className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/10 dark:hover:bg-slate-800/30 transition-colors"
+                                                        className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             {p.type === 'ADULT' ? <User size={18} className="text-[#3B82F6]" /> : <Baby size={18} className="text-amber-500" />}
-                                                            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">{guestTitle}</span>
+                                                            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
 
                                                             {!isExpanded && (p.firstName || p.lastName) && (
-                                                                <span className="text-sm text-slate-600 dark:text-slate-400 ml-2 border-l border-slate-300 dark:border-slate-700 pl-4 font-medium">
+                                                                <span className="text-sm text-slate-500 dark:text-slate-400 ml-2 border-l border-slate-200 dark:border-slate-700 pl-4 font-medium">
                                                                     {p.firstName} {p.lastName}
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="text-slate-500 dark:text-slate-400">
+                                                        <div className="text-slate-400 dark:text-slate-500">
                                                             {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                                                         </div>
                                                     </button>
@@ -382,73 +382,73 @@ export default function ReservationPage() {
                                                     {isExpanded && (() => {
                                                         const errors = getPassengerErrors(p);
                                                         return (
-                                                            <div className="p-5 border-t border-white/20 dark:border-slate-800/40 bg-white/20 dark:bg-slate-900/20 space-y-4">
+                                                            <div className="p-5 border-t border-slate-200/80 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/60 space-y-4">
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t("reservation_first_name")}</label>
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">{t("reservation_first_name")}</label>
                                                                         <input
                                                                             required
                                                                             type="text"
                                                                             value={p.firstName}
                                                                             onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                                                                         />
-                                                                        {errors.firstName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.firstName}</span>}
+                                                                        {errors.firstName && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.firstName}</span>}
                                                                     </div>
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t("reservation_last_name")}</label>
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">{t("reservation_last_name")}</label>
                                                                         <input
                                                                             required
                                                                             type="text"
                                                                             value={p.lastName}
                                                                             onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                                                                         />
-                                                                        {errors.lastName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.lastName}</span>}
+                                                                        {errors.lastName && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.lastName}</span>}
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cinsiyet</label>
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Cinsiyet</label>
                                                                         <select
                                                                             required
                                                                             value={p.gender || 'MR'}
                                                                             onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
-                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
+                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
                                                                         >
-                                                                            <option value="MR">Bay (Mr.)</option>
-                                                                            <option value="MRS">Bayan (Mrs.)</option>
-                                                                            <option value="CHD">Çocuk (Child)</option>
+                                                                            <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Bay (Mr.)</option>
+                                                                            <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Bayan (Mrs.)</option>
+                                                                            <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Çocuk (Child)</option>
                                                                         </select>
                                                                     </div>
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Doğum Tarihi</label>
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Doğum Tarihi</label>
                                                                         <input
                                                                             required
                                                                             type="date"
                                                                             max={new Date().toISOString().split('T')[0]}
                                                                             value={p.birthDate || ''}
                                                                             onChange={(e) => handlePassengerChange(index, 'birthDate', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                                                                         />
-                                                                        {errors.birthDate && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.birthDate}</span>}
+                                                                        {errors.birthDate && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.birthDate}</span>}
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Uyruk</label>
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Uyruk</label>
                                                                         <input
                                                                             required
                                                                             type="text"
                                                                             value={p.nationality || 'TR'}
                                                                             onChange={(e) => handlePassengerChange(index, 'nationality', e.target.value)}
-                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
+                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
                                                                         />
                                                                     </div>
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
                                                                             <ShieldCheck size={12} /> {t("reservation_identity_number")}
                                                                         </label>
                                                                         <input
@@ -456,15 +456,15 @@ export default function ReservationPage() {
                                                                             type="text"
                                                                             value={p.identityNumber}
                                                                             onChange={(e) => handlePassengerChange(index, 'identityNumber', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                                                                         />
-                                                                        {errors.identityNumber && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.identityNumber}</span>}
+                                                                        {errors.identityNumber && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.identityNumber}</span>}
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
                                                                             <Mail size={12} /> {t("reservation_email")}
                                                                         </label>
                                                                         <input
@@ -472,12 +472,12 @@ export default function ReservationPage() {
                                                                             type="email"
                                                                             value={p.email || ''}
                                                                             onChange={(e) => handlePassengerChange(index, 'email', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                                                                         />
-                                                                        {errors.email && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.email}</span>}
+                                                                        {errors.email && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.email}</span>}
                                                                     </div>
                                                                     <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
                                                                             <Phone size={12} /> {t("reservation_phone")}
                                                                         </label>
                                                                         <PhoneInput
@@ -485,20 +485,20 @@ export default function ReservationPage() {
                                                                             defaultCountry="TR"
                                                                             value={p.phone || ''}
                                                                             onChange={(val) => handlePassengerChange(index, 'phone', val)}
-                                                                            className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-300 dark:border-slate-800 focus-within:ring-[#3B82F6]/50 focus-within:border-[#3B82F6]'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
+                                                                            className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-300 dark:border-slate-700 focus-within:ring-[#3B82F6]/50 focus-within:border-[#3B82F6]'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
                                                                             numberInputProps={{
                                                                                 required: true,
-                                                                                className: 'bg-transparent border-0 outline-none w-full text-slate-800 dark:text-slate-100 focus:ring-0 ml-2 py-1',
+                                                                                className: 'bg-transparent border-0 outline-none w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 focus:ring-0 ml-2 py-1',
                                                                             }}
                                                                         />
-                                                                        {errors.phone && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.phone}</span>}
+                                                                        {errors.phone && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.phone}</span>}
                                                                     </div>
                                                                 </div>
 
                                                                 {p.type === 'CHILD' && (
                                                                     <div className="grid grid-cols-2 gap-4">
                                                                         <div className="col-span-1">
-                                                                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Yaş</label>
+                                                                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Yaş</label>
                                                                             <input
                                                                                 required
                                                                                 type="number"
@@ -506,7 +506,7 @@ export default function ReservationPage() {
                                                                                 max="17"
                                                                                 value={p.age}
                                                                                 onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
-                                                                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
                                                                             />
                                                                         </div>
                                                                     </div>

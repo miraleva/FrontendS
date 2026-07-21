@@ -327,16 +327,16 @@ export default function ReservationFormPanel({
                   : `${index - adultCount + 1}. Çocuk`;
 
                 return (
-                  <div key={guest.id} className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
+                  <div key={guest.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
                     <button
                       type="button"
                       onClick={() => setExpandedGuestId(isExpanded ? null : guest.id)}
-                      className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         {guest.type === 'ADULT' ? <User size={18} className="text-blue-500" /> : <Baby size={18} className="text-amber-500" />}
                         <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
-                        {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
+                        {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">İletişim</span>}
 
                         {/* Summary when collapsed */}
                         {!isExpanded && (guest.firstName || guest.lastName) && (
@@ -353,73 +353,73 @@ export default function ReservationFormPanel({
                     {isExpanded && (() => {
                       const errors = getPassengerErrors(guest, isValidPhoneNumber);
                       return (
-                        <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-4">
+                        <div className="p-5 border-t border-slate-200/80 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/60 space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ad</label>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Ad</label>
                               <input
                                 required
                                 type="text"
                                 value={guest.firstName}
                                 onChange={(e) => handleGuestChange(index, 'firstName', e.target.value)}
-                                className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                               />
-                              {errors.firstName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.firstName}</span>}
+                              {errors.firstName && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.firstName}</span>}
                             </div>
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Soyad</label>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Soyad</label>
                               <input
                                 required
                                 type="text"
                                 value={guest.lastName}
                                 onChange={(e) => handleGuestChange(index, 'lastName', e.target.value)}
-                                className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                               />
-                              {errors.lastName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.lastName}</span>}
+                              {errors.lastName && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.lastName}</span>}
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Cinsiyet</label>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Cinsiyet</label>
                               <select
                                 required
                                 value={guest.gender || 'MR'}
                                 onChange={(e) => handleGuestChange(index, 'gender', e.target.value)}
-                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                               >
-                                <option value="MR">Bay (Mr.)</option>
-                                <option value="MRS">Bayan (Mrs.)</option>
-                                <option value="CHD">Çocuk (Child)</option>
+                                <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Bay (Mr.)</option>
+                                <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Bayan (Mrs.)</option>
+                                <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Çocuk (Child)</option>
                               </select>
                             </div>
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Doğum Tarihi</label>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Doğum Tarihi</label>
                               <input
                                 required
                                 type="date"
                                 max={new Date().toISOString().split('T')[0]}
                                 value={guest.birthDate || ''}
                                 onChange={(e) => handleGuestChange(index, 'birthDate', e.target.value)}
-                                className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                               />
-                              {errors.birthDate && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.birthDate}</span>}
+                              {errors.birthDate && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.birthDate}</span>}
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Uyruk</label>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Uyruk</label>
                               <input
                                 required
                                 type="text"
                                 value={guest.nationality || 'TR'}
                                 onChange={(e) => handleGuestChange(index, 'nationality', e.target.value)}
-                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                               />
                             </div>
                             <div className="col-span-1">
-                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
                                 <ShieldCheck size={12} /> TC Kimlik No / Pasaport
                               </label>
                               <input
@@ -427,16 +427,16 @@ export default function ReservationFormPanel({
                                 type="text"
                                 value={guest.identityNumber}
                                 onChange={(e) => handleGuestChange(index, 'identityNumber', e.target.value)}
-                                className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                               />
-                              {errors.identityNumber && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.identityNumber}</span>}
+                              {errors.identityNumber && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.identityNumber}</span>}
                             </div>
                           </div>
 
                           {guest.type === 'CHILD' && (
                             <div className="grid grid-cols-2 gap-4">
                               <div className="col-span-1">
-                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Yaş</label>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Yaş</label>
                                 <input
                                   required
                                   type="number"
@@ -444,7 +444,7 @@ export default function ReservationFormPanel({
                                   max="17"
                                   value={guest.age}
                                   onChange={(e) => handleGuestChange(index, 'age', e.target.value)}
-                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
+                                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                                 />
                               </div>
                             </div>
@@ -453,7 +453,7 @@ export default function ReservationFormPanel({
                           {index === 0 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-700">
                               <div>
-                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
                                   <Mail size={12} /> E-posta
                                 </label>
                                 <input
@@ -461,12 +461,12 @@ export default function ReservationFormPanel({
                                   type="email"
                                   value={guest.email || ''}
                                   onChange={(e) => handleGuestChange(index, 'email', e.target.value)}
-                                  className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                  className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-amber-500/50 focus:border-amber-500'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
                                 />
-                                {errors.email && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.email}</span>}
+                                {errors.email && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.email}</span>}
                               </div>
                               <div>
-                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
                                   <Phone size={12} /> Telefon
                                 </label>
                                 <PhoneInput
@@ -474,13 +474,13 @@ export default function ReservationFormPanel({
                                   defaultCountry="TR"
                                   value={guest.phone || ''}
                                   onChange={(val) => handleGuestChange(index, 'phone', val)}
-                                  className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-200 dark:border-slate-700 focus-within:ring-amber-500/50 focus-within:border-amber-500'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
+                                  className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-300 dark:border-slate-700 focus-within:ring-amber-500/50 focus-within:border-amber-500'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
                                   numberInputProps={{
                                     required: true,
-                                    className: 'bg-transparent border-0 outline-none w-full text-slate-800 dark:text-white focus:ring-0 ml-2 py-1',
+                                    className: 'bg-transparent border-0 outline-none w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 focus:ring-0 ml-2 py-1',
                                   }}
                                 />
-                                {errors.phone && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.phone}</span>}
+                                {errors.phone && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.phone}</span>}
                               </div>
                             </div>
                           )}
@@ -493,11 +493,11 @@ export default function ReservationFormPanel({
             </div>
 
             {/* Cancellation Policy Block */}
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex items-start gap-3">
+            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 rounded-xl p-4 flex items-start gap-3">
               <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
               <div>
                 <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
-                <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
+                <p className="text-xs text-blue-700 dark:text-slate-300 mt-1 leading-relaxed">
                   {hotel.isRefundable === true
                     ? "Bu rezervasyon ücretsiz iptal edilebilir."
                     : hotel.isRefundable === false
@@ -508,7 +508,7 @@ export default function ReservationFormPanel({
             </div>
 
             {/* Price Breakdown */}
-            <div className="bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl p-5 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
