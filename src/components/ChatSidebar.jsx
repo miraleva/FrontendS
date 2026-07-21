@@ -279,7 +279,7 @@ export default function ChatSidebar({
         </div>
 
         {/* Dil Seçimi (LanguageSelector - Dropup) */}
-        <LanguageSelector direction="up" className="relative" />
+        <LanguageSelector direction="up" className="relative" align="left" />
 
         {/* Tema Değiştirme Butonu */}
         <button
