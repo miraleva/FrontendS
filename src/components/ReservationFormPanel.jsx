@@ -300,8 +300,8 @@ export default function ReservationFormPanel({
       ? new Intl.NumberFormat("tr-TR", {
         style: "currency",
         currency: safeHotel.currency || "TRY",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
       }).format(Number(safeHotel.price))
       : `${safeHotel?.price || 0} ${safeHotel?.currency || "TRY"
       }`;
@@ -324,8 +324,8 @@ export default function ReservationFormPanel({
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
       currency: safeHotel?.currency || "TRY",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 

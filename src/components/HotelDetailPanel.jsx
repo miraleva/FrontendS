@@ -68,8 +68,8 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
     ? new Intl.NumberFormat('tr-TR', {
         style: 'currency',
         currency: hotel.currency || 'TRY',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
       }).format(hotel.price)
     : `${hotel.price} ${hotel.currency || 'TRY'}`;
 
@@ -119,7 +119,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {loadingDetail && (
           <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full">
             <Loader2 size={12} className="animate-spin" />
-            Fotoğraflar yükleniyor
+            {t("hoteldetail_loading_photos")}
           </div>
         )}
 
@@ -188,7 +188,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
           <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4">
             <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Info size={12} />
-              Otel Hakkında
+              {t("hoteldetail_about")}
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{displayedDescription}</p>
             {isDescriptionLong && (
@@ -196,7 +196,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
                 onClick={() => setDescriptionExpanded(v => !v)}
                 className="mt-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
               >
-                {descriptionExpanded ? "Daha az göster" : "Devamını oku"}
+                {descriptionExpanded ? t("hoteldetail_show_less") : t("hoteldetail_show_more")}
               </button>
             )}
           </div>
@@ -219,7 +219,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
 
         {/* Booking Context (from chat context) */}
         <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 flex flex-col gap-3">
-          <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Arama Detayları</h3>
+          <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("hoteldetail_search_details")}</h3>
           <div className="flex flex-wrap gap-y-3 gap-x-6">
             {bookingDetails?.checkIn && (
               <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
@@ -245,7 +245,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {/* Themes/Badges */}
         {themesList.length > 0 && (
           <div>
-            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Temalar</h3>
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">{t("hoteldetail_themes")}</h3>
             <div className="flex flex-wrap gap-2">
               {themesList.map((theme, i) => (
                 <span key={i} className="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50 rounded-md text-xs font-semibold">
@@ -259,7 +259,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {/* Facilities */}
         {facilitiesList.length > 0 && (
           <div>
-            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Olanaklar</h3>
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">{t("hoteldetail_amenities")}</h3>
             <div className="grid grid-cols-2 gap-2">
               {facilitiesList.map((facility, i) => (
                 <div key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
@@ -275,7 +275,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
         {loadingDetail && !plainDescription && facilitiesList.length === 0 && themesList.length === 0 && (
           <div className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
             <Loader2 size={14} className="animate-spin" />
-            Otel detayları yükleniyor...
+            {t("hoteldetail_loading_details")}
           </div>
         )}
 
@@ -285,7 +285,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
       <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         <div className="flex items-end justify-between mb-4">
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Toplam Fiyat</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("hoteldetail_total_price")}</span>
             <span className="text-2xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
           </div>
         </div>
@@ -293,7 +293,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
           onClick={onProceed}
           className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md shadow-amber-500/20 transition-all active:scale-[0.98]"
         >
-          Rezervasyona Başla
+          {t("hoteldetail_start_reservation")}
         </button>
       </div>
     </div>
