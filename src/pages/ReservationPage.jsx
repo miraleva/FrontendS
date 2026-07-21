@@ -88,8 +88,9 @@ function toDateOnly(value) {
     return date.toISOString().slice(0, 10);
 }
 
-function getPassengerErrors(passenger) {
+function getPassengerErrors(passenger, index = 0) {
     const errors = {};
+    const isPrimaryContact = index === 0;
 
     if (!passenger.firstName?.trim()) {
         errors.firstName = "Ad gereklidir.";
@@ -125,24 +126,18 @@ function getPassengerErrors(passenger) {
             "Doğum tarihi geçmişte olmalıdır.";
     }
 
-    if (!passenger.email?.trim()) {
-        errors.email = "E-posta gereklidir.";
-    } else if (
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-            passenger.email
-        )
-    ) {
-        errors.email =
-            "Geçersiz e-posta formatı (örn: ad@example.com).";
-    }
+    if (isPrimaryContact) {
+        if (!passenger.email?.trim()) {
+            errors.email = "E-posta gereklidir.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)) {
+            errors.email = "Geçersiz e-posta formatı (örn: ad@example.com).";
+        }
 
-    if (!passenger.phone) {
-        errors.phone = "Telefon numarası gereklidir.";
-    } else if (
-        !isValidPhoneNumber(passenger.phone)
-    ) {
-        errors.phone =
-            "Ülke formatına uymuyor (geçersiz uzunluk).";
+        if (!passenger.phone) {
+            errors.phone = "Telefon numarası gereklidir.";
+        } else if (!isValidPhoneNumber(passenger.phone)) {
+            errors.phone = "Ülke formatına uymuyor (geçersiz uzunluk).";
+        }
     }
 
     return errors;
@@ -454,7 +449,7 @@ export default function ReservationPage() {
         passengers.length > 0 &&
         passengers.every((passenger) => {
             const errors =
-                getPassengerErrors(passenger);
+                getPassengerErrors(passenger, index);
 
             return Object.keys(errors).length === 0;
         });
@@ -529,9 +524,9 @@ export default function ReservationPage() {
                     lastName:
                         passenger.lastName.trim(),
                     email:
-                        passenger.email.trim(),
+                        index === 0 ? passenger.email?.trim() || "" : "",
                     phoneNumber:
-                        passenger.phone || "",
+                        index === 0 ? passenger.phone?.trim() || "" : "",
                     identityNumber:
                         passenger.identityNumber.trim(),
                     birthDate:
@@ -872,7 +867,7 @@ export default function ReservationPage() {
                                                     )}`;
 
                                             const errors =
-                                                getPassengerErrors(passenger);
+                                                getPassengerErrors(passenger, index);
 
                                             return (
                                                 <div
@@ -1342,38 +1337,36 @@ export default function ReservationPage() {
                                                                     </div>
                                                                 </div>
 
-                                                                {passenger.type ===
-                                                                    "CHILD" && (
-                                                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                            <div>
-                                                                                <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                                    Yaş
-                                                                                </label>
-                                                                                <input
-                                                                                    required
-                                                                                    type="number"
-                                                                                    min="0"
-                                                                                    max="17"
-                                                                                    value={
-                                                                                        passenger.age ||
-                                                                                        ""
-                                                                                    }
-                                                                                    onChange={(
-                                                                                        event
-                                                                                    ) =>
-                                                                                        handlePassengerChange(
-                                                                                            index,
-                                                                                            "age",
-                                                                                            event.target
-                                                                                                .value
-                                                                                        )
-                                                                                    }
-                                                                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-                                                                                />
-                                                                            </div>
+                                                                {index === 0 && (
+                                                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                        <div>
+                                                                            <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                                                Yaş
+                                                                            </label>
+                                                                            <input
+                                                                                required
+                                                                                type="number"
+                                                                                min="0"
+                                                                                max="17"
+                                                                                value={
+                                                                                    passenger.age ||
+                                                                                    ""
+                                                                                }
+                                                                                onChange={(
+                                                                                    event
+                                                                                ) =>
+                                                                                    handlePassengerChange(
+                                                                                        index,
+                                                                                        "age",
+                                                                                        event.target
+                                                                                            .value
+                                                                                    )
+                                                                                }
+                                                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                                                                            />
                                                                         </div>
-                                                                    )}
-                                                                </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>

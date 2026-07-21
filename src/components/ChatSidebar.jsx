@@ -41,6 +41,11 @@ export default function ChatSidebar({
   const [sessions, setSessions] = useState([]);
 
   const fetchSessions = async () => {
+    const isGuestSession = localStorage.getItem('isGuest') === 'true';
+    if (isGuestSession) {
+      setSessions([]);
+      return;
+    }
     try {
       const response = await api.get('/api/chat/sessions');
       setSessions(response.data);

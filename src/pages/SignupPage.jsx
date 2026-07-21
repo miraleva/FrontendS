@@ -9,10 +9,12 @@ import 'react-phone-number-input/style.css';
 import api from '../services/api';
 import { isPhoneNumberTooLong, getPhoneInputMaxLength } from '../utils/phoneLimits';
 import { useTheme } from '../components/ThemeContext';
+import { useAuth } from '../components/AuthContext';
 
 export default function SignupPage() {
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
+  const { continueAsGuest } = useAuth();
 
   const videoRef = useRef(null);
 
@@ -482,7 +484,10 @@ export default function SignupPage() {
 
           <button
             type="button"
-            onClick={() => navigate('/chat')}
+            onClick={() => {
+              continueAsGuest();
+              navigate('/chat');
+            }}
             className="w-full py-3 px-4 rounded-xl border border-blue-500/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             <UserIcon size={18} />

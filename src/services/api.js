@@ -56,8 +56,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const url = error.config?.url || '';
-      // Avoid redirecting when public auth endpoints fail
-      if (!url.includes('/api/auth')) {
+      const isGuestSession = localStorage.getItem('isGuest') === 'true';
+
+      // Avoid redirecting when public auth endpoints fail OR when user is in a guest session
+      if (!url.includes('/api/auth') && !isGuestSession) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userId');

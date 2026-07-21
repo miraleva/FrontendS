@@ -98,6 +98,7 @@ export default function Profile() {
     useEffect(() => {
         let isMounted = true;
         const fetchProfile = async () => {
+            if (localStorage.getItem('isGuest') === 'true') return;
             try {
                 const response = await api.get('/api/profile');
                 if (isMounted) {

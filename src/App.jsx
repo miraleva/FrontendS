@@ -22,6 +22,8 @@ import ChatLogs from "./pages/admin/ChatLogs.jsx";
 import Tours from "./pages/admin/Tours.jsx";
 
 import { ThemeProvider } from "./components/ThemeContext.jsx";
+import { AuthProvider } from "./components/AuthContext.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 // ==========================================
 // GEÇİCİ BİLEŞENLER (PLACEHOLDERS)
@@ -48,75 +50,79 @@ function HistoryPagePlaceholder() {
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        {/* Dark mode ve açık tema için global sarmalayıcı */}
-        <div className="relative min-h-screen w-full bg-white text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-50">
-          <Routes>
-            {/* Ana yönlendirme */}
-            <Route
-              path="/"
-              element={<Navigate to="/login" replace />}
-            />
+      <AuthProvider>
+        <BrowserRouter>
+          {/* Dark mode ve açık tema için global sarmalayıcı */}
+          <div className="relative min-h-screen w-full bg-white text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-50">
+            <Routes>
+              {/* Ana yönlendirme */}
+              <Route
+                path="/"
+                element={<Navigate to="/login" replace />}
+              />
 
-            {/* Layout dışında açılması gereken sayfalar */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route
-              path="/forgot-password"
-              element={<ForgotPasswordPage />}
-            />
-            <Route
-              path="/reset-password"
-              element={<ResetPasswordPage />}
-            />
+              {/* Layout dışında açılması gereken sayfalar */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route
+                path="/forgot-password"
+                element={<ForgotPasswordPage />}
+              />
+              <Route
+                path="/reset-password"
+                element={<ResetPasswordPage />}
+              />
 
-            {/* ADMIN ROTALARI */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route
-                path="reservations"
-                element={<Reservations />}
-              />
-              <Route path="users" element={<Users />} />
-              <Route path="chats" element={<ChatLogs />} />
-              <Route path="tours" element={<Tours />} />
-            </Route>
+              {/* ADMIN ROTALARI */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route
+                  path="reservations"
+                  element={<Reservations />}
+                />
+                <Route path="users" element={<Users />} />
+                <Route path="chats" element={<ChatLogs />} />
+                <Route path="tours" element={<Tours />} />
+              </Route>
 
-            {/* KULLANICI ROTALARI */}
-            <Route element={<MainLayout />}>
-              <Route path="/chat" element={<ChatbotPage />} />
-              <Route
-                path="/chat/search"
-                element={<SearchChats />}
-              />
-              <Route
-                path="/appointments"
-                element={<PastAppointments />}
-              />
-              <Route
-                path="/documents"
-                element={<DocumentPagePlaceholder />}
-              />
-              <Route
-                path="/history"
-                element={<HistoryPagePlaceholder />}
-              />
-              <Route
-                path="/profile"
-                element={<ProfilePage />}
-              />
-              <Route
-                path="/settings"
-                element={<Settings />}
-              />
-              <Route
-                path="/reservation"
-                element={<Reservation />}
-              />
-            </Route>
-          </Routes>
-        </div>
-      </BrowserRouter>
+              {/* KULLANICI & GUEST ROTALARI (ProtectedRoute) */}
+              <Route element={<ProtectedRoute allowedTypes={['authenticated', 'guest']} />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/chat" element={<ChatbotPage />} />
+                  <Route
+                    path="/chat/search"
+                    element={<SearchChats />}
+                  />
+                  <Route
+                    path="/appointments"
+                    element={<PastAppointments />}
+                  />
+                  <Route
+                    path="/documents"
+                    element={<DocumentPagePlaceholder />}
+                  />
+                  <Route
+                    path="/history"
+                    element={<HistoryPagePlaceholder />}
+                  />
+                  <Route
+                    path="/profile"
+                    element={<ProfilePage />}
+                  />
+                  <Route
+                    path="/settings"
+                    element={<Settings />}
+                  />
+                  <Route
+                    path="/reservation"
+                    element={<Reservation />}
+                  />
+                </Route>
+              </Route>
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

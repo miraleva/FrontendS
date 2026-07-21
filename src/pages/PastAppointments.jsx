@@ -191,6 +191,10 @@ export default function PastAppointments() {
   }, [theme]);
 
   const fetchReservations = async () => {
+    if (localStorage.getItem('isGuest') === 'true') {
+      setAppointments([]);
+      return;
+    }
     try {
       const response = await api.get("/api/reservations");
 

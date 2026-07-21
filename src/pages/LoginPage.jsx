@@ -6,11 +6,13 @@ import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
 import api from '../services/api';
 import { useTheme } from '../components/ThemeContext';
+import { useAuth } from '../components/AuthContext';
 import { initGoogleAuth, handleOAuthLogin } from '../services/socialAuth';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
+  const { login, continueAsGuest } = useAuth();
   const navigate = useNavigate();
 
   const videoRef = useRef(null);
@@ -105,9 +107,7 @@ export default function LoginPage() {
     try {
       const response = await api.post('/api/auth/login', { email, password });
       const data = response.data;
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('userId', data.user.email);
+      login(data.user, data.token);
       navigate('/chat');
     } catch (err) {
       if (err.response && err.response.status === 401) {
@@ -506,7 +506,10 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => navigate('/chat')}
+              onClick={() => {
+                continueAsGuest();
+                navigate('/chat');
+              }}
               className="w-full py-3 px-4 rounded-xl border border-blue-500/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               <UserIcon size={18} />
