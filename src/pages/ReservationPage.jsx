@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,6 +16,7 @@ import {
 import PhoneInput, {
     isValidPhoneNumber,
 } from "react-phone-number-input";
+import { validatePhoneNumberLength } from "libphonenumber-js/max";
 import "react-phone-number-input/style.css";
 
 import ChatSidebar from "../components/ChatSidebar";
@@ -213,9 +214,13 @@ export default function ReservationPage() {
                 10
             ) || 0;
 
-    const childAges = isFlight
-        ? []
-        : bookingDetails?.childAges || [];
+    const childAges = useMemo(
+        () =>
+            isFlight
+                ? []
+                : bookingDetails?.childAges || [],
+        [isFlight, bookingDetails?.childAges]
+    );
 
     useEffect(() => {
         if (!videoRef.current) return;
@@ -261,6 +266,10 @@ export default function ReservationPage() {
                             passenger.phoneNumber ||
                             passenger.phone ||
                             "",
+                        phoneCountry:
+                            passenger.phoneCountry ||
+                            passenger.country ||
+                            "TR",
                         birthDate:
                             passenger.birthDate || "",
                         gender:
@@ -305,6 +314,7 @@ export default function ReservationPage() {
                 identityNumber: "",
                 email: "",
                 phone: "",
+                phoneCountry: "TR",
                 birthDate: "",
                 gender: "MR",
                 nationality: "TR",
@@ -324,6 +334,7 @@ export default function ReservationPage() {
                 identityNumber: "",
                 email: "",
                 phone: "",
+                phoneCountry: "TR",
                 birthDate: "",
                 gender: "CHD",
                 nationality: "TR",
@@ -937,16 +948,26 @@ export default function ReservationPage() {
                                                                                 passenger.firstName ||
                                                                                 ""
                                                                             }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
+                                                                            onChange={(event) => {
+                                                                                const cleanValue =
+                                                                                    event.target.value.replace(
+                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
+                                                                                        ""
+                                                                                    );
+
                                                                                 handlePassengerChange(
                                                                                     index,
                                                                                     "firstName",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
-                                                                            }
+                                                                                    cleanValue
+                                                                                );
+                                                                            }}
+                                                                            onInput={(event) => {
+                                                                                event.currentTarget.value =
+                                                                                    event.currentTarget.value.replace(
+                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
+                                                                                        ""
+                                                                                    );
+                                                                            }}
                                                                             className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.firstName
                                                                                 ? "border-red-500 ring-1 ring-red-500"
                                                                                 : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
@@ -974,16 +995,26 @@ export default function ReservationPage() {
                                                                                 passenger.lastName ||
                                                                                 ""
                                                                             }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
+                                                                            onChange={(event) => {
+                                                                                const cleanValue =
+                                                                                    event.target.value.replace(
+                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
+                                                                                        ""
+                                                                                    );
+
                                                                                 handlePassengerChange(
                                                                                     index,
                                                                                     "lastName",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
-                                                                            }
+                                                                                    cleanValue
+                                                                                );
+                                                                            }}
+                                                                            onInput={(event) => {
+                                                                                event.currentTarget.value =
+                                                                                    event.currentTarget.value.replace(
+                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
+                                                                                        ""
+                                                                                    );
+                                                                            }}
                                                                             className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.lastName
                                                                                 ? "border-red-500 ring-1 ring-red-500"
                                                                                 : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
@@ -1081,25 +1112,39 @@ export default function ReservationPage() {
                                                                         <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
                                                                             Uyruk
                                                                         </label>
-                                                                        <input
+                                                                        <select
                                                                             required
-                                                                            type="text"
                                                                             value={
                                                                                 passenger.nationality ||
                                                                                 ""
                                                                             }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
+                                                                            onChange={(event) => {
                                                                                 handlePassengerChange(
                                                                                     index,
                                                                                     "nationality",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
-                                                                            }
+                                                                                    event.target.value
+                                                                                );
+
+                                                                                handlePassengerChange(
+                                                                                    index,
+                                                                                    "identityNumber",
+                                                                                    ""
+                                                                                );
+                                                                            }}
                                                                             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-                                                                        />
+                                                                        >
+                                                                            <option value="TR">Türkiye</option>
+                                                                            <option value="DE">Almanya</option>
+                                                                            <option value="GB">Birleşik Krallık</option>
+                                                                            <option value="US">Amerika Birleşik Devletleri</option>
+                                                                            <option value="FR">Fransa</option>
+                                                                            <option value="NL">Hollanda</option>
+                                                                            <option value="IT">İtalya</option>
+                                                                            <option value="ES">İspanya</option>
+                                                                            <option value="AU">Avustralya</option>
+                                                                            <option value="CA">Kanada</option>
+                                                                            <option value="OTHER">Diğer</option>
+                                                                        </select>
                                                                     </div>
 
                                                                     <div>
@@ -1107,26 +1152,91 @@ export default function ReservationPage() {
                                                                             <ShieldCheck
                                                                                 size={12}
                                                                             />
-                                                                            {t(
-                                                                                "reservation_identity_number"
-                                                                            )}
+                                                                            {passenger.nationality === "TR"
+                                                                                ? "T.C. Kimlik Numarası"
+                                                                                : "Pasaport Numarası"}
                                                                         </label>
                                                                         <input
                                                                             required
                                                                             type="text"
+                                                                            inputMode={
+                                                                                passenger.nationality === "TR"
+                                                                                    ? "numeric"
+                                                                                    : "text"
+                                                                            }
+                                                                            maxLength={
+                                                                                passenger.nationality === "TR"
+                                                                                    ? 11
+                                                                                    : 15
+                                                                            }
                                                                             value={
                                                                                 passenger.identityNumber ||
                                                                                 ""
                                                                             }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
+                                                                            onChange={(event) => {
+                                                                                const rawValue =
+                                                                                    event.target.value;
+
+                                                                                const cleanValue =
+                                                                                    passenger.nationality ===
+                                                                                        "TR"
+                                                                                        ? rawValue
+                                                                                            .replace(
+                                                                                                /\D/g,
+                                                                                                ""
+                                                                                            )
+                                                                                            .slice(
+                                                                                                0,
+                                                                                                11
+                                                                                            )
+                                                                                        : rawValue
+                                                                                            .replace(
+                                                                                                /[^A-Za-z0-9]/g,
+                                                                                                ""
+                                                                                            )
+                                                                                            .toUpperCase()
+                                                                                            .slice(
+                                                                                                0,
+                                                                                                15
+                                                                                            );
+
                                                                                 handlePassengerChange(
                                                                                     index,
                                                                                     "identityNumber",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
+                                                                                    cleanValue
+                                                                                );
+                                                                            }}
+                                                                            onInput={(event) => {
+                                                                                const currentValue =
+                                                                                    event.currentTarget.value;
+
+                                                                                event.currentTarget.value =
+                                                                                    passenger.nationality ===
+                                                                                        "TR"
+                                                                                        ? currentValue
+                                                                                            .replace(
+                                                                                                /\D/g,
+                                                                                                ""
+                                                                                            )
+                                                                                            .slice(
+                                                                                                0,
+                                                                                                11
+                                                                                            )
+                                                                                        : currentValue
+                                                                                            .replace(
+                                                                                                /[^A-Za-z0-9]/g,
+                                                                                                ""
+                                                                                            )
+                                                                                            .toUpperCase()
+                                                                                            .slice(
+                                                                                                0,
+                                                                                                15
+                                                                                            );
+                                                                            }}
+                                                                            placeholder={
+                                                                                passenger.nationality === "TR"
+                                                                                    ? "11 haneli T.C. kimlik numarası"
+                                                                                    : "En fazla 15 harf veya rakam"
                                                                             }
                                                                             className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
                                                                                 ? "border-red-500 ring-1 ring-red-500"
@@ -1191,23 +1301,65 @@ export default function ReservationPage() {
                                                                         <PhoneInput
                                                                             international
                                                                             defaultCountry="TR"
+                                                                            onCountryChange={(country) => {
+                                                                                handlePassengerChange(
+                                                                                    index,
+                                                                                    "phoneCountry",
+                                                                                    country || "TR"
+                                                                                );
+
+                                                                                // Ülke değiştiğinde eski ülkeye ait numarayı temizler.
+                                                                                handlePassengerChange(
+                                                                                    index,
+                                                                                    "phone",
+                                                                                    ""
+                                                                                );
+                                                                            }}
                                                                             value={
                                                                                 passenger.phone ||
                                                                                 ""
                                                                             }
-                                                                            onChange={(value) =>
-                                                                                handlePassengerChange(
-                                                                                    index,
-                                                                                    "phone",
-                                                                                    value || ""
-                                                                                )
-                                                                            }
+                                                                            onChange={(value) => {
+                                                                                const nextPhone =
+                                                                                    value || "";
+
+                                                                                if (!nextPhone) {
+                                                                                    handlePassengerChange(
+                                                                                        index,
+                                                                                        "phone",
+                                                                                        ""
+                                                                                    );
+                                                                                    return;
+                                                                                }
+
+                                                                                const lengthError =
+                                                                                    validatePhoneNumberLength(
+                                                                                        nextPhone
+                                                                                    );
+
+                                                                                // Eksik numara yazılabilir; yalnızca fazla rakam engellenir.
+                                                                                if (
+                                                                                    lengthError !==
+                                                                                    "TOO_LONG"
+                                                                                ) {
+                                                                                    handlePassengerChange(
+                                                                                        index,
+                                                                                        "phone",
+                                                                                        nextPhone
+                                                                                    );
+                                                                                }
+                                                                            }}
                                                                             className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
                                                                                 ? "border-red-500 ring-1 ring-red-500"
                                                                                 : "border-slate-300 focus-within:border-[#3B82F6] focus-within:ring-2 focus-within:ring-[#3B82F6]/50 dark:border-slate-800"
                                                                                 }`}
                                                                             numberInputProps={{
-                                                                                required: true,
+                                                                                required: index === 0,
+                                                                                inputMode: "tel",
+                                                                                autoComplete:
+                                                                                    index === 0
+                                                                                        ? "tel"
+                                                                                        : "off",
                                                                                 className:
                                                                                     "ml-2 w-full border-0 bg-transparent py-1 text-slate-800 outline-none focus:ring-0 dark:text-slate-100",
                                                                             }}
