@@ -1091,7 +1091,7 @@ export default function ReservationPage() {
                                                                             type="text"
                                                                             value={
                                                                                 passenger.nationality ||
-                                                                                "TR"
+                                                                                ""
                                                                             }
                                                                             onChange={(
                                                                                 event

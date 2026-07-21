@@ -788,7 +788,7 @@ export default function ReservationFormPanel({
                                   type="text"
                                   value={
                                     guest.nationality ||
-                                    "TR"
+                                    ""
                                   }
                                   onChange={(event) =>
                                     handleGuestChange(
