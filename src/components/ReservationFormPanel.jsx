@@ -448,7 +448,7 @@ export default function ReservationFormPanel({
             className="mb-4 text-emerald-500"
           />
 
-          <p className="mb-6 max-w-sm font-medium text-slate-800 dark:text-slate-200">
+          <p className="mb-4 max-w-sm font-medium text-slate-800 dark:text-slate-200">
             {bookingDetails?.editMode
               ? "Rezervasyon başarıyla güncellendi."
               : t("reservation_confirm_success", {
@@ -456,6 +456,14 @@ export default function ReservationFormPanel({
                   reservationResult.reservationNumber ||
                   reservationResult.id,
               })}
+          </p>
+
+          <p className="mb-6 max-w-md rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-xs md:text-sm font-medium text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+            Rezervasyon detaylarınız ve biletiniz{" "}
+            <strong className="font-bold text-blue-600 dark:text-blue-400">
+              {guests[0]?.email || reservationResult?.passengers?.[0]?.email || "e-posta"}
+            </strong>{" "}
+            adresine e-posta olarak gönderilmiştir.
           </p>
 
           <button
@@ -580,80 +588,39 @@ export default function ReservationFormPanel({
                       getPassengerErrors(guest);
 
                     return (
-                      <div
-                        key={guest.id || index}
-                        className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 dark:border-slate-800 dark:bg-slate-800"
-                      >
+                      <div key={guest.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
                         <button
                           type="button"
-                          onClick={() =>
-                            setExpandedGuestId(
-                              isExpanded
-                                ? null
-                                : guest.id
-                            )
-                          }
-                          className="flex w-full items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+                          onClick={() => setExpandedGuestId(isExpanded ? null : guest.id)}
+                          className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors rounded-t-xl"
                         >
                           <div className="flex items-center gap-3">
-                            {guest.type ===
-                              "ADULT" ? (
-                              <User
-                                size={18}
-                                className="text-blue-500"
-                              />
-                            ) : (
-                              <Baby
-                                size={18}
-                                className="text-amber-500"
-                              />
-                            )}
+                            {guest.type === 'ADULT' ? <User size={18} className="text-blue-500 dark:text-slate-200" /> : <Baby size={18} className="text-amber-500 dark:text-amber-300" />}
+                            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
+                            {index === 0 && <span className="ml-2 text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
 
-                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                              {guestTitle}
-                            </span>
-
-                            {index === 0 && (
-                              <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                                İletişim
+                            {/* Summary when collapsed */}
+                            {!isExpanded && (guest.firstName || guest.lastName) && (
+                              <span className="text-sm text-slate-500 dark:text-slate-400 ml-2 border-l border-slate-200 dark:border-slate-700 pl-4">
+                                {guest.firstName} {guest.lastName}
                               </span>
                             )}
-
-                            {!isExpanded &&
-                              (guest.firstName ||
-                                guest.lastName) && (
-                                <span className="ml-2 border-l border-slate-200 pl-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                                  {guest.firstName}{" "}
-                                  {guest.lastName}
-                                </span>
-                              )}
                           </div>
-
-                          <div className="text-slate-400 dark:text-slate-500">
-                            {isExpanded ? (
-                              <ChevronUp size={20} />
-                            ) : (
-                              <ChevronDown
-                                size={20}
-                              />
-                            )}
+                          <div className="text-slate-400 dark:text-slate-400">
+                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                           </div>
                         </button>
-
                         {isExpanded && (
-                          <div className="space-y-4 border-t border-slate-100 bg-slate-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/40">
+                          <div className="space-y-4 border-t border-slate-200/80 bg-slate-50/70 p-5 dark:border-slate-700/60 dark:bg-slate-900/60">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   Ad
                                 </label>
                                 <input
                                   required
                                   type="text"
-                                  value={
-                                    guest.firstName ||
-                                    ""
-                                  }
+                                  value={guest.firstName || ""}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -661,30 +628,26 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.firstName
-                                      ? "border-red-500 ring-1 ring-red-500"
-                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.firstName
+                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                     }`}
                                 />
                                 {errors.firstName && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                    {
-                                      errors.firstName
-                                    }
+                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                    {errors.firstName}
                                   </span>
                                 )}
                               </div>
 
                               <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   Soyad
                                 </label>
                                 <input
                                   required
                                   type="text"
-                                  value={
-                                    guest.lastName || ""
-                                  }
+                                  value={guest.lastName || ""}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -692,16 +655,14 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.lastName
-                                      ? "border-red-500 ring-1 ring-red-500"
-                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.lastName
+                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                     }`}
                                 />
                                 {errors.lastName && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                    {
-                                      errors.lastName
-                                    }
+                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                    {errors.lastName}
                                   </span>
                                 )}
                               </div>
@@ -709,17 +670,14 @@ export default function ReservationFormPanel({
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   Cinsiyet
                                 </label>
                                 <select
                                   required
                                   value={
                                     guest.gender ||
-                                    (guest.type ===
-                                      "CHILD"
-                                      ? "CHD"
-                                      : "MR")
+                                    (guest.type === "CHILD" ? "CHD" : "MR")
                                   }
                                   onChange={(event) =>
                                     handleGuestChange(
@@ -728,34 +686,29 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                 >
-                                  <option value="MR">
+                                  <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                                     Bay (Mr.)
                                   </option>
-                                  <option value="MRS">
+                                  <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                                     Bayan (Mrs.)
                                   </option>
-                                  <option value="CHD">
+                                  <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                                     Çocuk (Child)
                                   </option>
                                 </select>
                               </div>
 
                               <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   Doğum Tarihi
                                 </label>
                                 <input
                                   required
                                   type="date"
-                                  max={new Date()
-                                    .toISOString()
-                                    .split("T")[0]}
-                                  value={
-                                    guest.birthDate ||
-                                    ""
-                                  }
+                                  max={new Date().toISOString().split("T")[0]}
+                                  value={guest.birthDate || ""}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -763,16 +716,14 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
-                                      ? "border-red-500 ring-1 ring-red-500"
-                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
+                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                     }`}
                                 />
                                 {errors.birthDate && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                    {
-                                      errors.birthDate
-                                    }
+                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                    {errors.birthDate}
                                   </span>
                                 )}
                               </div>
@@ -780,16 +731,13 @@ export default function ReservationFormPanel({
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   Uyruk
                                 </label>
                                 <input
                                   required
                                   type="text"
-                                  value={
-                                    guest.nationality ||
-                                    ""
-                                  }
+                                  value={guest.nationality || "TR"}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -797,24 +745,19 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400"
                                 />
                               </div>
 
                               <div>
-                                <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                  <ShieldCheck
-                                    size={12}
-                                  />
+                                <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                  <ShieldCheck size={12} />
                                   TC Kimlik No / Pasaport
                                 </label>
                                 <input
                                   required
                                   type="text"
-                                  value={
-                                    guest.identityNumber ||
-                                    ""
-                                  }
+                                  value={guest.identityNumber || ""}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -822,16 +765,14 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
-                                      ? "border-red-500 ring-1 ring-red-500"
-                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.identityNumber
+                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                     }`}
                                 />
                                 {errors.identityNumber && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                    {
-                                      errors.identityNumber
-                                    }
+                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                    {errors.identityNumber}
                                   </span>
                                 )}
                               </div>
@@ -839,7 +780,7 @@ export default function ReservationFormPanel({
 
                             {guest.type === "CHILD" && (
                               <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   Yaş
                                 </label>
                                 <input
@@ -855,7 +796,7 @@ export default function ReservationFormPanel({
                                       event.target.value
                                     )
                                   }
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400"
                                 />
                               </div>
                             )}
@@ -863,49 +804,42 @@ export default function ReservationFormPanel({
                             {index === 0 && (
                               <div className="grid grid-cols-1 gap-4 border-t border-slate-200/60 pt-4 dark:border-slate-700 md:grid-cols-2">
                                 <div>
-                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                                     <Mail size={12} />
                                     E-posta
                                   </label>
                                   <input
                                     required
                                     type="email"
-                                    value={
-                                      guest.email || ""
-                                    }
-                                    onChange={(
-                                      event
-                                    ) =>
+                                    value={guest.email || ""}
+                                    onChange={(event) =>
                                       handleGuestChange(
                                         index,
                                         "email",
-                                        event.target
-                                          .value
+                                        event.target.value
                                       )
                                     }
-                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.email
-                                        ? "border-red-500 ring-1 ring-red-500"
-                                        : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.email
+                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                        : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                       }`}
                                   />
                                   {errors.email && (
-                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
                                       {errors.email}
                                     </span>
                                   )}
                                 </div>
 
                                 <div>
-                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                                     <Phone size={12} />
                                     Telefon
                                   </label>
                                   <PhoneInput
                                     international
                                     defaultCountry="TR"
-                                    value={
-                                      guest.phone || ""
-                                    }
+                                    value={guest.phone || ""}
                                     onChange={(value) =>
                                       handleGuestChange(
                                         index,
@@ -914,17 +848,17 @@ export default function ReservationFormPanel({
                                       )
                                     }
                                     className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
-                                        ? "border-red-500 ring-1 ring-red-500"
-                                        : "border-slate-200 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"
+                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                        : "border-slate-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"
                                       }`}
                                     numberInputProps={{
                                       required: true,
                                       className:
-                                        "ml-2 w-full border-0 bg-transparent py-1 text-slate-800 outline-none focus:ring-0 dark:text-white",
+                                        "ml-2 w-full border-0 bg-transparent py-1 text-slate-900 outline-none focus:ring-0 dark:text-white placeholder-slate-400 dark:placeholder-slate-400",
                                     }}
                                   />
                                   {errors.phone && (
-                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
                                       {errors.phone}
                                     </span>
                                   )}
@@ -937,65 +871,37 @@ export default function ReservationFormPanel({
                     );
                   }
                 )}
-              </div>
+                            <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
+                              <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
+                                {hotel.isRefundable === true
+                                  ? "Bu rezervasyon ücretsiz iptal edilebilir."
+                                  : hotel.isRefundable === false
+                                    ? "Bu rezervasyon iade edilemez."
+                                    : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
+                              </p>
+                            </div>
+                          </div>
 
-              <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30">
-                <Info
-                  size={20}
-                  className="mt-0.5 flex-shrink-0 text-blue-500"
-                />
-                <div>
-                  <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300">
-                    İptal Politikası
-                  </h4>
-                  <p className="mt-1 text-xs leading-relaxed text-blue-700 dark:text-slate-300">
-                    {safeHotel?.isRefundable === true
-                      ? "Bu rezervasyon ücretsiz iptal edilebilir."
-                      : safeHotel?.isRefundable ===
-                        false
-                        ? "Bu rezervasyon iade edilemez."
-                        : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
-                  </p>
+                          {/* Price Breakdown */ }
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
+                  <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span>Vergiler ve Harçlar</span>
+                  <span className="font-medium">{formatSubPrice(taxValue)}</span>
+                </div>
+                <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">Toplam</span>
+                  <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
                 </div>
               </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-800">
-                <h3 className="mb-4 border-b border-slate-100 pb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:border-slate-700 dark:text-slate-200">
-                  Fiyat Özeti
-                </h3>
-
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                    <span>
-                      Oda Fiyatı (
-                      {bookingDetails?.guests ||
-                        "1 Oda"}
-                      )
-                    </span>
-                    <span className="font-medium">
-                      {formatSubPrice(
-                        roomPriceValue
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                    <span>Vergiler ve Harçlar</span>
-                    <span className="font-medium">
-                      {formatSubPrice(taxValue)}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      Toplam
-                    </span>
-                    <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">
-                      {formattedPrice}
-                    </span>
-                  </div>
-                </div>
-              </div>
+            </div>
 
               <div className="flex items-start gap-3 p-2">
                 <input
@@ -1027,40 +933,40 @@ export default function ReservationFormPanel({
               </div>
             </form>
           </div>
-        </div>
-
-        <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:border-slate-800 dark:bg-slate-900 md:flex-row md:p-6">
-          <div className="flex w-full flex-col text-center md:w-auto md:text-left">
-            <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Toplam Tutar
-            </span>
-
-            <span className="text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
-              {formattedPrice}
-            </span>
-
-            {submitError && (
-              <span className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-                {submitError}
-              </span>
-            )}
           </div>
 
-          <button
-            type="submit"
-            form="reservation-form"
-            disabled={!termsAccepted || isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 md:w-auto md:min-w-[240px]"
-          >
-            <ShieldCheck size={18} />
-            {isSubmitting
-              ? t("reservation_submitting")
-              : bookingDetails?.editMode
-                ? "Güncellemeyi Onayla"
-                : "Rezervasyonu Onayla"}
-          </button>
+          <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:border-slate-800 dark:bg-slate-900 md:flex-row md:p-6">
+            <div className="flex w-full flex-col text-center md:w-auto md:text-left">
+              <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Toplam Tutar
+              </span>
+
+              <span className="text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
+                {formattedPrice}
+              </span>
+
+              {submitError && (
+                <span className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                  {submitError}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              form="reservation-form"
+              disabled={!termsAccepted || isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 md:w-auto md:min-w-[240px]"
+            >
+              <ShieldCheck size={18} />
+              {isSubmitting
+                ? t("reservation_submitting")
+                : bookingDetails?.editMode
+                  ? "Güncellemeyi Onayla"
+                  : "Rezervasyonu Onayla"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+      );
 }

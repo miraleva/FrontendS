@@ -15,10 +15,12 @@ import {
   Users,
   Hotel,
   Plane,
-  Sparkles
+  Sparkles,
+  LogIn
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../components/ThemeContext";
+import { useAuth } from "../components/AuthContext";
 import ChatSidebar from "../components/ChatSidebar";
 import HotelDetailPanel from "../components/HotelDetailPanel";
 import ReservationFormPanel from "../components/ReservationFormPanel";
@@ -118,6 +120,7 @@ function formatBaggage(baggage, t) {
 export default function Index() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatActive, setIsChatActive] = useState(false);
@@ -437,7 +440,10 @@ export default function Index() {
       }
 
       if (data.sessionId && data.sessionId !== sessionId) {
-        setSearchParams({ sessionId: data.sessionId });
+        // Misafir oturumlarında sessionId URL'ye yazılmaz (geçmiş kaydedilmez)
+        if (!isGuest) {
+          setSearchParams({ sessionId: data.sessionId });
+        }
       }
 
     } catch (err) {
@@ -540,7 +546,7 @@ export default function Index() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+    <div className={`flex w-full overflow-hidden bg-transparent font-sans relative ${isGuest ? 'h-[calc(100vh-33px)] mt-[33px]' : 'h-screen'}`}>
       {/* Katman 1 (z-0): Background Video */}
       <video
         ref={videoRef}
@@ -555,6 +561,29 @@ export default function Index() {
 
       {/* Katman 2 (z-10): Overlay Mask */}
       <div className="fixed inset-0 z-10 pointer-events-none bg-white/10 dark:bg-black/30" />
+
+      {/* Misafir Bannerı (z-50): fixed, her zaman en üstte — layout wrapper mt-[33px] ile telafi ediyor */}
+      {isGuest && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-2 px-4 py-2 bg-amber-50/95 dark:bg-amber-950/90 backdrop-blur-sm border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-medium shadow-sm">
+          <LogIn size={13} className="flex-shrink-0" />
+          <span>
+            {t('guest.bannerText', 'Misafir olarak oturum açtınız. Sohbet geçmişinizi kaydetmek için')}{' '}
+          </span>
+          <button
+            onClick={() => navigate('/login')}
+            className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-200 transition-colors cursor-pointer"
+          >
+            {t('guest.loginLink', 'Giriş Yap')}
+          </button>
+          <span>{t('guest.or', 'veya')}</span>
+          <button
+            onClick={() => navigate('/signup')}
+            className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-200 transition-colors cursor-pointer"
+          >
+            {t('guest.registerLink', 'Kayıt Ol')}
+          </button>
+        </div>
+      )}
 
       {/* Katman 3 (z-30): Sol Sidebar */}
       <ChatSidebar
@@ -744,7 +773,7 @@ export default function Index() {
                               {msg.chatStatus === "BOOKING" && msg.selectedItem && (
                                 <div className="mt-3 text-right">
                                   <button
-                                    onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
+                                    onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, bookingDetails: bookingDetails, sessionId: sessionId } })}
                                     className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
                                   >
                                     {t("proceed_to_reservation", "Proceed to Reservation")}

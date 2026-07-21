@@ -12,13 +12,15 @@ import {
   ChevronDown,
   Check,
   Trash2,
-  Sun,   // <-- YENİ: İkon eklendi
-  Moon   // <-- YENİ: İkon eklendi
+  Sun,
+  Moon,
+  LogIn
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
 import LanguageSelector from './LanguageSelector';
 import api from '../services/api';
-import { useTheme } from './ThemeContext.jsx'; // <-- YENİ: ThemeContext import edildi
+import { useTheme } from './ThemeContext.jsx';
+import { useAuth } from './AuthContext';
 
 export default function ChatSidebar({
   isOpen,
@@ -28,7 +30,8 @@ export default function ChatSidebar({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme(); // <-- YENİ: Tema fonksiyonları çekildi
+  const { theme, toggleTheme } = useTheme();
+  const { isGuest } = useAuth();
 
   const isChatActive = location.pathname.startsWith('/chat');
   const isAppointmentsActive = location.pathname === '/appointments';
@@ -41,6 +44,11 @@ export default function ChatSidebar({
   const [sessions, setSessions] = useState([]);
 
   const fetchSessions = async () => {
+    const isGuestSession = localStorage.getItem('isGuest') === 'true';
+    if (isGuestSession) {
+      setSessions([]);
+      return;
+    }
     try {
       const response = await api.get('/api/chat/sessions');
       setSessions(response.data);
@@ -117,9 +125,8 @@ export default function ChatSidebar({
   const displayUsername = profileFullName || (username.includes('@') ? username.split('@')[0] : username);
 
   return (
-    // YENİ: h h-screen bg-white sınıfı, dark mod uyumlu yapıldı: bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800
     <div
-      className={`h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-30 ${isOpen ? 'w-[340px]' : 'w-0 border-r-0'
+      className={`h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-30 ${isOpen ? 'w-[340px]' : 'w-0 border-r-0'
         }`}
     >
       {/* 1. Top Row (Logo Alanı) */}
@@ -162,23 +169,24 @@ export default function ChatSidebar({
         </button>
       </div>
 
-      {/* 3. Search Input */}
-      <div className="px-5 py-3">
-        <div className="relative flex items-center border-b border-transparent focus-within:border-slate-300 dark:focus-within:border-slate-600 transition-all duration-150">
-          <span className="absolute left-0 text-slate-400 dark:text-slate-500">
-            <Search size={16} />
-          </span>
-          <input
-            type="text"
-            placeholder={t('sidebar_search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => navigate('/chat/search')}
-            // YENİ: text-text-primary dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500
-            className="w-full bg-transparent pl-7 pr-2 py-1.5 text-sm text-text-primary dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all cursor-pointer"
-          />
+      {/* 3. Search Input — Misafirlere gösterilmez */}
+      {!isGuest && (
+        <div className="px-5 py-3">
+          <div className="relative flex items-center border-b border-transparent focus-within:border-slate-300 dark:focus-within:border-slate-600 transition-all duration-150">
+            <span className="absolute left-0 text-slate-400 dark:text-slate-500">
+              <Search size={16} />
+            </span>
+            <input
+              type="text"
+              placeholder={t('sidebar_search')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => navigate('/chat/search')}
+              className="w-full bg-transparent pl-7 pr-2 py-1.5 text-sm text-text-primary dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all cursor-pointer"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 4. Main Nav Section */}
       <div className="flex flex-col">
@@ -188,7 +196,6 @@ export default function ChatSidebar({
         <nav className="flex flex-col gap-1 p-2">
           <button
             onClick={() => navigate('/chat')}
-            // YENİ: dark mod uyumlu arka plan ve metin renkleri eklendi
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isChatActive
               ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-400'
               : 'text-text-secondary dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-text-primary dark:hover:text-slate-200'
@@ -198,83 +205,105 @@ export default function ChatSidebar({
             <span>{t('sidebar_chats')}</span>
           </button>
 
-          <button
-            onClick={() => navigate('/appointments')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isAppointmentsActive
-              ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-400'
-              : 'text-text-secondary dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-text-primary dark:hover:text-slate-200'
-              }`}
-          >
-            <Clock size={16} />
-            <span>{t('sidebar_appointments')}</span>
-          </button>
+          {/* Misafirler için Randevular gizli */}
+          {!isGuest && (
+            <button
+              onClick={() => navigate('/appointments')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none cursor-pointer ${isAppointmentsActive
+                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-400'
+                : 'text-text-secondary dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-text-primary dark:hover:text-slate-200'
+                }`}
+            >
+              <Clock size={16} />
+              <span>{t('sidebar_appointments')}</span>
+            </button>
+          )}
         </nav>
       </div>
 
-      {/* 5. Recent Chats Section Header */}
-      <div className="flex flex-col flex-1 min-h-0">
-        <div className="bg-transparent text-[#0B5FFF] dark:text-[#3b82f6] text-[11px] font-bold uppercase tracking-wider px-5 py-2 flex items-center justify-between">
-          <span>{t('sidebar_recent_chats')}</span>
-        </div>
+      {/* 5. Recent Chats Section — Misafirlere gösterilmez */}
+      {!isGuest && (
+        <div className="flex flex-col flex-1 min-h-0">
+          <div className="bg-transparent text-[#0B5FFF] dark:text-[#3b82f6] text-[11px] font-bold uppercase tracking-wider px-5 py-2 flex items-center justify-between">
+            <span>{t('sidebar_recent_chats')}</span>
+          </div>
 
-        {/* 6. Recent Chats Session List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {filteredSessions.length > 0 ? (
-            filteredSessions.map((session) => {
-              return (
-                <div
-                  key={session.id}
-                  onClick={() => navigate(`/chat?sessionId=${session.id}`)}
-                  // YENİ: hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-100 dark:hover:border-slate-800
-                  className="p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-800 group relative flex flex-col gap-1"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    {/* YENİ: text-text-primary dark:text-slate-200 group-hover:text-primary dark:group-hover:text-blue-400 */}
-                    <p className="text-sm font-semibold text-text-primary dark:text-slate-200 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors truncate flex-1" title={session.title}>
-                      {session.title || 'Chat Session'}
-                    </p>
-                    <button
-                      onClick={(e) => handleDeleteClick(e, session.id)}
-                      className="p-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all duration-150 cursor-pointer flex-shrink-0"
-                      title={t('Delete Chat')}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
+          {/* 6. Recent Chats Session List */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {filteredSessions.length > 0 ? (
+              filteredSessions.map((session) => {
+                return (
+                  <div
+                    key={session.id}
+                    onClick={() => navigate(`/chat?sessionId=${session.id}`)}
+                    className="p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-800 group relative flex flex-col gap-1"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-text-primary dark:text-slate-200 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors truncate flex-1" title={session.title}>
+                        {session.title || 'Chat Session'}
+                      </p>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, session.id)}
+                        className="p-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-all duration-150 cursor-pointer flex-shrink-0"
+                        title={t('Delete Chat')}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
 
-                  <div className="flex items-end justify-end">
-                    {/* YENİ: text-text-secondary dark:text-slate-400 */}
-                    <span className="text-[10px] text-text-secondary dark:text-slate-400 font-medium whitespace-nowrap leading-none">
-                      {formatTimestamp(session.lastMessageTimestamp)}
-                    </span>
+                    <div className="flex items-end justify-end">
+                      <span className="text-[10px] text-text-secondary dark:text-slate-400 font-medium whitespace-nowrap leading-none">
+                        {formatTimestamp(session.lastMessageTimestamp)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          ) : (
-            <p className="text-xs text-text-secondary dark:text-slate-500 text-center py-6">{t('sidebar_no_matches')}</p>
-          )}
+                );
+              })
+            ) : (
+              <p className="text-xs text-text-secondary dark:text-slate-500 text-center py-6">{t('sidebar_no_matches')}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Misafir için esneme alanı (recent chats olmadığında boşluğu doldur) */}
+      {isGuest && <div className="flex-1" />}
 
       {/* 7. Divider Line */}
       <hr className="border-border dark:border-slate-800 mx-4" />
 
       {/* 8. Bottom Footer */}
       <div className="p-3 flex items-center justify-between gap-1">
+        {/* Profil alanı: misafirler için /login yönlendirmesi */}
         <div
-          onClick={() => navigate('/profile')}
-          className={`flex items-center gap-2.5 cursor-pointer p-1.5 rounded-lg transition-colors min-w-0 flex-1 ${location.pathname === '/profile' ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
-            }`}
-          title="View Profile"
+          onClick={() => navigate(isGuest ? '/login' : '/profile')}
+          className={`flex items-center gap-2.5 cursor-pointer p-1.5 rounded-lg transition-colors min-w-0 flex-1 ${
+            !isGuest && location.pathname === '/profile'
+              ? 'bg-slate-100 dark:bg-slate-800'
+              : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+          }`}
+          title={isGuest ? t('guest.loginTitle', 'Giriş Yap / Kayıt Ol') : t('profile_settings', 'View Profile')}
         >
-          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-blue-500/10 border border-primary/20 dark:border-blue-500/20 flex items-center justify-center font-bold text-primary dark:text-blue-400 text-xs shadow-sm flex-shrink-0 select-none">
-            {displayUsername.slice(0, 2).toUpperCase()}
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0 select-none ${
+            isGuest
+              ? 'bg-amber-100 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400'
+              : 'bg-primary/10 dark:bg-blue-500/10 border border-primary/20 dark:border-blue-500/20 text-primary dark:text-blue-400'
+          }`}>
+            {isGuest ? '?' : displayUsername.slice(0, 2).toUpperCase()}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-text-primary dark:text-slate-200 truncate max-w-[80px]" title={username}>
-              {displayUsername}
+            <span className={`text-xs font-semibold truncate max-w-[80px] ${
+              isGuest
+                ? 'text-amber-700 dark:text-amber-400'
+                : 'text-text-primary dark:text-slate-200'
+            }`} title={isGuest ? t('guest.guestUserTitle', 'Misafir') : displayUsername}>
+              {isGuest ? t('guest.guestUserTitle', 'Misafir') : displayUsername}
             </span>
+            {isGuest && (
+              <span className="text-[10px] text-amber-600 dark:text-amber-500 font-medium">
+                {t('guest.loginAction', 'Giriş Yap →')}
+              </span>
+            )}
           </div>
         </div>
 
@@ -290,17 +319,19 @@ export default function ChatSidebar({
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
-        {/* Ayarlar Butonu */}
-        <button
-          onClick={() => navigate('/settings')}
-          className={`p-2 rounded-lg transition-colors focus:outline-none flex-shrink-0 ${location.pathname === '/settings'
-            ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-orange-400'
-            : 'text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-orange-400'
-            }`}
-          title="Settings"
-        >
-          <Settings size={18} />
-        </button>
+        {/* Ayarlar Butonu — Misafirlere gösterilmez */}
+        {!isGuest && (
+          <button
+            onClick={() => navigate('/settings')}
+            className={`p-2 rounded-lg transition-colors focus:outline-none flex-shrink-0 ${location.pathname === '/settings'
+              ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-orange-400'
+              : 'text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-orange-400'
+              }`}
+            title="Settings"
+          >
+            <Settings size={18} />
+          </button>
+        )}
       </div>
 
       {/* Modal Kısmı */}

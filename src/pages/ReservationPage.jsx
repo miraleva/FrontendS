@@ -447,9 +447,9 @@ export default function ReservationPage() {
 
     const isPassengerFormValid =
         passengers.length > 0 &&
-        passengers.every((passenger) => {
+        passengers.every((passenger, passengerIndex) => {
             const errors =
-                getPassengerErrors(passenger, index);
+                getPassengerErrors(passenger, passengerIndex);
 
             return Object.keys(errors).length === 0;
         });
@@ -518,17 +518,17 @@ export default function ReservationPage() {
                 editData?.currency ||
                 "TRY",
             passengers: passengers.map(
-                (passenger) => ({
+                (passenger, passengerIndex) => ({
                     firstName:
-                        passenger.firstName.trim(),
+                        passenger.firstName?.trim() || "",
                     lastName:
-                        passenger.lastName.trim(),
+                        passenger.lastName?.trim() || "",
                     email:
-                        index === 0 ? passenger.email?.trim() || "" : "",
+                        passengerIndex === 0 ? passenger.email?.trim() || "" : "",
                     phoneNumber:
-                        index === 0 ? passenger.phone?.trim() || "" : "",
+                        passengerIndex === 0 ? passenger.phone?.trim() || "" : "",
                     identityNumber:
-                        passenger.identityNumber.trim(),
+                        passenger.identityNumber?.trim() || "",
                     birthDate:
                         passenger.birthDate || null,
                     gender:
@@ -652,7 +652,7 @@ export default function ReservationPage() {
                                         className="mx-auto mb-4 text-emerald-500"
                                     />
 
-                                    <p className="mb-6 font-medium text-slate-800 dark:text-slate-200">
+                                    <p className="mb-4 font-medium text-slate-800 dark:text-slate-200">
                                         {isEditMode
                                             ? "Rezervasyon başarıyla güncellendi."
                                             : t(
@@ -663,6 +663,14 @@ export default function ReservationPage() {
                                                         reservationResult.id,
                                                 }
                                             )}
+                                    </p>
+
+                                    <p className="mb-6 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-xs md:text-sm font-medium text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+                                        Rezervasyon detaylarınız ve biletiniz{" "}
+                                        <strong className="font-bold text-blue-600 dark:text-blue-400">
+                                            {passengers[0]?.email || reservationResult?.passengers?.[0]?.email || "e-posta"}
+                                        </strong>{" "}
+                                        adresine e-posta olarak gönderilmiştir.
                                     </p>
 
                                     <button
@@ -842,197 +850,154 @@ export default function ReservationPage() {
                                                 "reservation_passenger_info"
                                             )}
                                         </h2>
+                                        {passengers.map((passenger, index) => {
+                                            const isExpanded =
+                                                expandedGuestId === passenger.id;
 
-                                        {passengers.map(
-                                            (passenger, index) => {
-                                                const isExpanded =
-                                                    expandedGuestId ===
-                                                    passenger.id;
+                                            const guestTitle =
+                                                passenger.type === "ADULT"
+                                                    ? `${index + 1}. ${t(
+                                                        "unit_adult",
+                                                        "Yetişkin"
+                                                    )}`
+                                                    : `${index - adultCount + 1
+                                                    }. ${t(
+                                                        "unit_child",
+                                                        "Çocuk"
+                                                    )}`;
 
-                                                const guestTitle =
-                                                    passenger.type ===
-                                                        "ADULT"
-                                                        ? `${index + 1}. ${t(
-                                                            "unit_adult",
-                                                            "Yetişkin"
-                                                        )}`
-                                                        : `${index -
-                                                        adultCount +
-                                                        1
-                                                        }. ${t(
-                                                            "unit_child",
-                                                            "Çocuk"
-                                                        )}`;
+                                            const errors =
+                                                getPassengerErrors(passenger, index);
 
-                                                const errors =
-                                                    getPassengerErrors(
-                                                        passenger, index
-                                                    );
-
-                                                return (
-                                                    <div
-                                                        key={
-                                                            passenger.id || index
+                                            return (
+                                                <div
+                                                    key={passenger.id || index}
+                                                    className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm transition-all duration-200 dark:border-slate-700/80 dark:bg-slate-800"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setExpandedGuestId(
+                                                                isExpanded
+                                                                    ? null
+                                                                    : passenger.id
+                                                            )
                                                         }
-                                                        className="overflow-hidden rounded-[16px] border border-slate-200 bg-white/50 shadow-sm transition-all duration-200 dark:border-slate-800 dark:bg-slate-900/40"
+                                                        className="flex w-full items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/80"
                                                     >
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setExpandedGuestId(
-                                                                    isExpanded
-                                                                        ? null
-                                                                        : passenger.id
-                                                                )
-                                                            }
-                                                            className="flex w-full items-center justify-between px-5 py-4 transition-colors hover:bg-white/30 dark:hover:bg-slate-800/30"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                {passenger.type ===
-                                                                    "ADULT" ? (
-                                                                    <User
-                                                                        size={18}
-                                                                        className="text-[#3B82F6]"
-                                                                    />
-                                                                ) : (
-                                                                    <Baby
-                                                                        size={18}
-                                                                        className="text-amber-500"
-                                                                    />
-                                                                )}
+                                                        <div className="flex items-center gap-3">
+                                                            {passenger.type === "ADULT" ? (
+                                                                <User
+                                                                    size={18}
+                                                                    className="text-blue-500 dark:text-slate-200"
+                                                                />
+                                                            ) : (
+                                                                <Baby
+                                                                    size={18}
+                                                                    className="text-amber-500 dark:text-amber-300"
+                                                                />
+                                                            )}
 
-                                                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                                                                    {guestTitle}
+                                                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                                                {guestTitle}
+                                                            </span>
+
+                                                            {index === 0 && (
+                                                                <span className="ml-2 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                                                    İletişim
                                                                 </span>
+                                                            )}
 
-                                                                {!isExpanded &&
-                                                                    (passenger.firstName ||
-                                                                        passenger.lastName) && (
-                                                                        <span className="ml-2 border-l border-slate-300 pl-4 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-400">
-                                                                            {
-                                                                                passenger.firstName
-                                                                            }{" "}
-                                                                            {
-                                                                                passenger.lastName
-                                                                            }
+                                                            {!isExpanded &&
+                                                                (passenger.firstName ||
+                                                                    passenger.lastName) && (
+                                                                    <span className="ml-2 border-l border-slate-200 pl-4 text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                                                        {passenger.firstName}{" "}
+                                                                        {passenger.lastName}
+                                                                    </span>
+                                                                )}
+                                                        </div>
+
+                                                        <div className="text-slate-400 dark:text-slate-400">
+                                                            {isExpanded ? (
+                                                                <ChevronUp size={20} />
+                                                            ) : (
+                                                                <ChevronDown size={20} />
+                                                            )}
+                                                        </div>
+                                                    </button>
+
+                                                    {isExpanded && (
+                                                        <div className="space-y-4 border-t border-slate-200/80 bg-slate-50/70 p-5 dark:border-slate-700/60 dark:bg-slate-900/60">
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        {t("reservation_first_name")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={passenger.firstName || ""}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "firstName",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.firstName
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.firstName && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.firstName}
                                                                         </span>
                                                                     )}
-                                                            </div>
-
-                                                            <div className="text-slate-500 dark:text-slate-400">
-                                                                {isExpanded ? (
-                                                                    <ChevronUp
-                                                                        size={20}
-                                                                    />
-                                                                ) : (
-                                                                    <ChevronDown
-                                                                        size={20}
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        </button>
-
-                                                        {isExpanded && (
-                                                            <div className="space-y-4 border-t border-slate-200 bg-white/20 p-5 dark:border-slate-800 dark:bg-slate-900/20">
-                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                    <div>
-                                                                        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                            {t(
-                                                                                "reservation_first_name"
-                                                                            )}
-                                                                        </label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            value={
-                                                                                passenger.firstName ||
-                                                                                ""
-                                                                            }
-                                                                            onChange={(event) => {
-                                                                                const cleanValue =
-                                                                                    event.target.value.replace(
-                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
-                                                                                        ""
-                                                                                    );
-
-                                                                                handlePassengerChange(
-                                                                                    index,
-                                                                                    "firstName",
-                                                                                    cleanValue
-                                                                                );
-                                                                            }}
-                                                                            onInput={(event) => {
-                                                                                event.currentTarget.value =
-                                                                                    event.currentTarget.value.replace(
-                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
-                                                                                        ""
-                                                                                    );
-                                                                            }}
-                                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.firstName
-                                                                                ? "border-red-500 ring-1 ring-red-500"
-                                                                                : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
-                                                                                }`}
-                                                                        />
-                                                                        {errors.firstName && (
-                                                                            <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                                                                {
-                                                                                    errors.firstName
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-
-                                                                    <div>
-                                                                        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                            {t(
-                                                                                "reservation_last_name"
-                                                                            )}
-                                                                        </label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            value={
-                                                                                passenger.lastName ||
-                                                                                ""
-                                                                            }
-                                                                            onChange={(event) => {
-                                                                                const cleanValue =
-                                                                                    event.target.value.replace(
-                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
-                                                                                        ""
-                                                                                    );
-
-                                                                                handlePassengerChange(
-                                                                                    index,
-                                                                                    "lastName",
-                                                                                    cleanValue
-                                                                                );
-                                                                            }}
-                                                                            onInput={(event) => {
-                                                                                event.currentTarget.value =
-                                                                                    event.currentTarget.value.replace(
-                                                                                        /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
-                                                                                        ""
-                                                                                    );
-                                                                            }}
-                                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.lastName
-                                                                                ? "border-red-500 ring-1 ring-red-500"
-                                                                                : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
-                                                                                }`}
-                                                                        />
-                                                                        {errors.lastName && (
-                                                                            <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                                                                {
-                                                                                    errors.lastName
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
                                                                 </div>
 
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        {t("reservation_last_name")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={passenger.lastName || ""}
+                                                                        onChange={(event) => {
+                                                                            const cleanValue = event.target.value.replace(
+                                                                                /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
+                                                                                ""
+                                                                            );
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "lastName",
+                                                                                cleanValue
+                                                                            );
+                                                                        }}
+                                                                        onInput={(event) => {
+                                                                            event.currentTarget.value = event.currentTarget.value.replace(
+                                                                                /[^A-Za-zÇĞİÖŞÜçğıöşü\s'-]/g,
+                                                                                ""
+                                                                            );
+                                                                        }}
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.lastName
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.lastName && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.lastName}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
                                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                                     <div>
-                                                                        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
                                                                             Cinsiyet
                                                                         </label>
                                                                         <select
@@ -1407,54 +1372,53 @@ export default function ReservationPage() {
                                                         )}
                                                     </div>
                                                 );
-                                            }
-                                        )}
+                                            })}
                                     </div>
 
                                     {submitError && (
-                                        <p className="text-right text-sm font-medium text-red-600 dark:text-red-400">
-                                            {submitError}
-                                        </p>
-                                    )}
-
-                                    <div className="mt-8 flex justify-end gap-4">
-                                        <button
-                                            type="button"
-                                            onClick={handleBack}
-                                            disabled={isSubmitting}
-                                            className="rounded-[12px] border border-slate-300 px-6 py-3 text-[14px] font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                                        >
-                                            {t("reservation_cancel")}
-                                        </button>
-
-                                        <button
-                                            type="submit"
-                                            disabled={
-                                                !isPassengerFormValid ||
-                                                isSubmitting
-                                            }
-                                            className="rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
-                                        >
-                                            {isSubmitting
-                                                ? t(
-                                                    "reservation_submitting"
-                                                )
-                                                : isEditMode
-                                                    ? t(
-                                                        "reservation_update_confirm",
-                                                        "Güncelle"
-                                                    )
-                                                    : t(
-                                                        "reservation_confirm_proceed"
-                                                    )}
-                                        </button>
-                                    </div>
-                                </form>
+                                <p className="text-right text-sm font-medium text-red-600 dark:text-red-400">
+                                    {submitError}
+                                </p>
                             )}
-                        </div>
+
+                            <div className="mt-8 flex justify-end gap-4">
+                                <button
+                                    type="button"
+                                    onClick={handleBack}
+                                    disabled={isSubmitting}
+                                    className="rounded-[12px] border border-slate-300 px-6 py-3 text-[14px] font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                                >
+                                    {t("reservation_cancel")}
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={
+                                        !isPassengerFormValid ||
+                                        isSubmitting
+                                    }
+                                    className="rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
+                                >
+                                    {isSubmitting
+                                        ? t(
+                                            "reservation_submitting"
+                                        )
+                                        : isEditMode
+                                            ? t(
+                                                "reservation_update_confirm",
+                                                "Güncelle"
+                                            )
+                                            : t(
+                                                "reservation_confirm_proceed"
+                                            )}
+                                </button>
+                            </div>
+                        </form>
+                            )}
                     </div>
                 </div>
             </div>
         </div>
+        </div >
     );
 }
