@@ -23,18 +23,18 @@ export default function Settings() {
     const [localizationSettings, setLocalizationSettings] = useState(() => {
         try {
             const stored = localStorage.getItem("localizationSettings");
-            return stored ? JSON.parse(stored) : { currency: "usd", timezone: "europe/london" };
+            return stored ? JSON.parse(stored) : { currency: "usd" };
         } catch (e) {
-            return { currency: "usd", timezone: "europe/london" };
+            return { currency: "usd" };
         }
     });
 
     const [notificationSettings, setNotificationSettings] = useState(() => {
         try {
             const stored = localStorage.getItem("notificationSettings");
-            return stored ? JSON.parse(stored) : { priceAlerts: true, bookingConfirmations: true };
+            return stored ? JSON.parse(stored) : { bookingConfirmations: true };
         } catch (e) {
-            return { priceAlerts: true, bookingConfirmations: true };
+            return { bookingConfirmations: true };
         }
     });
 
@@ -85,11 +85,11 @@ export default function Settings() {
         const loadDefaults = () => {
             try {
                 const stored = localStorage.getItem("localizationSettings");
-                setLocalizationSettings(stored ? JSON.parse(stored) : { currency: "usd", timezone: "europe/london" });
+                setLocalizationSettings(stored ? JSON.parse(stored) : { currency: "usd" });
             } catch (e) { }
             try {
                 const stored = localStorage.getItem("notificationSettings");
-                setNotificationSettings(stored ? JSON.parse(stored) : { priceAlerts: true, bookingConfirmations: true });
+                setNotificationSettings(stored ? JSON.parse(stored) : { bookingConfirmations: true });
             } catch (e) { }
         };
         loadDefaults();
@@ -179,47 +179,12 @@ export default function Settings() {
                                                     <option value="gbp" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">British Pound (£)</option>
                                                 </select>
                                             </div>
-
-                                            <div>
-                                                <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
-                                                    {t("settings_timezone")}
-                                                </label>
-                                                <select
-                                                    value={localizationSettings.timezone}
-                                                    onChange={(e) => setLocalizationSettings({ ...localizationSettings, timezone: e.target.value })}
-                                                    className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 cursor-pointer text-[14px]"
-                                                >
-                                                    <option value="europe/istanbul" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Europe/Istanbul (GMT+3)</option>
-                                                    <option value="europe/london" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Europe/London (GMT+0)</option>
-                                                    <option value="europe/berlin" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Europe/Berlin (GMT+1)</option>
-                                                    <option value="america/new_york" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">America/New_York (GMT-5)</option>
-                                                </select>
-                                            </div>
                                         </div>
                                     )}
 
                                     {/* 2. Notifications Tab */}
                                     {activeTab === "notifications" && (
                                         <div className="space-y-[24px]">
-                                            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/50 p-[16px] rounded-[12px] border border-slate-200 dark:border-slate-700/60">
-                                                <div>
-                                                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-[16px]">
-                                                        {t("settings_price_alerts")}
-                                                    </h3>
-                                                    <p className="text-[12px] text-slate-700 dark:text-slate-300 mt-[2px]">
-                                                        {t("settings_price_alerts_desc")}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setNotificationSettings({ ...notificationSettings, priceAlerts: !notificationSettings.priceAlerts })}
-                                                    className={`relative inline-flex h-[40px] w-[64px] items-center rounded-full transition-all border border-slate-300 dark:border-slate-700 cursor-pointer ${notificationSettings.priceAlerts ? "bg-[#F59E0B]" : "bg-slate-200 dark:bg-slate-700"
-                                                        }`}
-                                                >
-                                                    <span className={`inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-lg transition-transform ${notificationSettings.priceAlerts ? "translate-x-[28px]" : "translate-x-[2px]"
-                                                        }`} />
-                                                </button>
-                                            </div>
-
                                             <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/50 p-[16px] rounded-[12px] border border-slate-200 dark:border-slate-700/60">
                                                 <div>
                                                     <h3 className="font-bold text-slate-900 dark:text-slate-100 text-[16px]">
@@ -276,20 +241,20 @@ export default function Settings() {
 
                                                 <div>
                                                     <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
-                                                        {t("Yeni Şifreyi Tekrar Girin")}
+                                                        {t("settings_confirm_new_password")}
                                                     </label>
                                                     <div className="relative">
                                                         <input
                                                             type={showPassword ? "text" : "password"}
                                                             value={confirmPassword}
                                                             onChange={(e) => setConfirmPassword(e.target.value)}
-                                                            placeholder={t("Yeni şifrenizi tekrar girin")}
+                                                            placeholder={t("settings_confirm_new_password_placeholder")}
                                                             className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 pr-[48px] font-medium text-[14px]"
                                                         />
                                                     </div>
                                                     {newPassword && confirmPassword && newPassword !== confirmPassword && (
                                                         <p className="text-red-600 dark:text-red-400 text-[12px] font-semibold mt-[6px]">
-                                                            {t("Şifreler birbiriyle eşleşmiyor.")}
+                                                            {t("settings_password_mismatch")}
                                                         </p>
                                                     )}
                                                 </div>

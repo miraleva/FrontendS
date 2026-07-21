@@ -110,6 +110,31 @@ function mapProductInfoToHotelDetail(productInfo) {
   };
 }
 
+// Bot cevabını karakter karakter "yazılıyormuş" gibi gösterir. Otel/uçak
+// kartları (msg.results) buna dahil değil — onlar zaten anında görünüyor,
+// sadece metin cevabı yavaşça yazılır.
+function TypewriterText({ text, animate }) {
+  const [visibleChars, setVisibleChars] = useState(animate ? 0 : (text || "").length);
+
+  useEffect(() => {
+    if (!animate || !text) return;
+    setVisibleChars(0);
+    let i = 0;
+    const CHARS_PER_TICK = 2;
+    const TICK_MS = 15;
+    const timer = setInterval(() => {
+      i += CHARS_PER_TICK;
+      setVisibleChars(Math.min(i, text.length));
+      if (i >= text.length) clearInterval(timer);
+    }, TICK_MS);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!animate) return text;
+  return text ? text.slice(0, visibleChars) : text;
+}
+
 function formatBaggage(baggage, t) {
   if (!baggage || baggage === "0kg" || baggage === "0 kg") {
     return t ? t("baggage_not_included") : "Baggage not included";
@@ -337,7 +362,8 @@ export default function Index() {
         results: data.results,
         chatStatus: data.chatStatus,
         selectedItem: data.selectedItem,
-        bookingMeta: data.bookingMeta || null
+        bookingMeta: data.bookingMeta || null,
+        animate: true // yeni gelen cevap yazıla yazıla görünsün; geçmiş mesajlar animasyonsuz yüklenir
       };
 
       setMessages(prev => [...prev, botMsg]);
@@ -451,7 +477,8 @@ export default function Index() {
       const errorMsg = {
         id: Date.now() + 1,
         text: "Sorry, I couldn't reach the chat assistant. Please check your connection.",
-        sender: "bot"
+        sender: "bot",
+        animate: true
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -769,7 +796,7 @@ export default function Index() {
                                 : "bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-tl-none"
                                 }`}
                             >
-                              {msg.text}
+                              <TypewriterText text={msg.text} animate={msg.sender === "bot" && !!msg.animate} />
                               {msg.chatStatus === "BOOKING" && msg.selectedItem && (
                                 <div className="mt-3 text-right">
                                   <button
@@ -922,14 +949,7 @@ export default function Index() {
                                           </div>
                                         </div>
 
-                                        <div className="flex justify-between items-end mt-1">
-                                          <div className="flex flex-wrap gap-1">
-                                            {(result.boardName || result.boardType || result.pensionType) && (
-                                              <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide inline-flex items-center">
-                                                {result.boardName || result.boardType || result.pensionType}
-                                              </span>
-                                            )}
-                                          </div>
+                                        <div className="flex justify-end items-end mt-1">
                                           <span className="text-[#3B82F6] dark:text-blue-400 font-extrabold text-sm flex-shrink-0">
                                             {formattedPrice}
                                           </span>
@@ -1029,43 +1049,46 @@ export default function Index() {
             />
           )}
 
-          {/* Overlay Backdrop & Centered Modal */}
-          {activePanel && (
-            <div
-              className="fixed inset-0 bg-black/40 z-[100] transition-opacity flex items-center justify-center p-4 sm:p-6"
-              onClick={() => setActivePanel(null)}
-            >
-              <div
-                className="w-full max-w-[850px] h-[85vh] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {activePanel === 'hotelDetail' && (
-                  <HotelDetailPanel
-                    hotel={selectedHotel}
-                    bookingDetails={bookingDetails}
-                    loadingDetail={hotelDetailLoading}
-                    onClose={() => setActivePanel(null)}
-                    onProceed={() => setActivePanel('reservation')}
-                  />
-                )}
-                {activePanel === 'reservation' && (
-                  <ReservationFormPanel
-                    hotel={selectedHotel}
-                    bookingDetails={bookingDetails}
-                    onClose={() => setActivePanel(null)}
-                    onBack={() => setActivePanel('hotelDetail')}
-                    guests={reservationGuests}
-                    setGuests={setReservationGuests}
-                    termsAccepted={reservationTermsAccepted}
-                    setTermsAccepted={setReservationTermsAccepted}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
         </div>
       </div>
+
+      {/* Overlay Backdrop & Centered Modal — root seviyesinde (ChatSidebar'ın kardeşi) render
+          edilir, çünkü "Ana İçerik Alanı" (z-20) kendi stacking context'ini oluşturuyor;
+          modal onun İÇİNDE kalsaydı, içindeki z-[100] hiçbir zaman root'taki ChatSidebar'ın
+          z-30'unu geçemezdi (sol sidebar her zaman modalın önünde görünürdü). */}
+      {activePanel && (
+        <div
+          className="fixed inset-0 bg-black/40 z-[100] transition-opacity flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setActivePanel(null)}
+        >
+          <div
+            className="w-full max-w-[850px] h-[85vh] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {activePanel === 'hotelDetail' && (
+              <HotelDetailPanel
+                hotel={selectedHotel}
+                bookingDetails={bookingDetails}
+                loadingDetail={hotelDetailLoading}
+                onClose={() => setActivePanel(null)}
+                onProceed={() => setActivePanel('reservation')}
+              />
+            )}
+            {activePanel === 'reservation' && (
+              <ReservationFormPanel
+                hotel={selectedHotel}
+                bookingDetails={bookingDetails}
+                onClose={() => setActivePanel(null)}
+                onBack={() => setActivePanel('hotelDetail')}
+                guests={reservationGuests}
+                setGuests={setReservationGuests}
+                termsAccepted={reservationTermsAccepted}
+                setTermsAccepted={setReservationTermsAccepted}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

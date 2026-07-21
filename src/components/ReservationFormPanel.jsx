@@ -33,8 +33,9 @@ function toDateOnly(value) {
   return date.toISOString().slice(0, 10);
 }
 
-const getPassengerErrors = (passenger) => {
+const getPassengerErrors = (passenger, index = 0) => {
   const errors = {};
+  const isPrimaryContact = index === 0;
 
   if (!passenger.firstName?.trim()) {
     errors.firstName = "Ad gereklidir.";
@@ -57,26 +58,40 @@ const getPassengerErrors = (passenger) => {
       "Geçersiz Pasaport No (en az 5 karakter).";
   }
 
-  if (!passenger.birthDate) {
-    errors.birthDate = "Doğum tarihi gereklidir.";
-  } else if (new Date(passenger.birthDate) >= new Date()) {
-    errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
-  }
+  // Doğum tarihi, e-posta ve telefon SADECE 1. (iletişim) kişiden isteniyor —
+  // arayüz de bu alanları diğer yolcular için hiç göstermiyor, o yüzden
+  // zorunluluk da sadece onlara uygulanmalı; aksi hâlde form asla onaylanamazdı.
+  if (isPrimaryContact) {
+    if (!passenger.birthDate) {
+      errors.birthDate = "Doğum tarihi gereklidir.";
+    } else {
+      const birthDate = new Date(passenger.birthDate);
+      if (birthDate >= new Date()) {
+        errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+      } else {
+        const eighteenYearsAgo = new Date();
+        eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+        if (birthDate > eighteenYearsAgo) {
+          errors.birthDate = "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
+        }
+      }
+    }
 
-  if (!passenger.email?.trim()) {
-    errors.email = "E-posta gereklidir.";
-  } else if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)
-  ) {
-    errors.email =
-      "Geçersiz e-posta formatı (örn: ad@example.com).";
-  }
+    if (!passenger.email?.trim()) {
+      errors.email = "E-posta gereklidir.";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)
+    ) {
+      errors.email =
+        "Geçersiz e-posta formatı (örn: ad@example.com).";
+    }
 
-  if (!passenger.phone) {
-    errors.phone = "Telefon numarası gereklidir.";
-  } else if (!isValidPhoneNumber(passenger.phone)) {
-    errors.phone =
-      "Ülke formatına uymuyor (geçersiz uzunluk).";
+    if (!passenger.phone) {
+      errors.phone = "Telefon numarası gereklidir.";
+    } else if (!isValidPhoneNumber(passenger.phone)) {
+      errors.phone =
+        "Ülke formatına uymuyor (geçersiz uzunluk).";
+    }
   }
 
   return errors;
@@ -300,8 +315,8 @@ export default function ReservationFormPanel({
       ? new Intl.NumberFormat("tr-TR", {
         style: "currency",
         currency: safeHotel.currency || "TRY",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
       }).format(Number(safeHotel.price))
       : `${safeHotel?.price || 0} ${safeHotel?.currency || "TRY"
       }`;
@@ -324,8 +339,8 @@ export default function ReservationFormPanel({
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
       currency: safeHotel?.currency || "TRY",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -348,7 +363,7 @@ export default function ReservationFormPanel({
       index++
     ) {
       const guest = guests[index];
-      const errors = getPassengerErrors(guest);
+      const errors = getPassengerErrors(guest, index);
       const errorKeys = Object.keys(errors);
 
       if (errorKeys.length > 0) {
@@ -578,14 +593,10 @@ export default function ReservationFormPanel({
                     const isExpanded =
                       expandedGuestId === guest.id;
 
-                    const guestTitle =
-                      guest.type === "ADULT"
-                        ? `${index + 1}. Yetişkin`
-                        : `${index - adultCount + 1
-                        }. Çocuk`;
+                    const guestTitle = `${index + 1}. ${t("reservation_person", "Kişi")}`;
 
                     const errors =
-                      getPassengerErrors(guest);
+                      getPassengerErrors(guest, index);
 
                     return (
                       <div key={guest.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
@@ -668,17 +679,15 @@ export default function ReservationFormPanel({
                               </div>
                             </div>
 
+                            {index === 0 && (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div>
                                 <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Cinsiyet
+                                  {t("reservation_gender", "Cinsiyet")}
                                 </label>
                                 <select
                                   required
-                                  value={
-                                    guest.gender ||
-                                    (guest.type === "CHILD" ? "CHD" : "MR")
-                                  }
+                                  value={guest.gender || "MR"}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -689,13 +698,10 @@ export default function ReservationFormPanel({
                                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                 >
                                   <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    Bay (Mr.)
+                                    {t("reservation_male", "Erkek")}
                                   </option>
                                   <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    Bayan (Mrs.)
-                                  </option>
-                                  <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    Çocuk (Child)
+                                    {t("reservation_female", "Kız")}
                                   </option>
                                 </select>
                               </div>
@@ -728,43 +734,36 @@ export default function ReservationFormPanel({
                                 )}
                               </div>
                             </div>
+                            )}
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Uyruk
-                                </label>
-                                <input
-                                  required
-                                  type="text"
-                                  value={guest.nationality || "TR"}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "nationality",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400"
-                                />
-                              </div>
-
-                              <div>
+                              <div className="md:col-span-2">
                                 <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   <ShieldCheck size={12} />
-                                  TC Kimlik No / Pasaport
+                                  {index === 0
+                                    ? (guest.nationality === "TR" ? "T.C. Kimlik Numarası" : "Pasaport Numarası")
+                                    : "T.C. Kimlik Numarası"}
                                 </label>
                                 <input
                                   required
                                   type="text"
+                                  inputMode={(index !== 0 || guest.nationality === "TR") ? "numeric" : "text"}
                                   value={guest.identityNumber || ""}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "identityNumber",
-                                      event.target.value
-                                    )
-                                  }
+                                  onChange={(event) => {
+                                    const rawValue = event.target.value;
+                                    if (index === 0) {
+                                      const hasLetters = /[A-Za-z]/.test(rawValue);
+                                      const cleanValue = hasLetters
+                                        ? rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
+                                        : rawValue.replace(/\D/g, "").slice(0, 11);
+                                      handleGuestChange(index, "identityNumber", cleanValue);
+                                      handleGuestChange(index, "nationality", hasLetters ? "OTHER" : "TR");
+                                    } else {
+                                      const cleanValue = rawValue.replace(/\D/g, "").slice(0, 11);
+                                      handleGuestChange(index, "identityNumber", cleanValue);
+                                    }
+                                  }}
+                                  placeholder={index === 0 ? "T.C. kimlik no veya pasaport no" : "11 haneli T.C. kimlik numarası"}
                                   className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.identityNumber
                                       ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
                                       : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
@@ -777,29 +776,6 @@ export default function ReservationFormPanel({
                                 )}
                               </div>
                             </div>
-
-                            {guest.type === "CHILD" && (
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Yaş
-                                </label>
-                                <input
-                                  required
-                                  type="number"
-                                  min="0"
-                                  max="17"
-                                  value={guest.age || ""}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "age",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400"
-                                />
-                              </div>
-                            )}
 
                             {index === 0 && (
                               <div className="grid grid-cols-1 gap-4 border-t border-slate-200/60 pt-4 dark:border-slate-700 md:grid-cols-2">
