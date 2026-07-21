@@ -1,46 +1,150 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import {
+    PanelLeftOpen,
+    ArrowLeft,
+    CheckCircle2,
+    User,
+    Baby,
+    Mail,
+    Phone,
+    ShieldCheck,
+    ChevronDown,
+    ChevronUp,
+} from "lucide-react";
+import PhoneInput, {
+    isValidPhoneNumber,
+} from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+
 import ChatSidebar from "../components/ChatSidebar";
-import { PanelLeftOpen, ArrowLeft, CheckCircle2, User, Baby, Mail, Phone, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
-import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
 import api from "../services/api";
 import { useTheme } from "../components/ThemeContext";
 
 function formatPrice(price) {
     const num = Number(price);
-    if (Number.isNaN(num)) return price;
+
+    if (Number.isNaN(num)) {
+        return price;
+    }
+
     return Math.round(num).toLocaleString("tr-TR");
 }
 
 function formatFlightDateTime(value) {
     if (!value) return value;
+
     const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
     return date.toLocaleString("tr-TR", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-        ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+        ...(isDateOnly
+            ? {}
+            : {
+                hour: "2-digit",
+                minute: "2-digit",
+            }),
     });
 }
 
 function formatBaggage(baggage, t) {
-    if (!baggage || baggage === "0kg" || baggage === "0 kg") {
-        return t ? t("baggage_not_included") : "Baggage not included";
+    if (
+        !baggage ||
+        baggage === "0kg" ||
+        baggage === "0 kg"
+    ) {
+        return t
+            ? t("baggage_not_included")
+            : "Baggage not included";
     }
+
     return baggage;
 }
 
 function toDateOnly(value) {
     if (!value) return null;
+
     const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
-    if (match) return match[0];
+
+    if (match) {
+        return match[0];
+    }
+
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
+
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
     return date.toISOString().slice(0, 10);
+}
+
+function getPassengerErrors(passenger) {
+    const errors = {};
+
+    if (!passenger.firstName?.trim()) {
+        errors.firstName = "Ad gereklidir.";
+    }
+
+    if (!passenger.lastName?.trim()) {
+        errors.lastName = "Soyad gereklidir.";
+    }
+
+    if (passenger.nationality?.toUpperCase() === "TR") {
+        if (
+            !/^[1-9]\d{10}$/.test(
+                passenger.identityNumber || ""
+            )
+        ) {
+            errors.identityNumber =
+                "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+        }
+    } else if (
+        !passenger.identityNumber?.trim() ||
+        passenger.identityNumber.trim().length < 5
+    ) {
+        errors.identityNumber =
+            "Geçersiz Pasaport No (en az 5 karakter).";
+    }
+
+    if (!passenger.birthDate) {
+        errors.birthDate = "Doğum tarihi gereklidir.";
+    } else if (
+        new Date(passenger.birthDate) >= new Date()
+    ) {
+        errors.birthDate =
+            "Doğum tarihi geçmişte olmalıdır.";
+    }
+
+    if (!passenger.email?.trim()) {
+        errors.email = "E-posta gereklidir.";
+    } else if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+            passenger.email
+        )
+    ) {
+        errors.email =
+            "Geçersiz e-posta formatı (örn: ad@example.com).";
+    }
+
+    if (!passenger.phone) {
+        errors.phone = "Telefon numarası gereklidir.";
+    } else if (
+        !isValidPhoneNumber(passenger.phone)
+    ) {
+        errors.phone =
+            "Ülke formatına uymuyor (geçersiz uzunluk).";
+    }
+
+    return errors;
 }
 
 export default function ReservationPage() {
@@ -48,500 +152,1071 @@ export default function ReservationPage() {
     const { theme } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const [isSidebarOpen, setIsSidebarOpen] =
+        useState(true);
+    const [passengers, setPassengers] = useState([]);
+    const [expandedGuestId, setExpandedGuestId] =
+        useState("adult-0");
+    const [isSubmitting, setIsSubmitting] =
+        useState(false);
+    const [submitError, setSubmitError] =
+        useState("");
+    const [reservationResult, setReservationResult] =
+        useState(null);
 
     const videoRef = useRef(null);
 
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.load();
-            videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
-        }
-    }, [theme]);
-
     const selectedItem = location.state?.selectedItem;
-    const bookingDetails = location.state?.bookingDetails;
+    const bookingDetails =
+        location.state?.bookingDetails || {};
     const sessionId = location.state?.sessionId;
 
-    const isFlight = selectedItem?.airline !== undefined;
-    const adultCount = isFlight
-        ? (parseInt(bookingDetails?.passengerCount) || 1)
-        : (parseInt(bookingDetails?.adultCount) || 1);
-    const childCount = isFlight
-        ? 0
-        : (parseInt(bookingDetails?.childCount) || 0);
+    const editData =
+        location.state?.reservationData;
+    const isEditMode =
+        location.state?.editMode || false;
+
+    const normalizedEditType =
+        editData?.type?.toUpperCase();
+
+    const activeItem = selectedItem || editData;
+
+    const isFlight = selectedItem
+        ? selectedItem.airline !== undefined
+        : normalizedEditType === "FLIGHT";
+
+    const adultCount = isEditMode
+        ? Math.max(
+            1,
+            (editData?.passengers || []).filter(
+                (passenger) =>
+                    passenger.type !== "CHILD"
+            ).length ||
+            editData?.passengers?.length ||
+            1
+        )
+        : isFlight
+            ? parseInt(
+                bookingDetails?.passengerCount,
+                10
+            ) || 1
+            : parseInt(
+                bookingDetails?.adultCount,
+                10
+            ) || 1;
+
+    const childCount = isEditMode
+        ? (editData?.passengers || []).filter(
+            (passenger) =>
+                passenger.type === "CHILD"
+        ).length
+        : isFlight
+            ? 0
+            : parseInt(
+                bookingDetails?.childCount,
+                10
+            ) || 0;
+
     const childAges = isFlight
         ? []
-        : (bookingDetails?.childAges || []);
+        : bookingDetails?.childAges || [];
 
-    const [passengers, setPassengers] = useState([]);
-    const [expandedGuestId, setExpandedGuestId] = useState('adult-0');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState("");
-    const [reservationResult, setReservationResult] = useState(null);
-
-    // Sayfa yüklendiğinde backend'den profil bilgilerini alarak formu önceden doldur
     useEffect(() => {
+        if (!videoRef.current) return;
+
+        videoRef.current.load();
+        videoRef.current
+            .play()
+            .catch((error) =>
+                console.log(
+                    "Video oynatılamadı:",
+                    error
+                )
+            );
+    }, [theme]);
+
+    useEffect(() => {
+        if (
+            isEditMode &&
+            Array.isArray(editData?.passengers) &&
+            editData.passengers.length > 0
+        ) {
+            const mappedPassengers =
+                editData.passengers.map(
+                    (passenger, index) => ({
+                        id:
+                            passenger.id ||
+                            (passenger.type === "CHILD"
+                                ? `child-${index}`
+                                : `adult-${index}`),
+                        type:
+                            passenger.type ||
+                            (passenger.age !== undefined
+                                ? "CHILD"
+                                : "ADULT"),
+                        firstName:
+                            passenger.firstName || "",
+                        lastName:
+                            passenger.lastName || "",
+                        identityNumber:
+                            passenger.identityNumber || "",
+                        email: passenger.email || "",
+                        phone:
+                            passenger.phoneNumber ||
+                            passenger.phone ||
+                            "",
+                        birthDate:
+                            passenger.birthDate || "",
+                        gender:
+                            passenger.gender ||
+                            (passenger.type === "CHILD"
+                                ? "CHD"
+                                : "MR"),
+                        nationality:
+                            passenger.nationality || "TR",
+                        age:
+                            passenger.age !== undefined &&
+                                passenger.age !== null
+                                ? String(passenger.age)
+                                : "",
+                    })
+                );
+
+            setPassengers(mappedPassengers);
+            setExpandedGuestId(
+                mappedPassengers[0]?.id || "adult-0"
+            );
+            return;
+        }
+
+        if (!selectedItem) {
+            setPassengers([]);
+            return;
+        }
+
+        const initialPassengers = [];
+
+        for (
+            let index = 0;
+            index < adultCount;
+            index++
+        ) {
+            initialPassengers.push({
+                id: `adult-${index}`,
+                type: "ADULT",
+                firstName: "",
+                lastName: "",
+                identityNumber: "",
+                email: "",
+                phone: "",
+                birthDate: "",
+                gender: "MR",
+                nationality: "TR",
+            });
+        }
+
+        for (
+            let index = 0;
+            index < childCount;
+            index++
+        ) {
+            initialPassengers.push({
+                id: `child-${index}`,
+                type: "CHILD",
+                firstName: "",
+                lastName: "",
+                identityNumber: "",
+                email: "",
+                phone: "",
+                birthDate: "",
+                gender: "CHD",
+                nationality: "TR",
+                age:
+                    childAges[index] !== undefined
+                        ? String(childAges[index])
+                        : "",
+            });
+        }
+
+        setPassengers(initialPassengers);
+        setExpandedGuestId(
+            initialPassengers[0]?.id || "adult-0"
+        );
+    }, [
+        selectedItem,
+        isEditMode,
+        editData,
+        adultCount,
+        childCount,
+        childAges,
+    ]);
+
+    useEffect(() => {
+        if (isEditMode || passengers.length === 0) {
+            return;
+        }
+
         const fetchPrefill = async () => {
             try {
-                const response = await api.get("/api/reservations/prefill");
+                const response = await api.get(
+                    "/api/reservations/prefill"
+                );
+
                 const data = response.data;
-                setPassengers((prev) => {
-                    if (!prev || prev.length === 0) return prev;
-                    const updated = [...prev];
+
+                if (!data) return;
+
+                setPassengers((previousPassengers) => {
+                    if (
+                        !previousPassengers ||
+                        previousPassengers.length === 0
+                    ) {
+                        return previousPassengers;
+                    }
+
+                    const updated = [
+                        ...previousPassengers,
+                    ];
+
                     updated[0] = {
                         ...updated[0],
-                        firstName: updated[0].firstName || data.firstName || '',
-                        lastName: updated[0].lastName || data.lastName || '',
-                        email: updated[0].email || data.email || '',
-                        phone: updated[0].phone || data.phoneNumber || '',
+                        firstName:
+                            updated[0].firstName ||
+                            data.firstName ||
+                            "",
+                        lastName:
+                            updated[0].lastName ||
+                            data.lastName ||
+                            "",
+                        email:
+                            updated[0].email ||
+                            data.email ||
+                            "",
+                        phone:
+                            updated[0].phone ||
+                            data.phoneNumber ||
+                            "",
                     };
+
                     return updated;
                 });
             } catch {
-                // Kullanıcı giriş yapmamışsa veya istek başarısız olursa form boş başlar
+                // Prefill başarısız olursa form boş kalır.
             }
         };
+
         fetchPrefill();
-    }, []);
+    }, [isEditMode, passengers.length]);
 
-    // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
-    const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
-
-    useEffect(() => {
-        if (selectedItem) {
-            const initialPassengers = [];
-            for (let i = 0; i < adultCount; i++) {
-                initialPassengers.push({
-                    id: `adult-${i}`,
-                    type: 'ADULT',
-                    firstName: '',
-                    lastName: '',
-                    identityNumber: '',
-                    email: '',
-                    phone: '',
-                    birthDate: '',
-                    gender: 'MR',
-                    nationality: 'TR',
-                });
-            }
-            for (let i = 0; i < childCount; i++) {
-                initialPassengers.push({
-                    id: `child-${i}`,
-                    type: 'CHILD',
-                    firstName: '',
-                    lastName: '',
-                    identityNumber: '',
-                    email: '',
-                    phone: '',
-                    birthDate: '',
-                    gender: 'CHD',
-                    nationality: 'TR',
-                    age: childAges[i] !== undefined ? childAges[i].toString() : '',
-                });
-            }
-            setPassengers(initialPassengers);
+    const handleBack = () => {
+        if (isEditMode) {
+            navigate("/appointments");
+            return;
         }
-    }, [selectedItem, bookingDetails, adultCount, childCount, childAges]);
 
-    const handlePassengerChange = (index, field, value) => {
-        setPassengers((prev) => {
-            const updated = [...prev];
-            updated[index] = { ...updated[index], [field]: value };
+        navigate(
+            sessionId
+                ? `/chat?sessionId=${sessionId}`
+                : "/chat"
+        );
+    };
+
+    const handlePassengerChange = (
+        index,
+        field,
+        value
+    ) => {
+        setPassengers((previousPassengers) => {
+            const updated = [...previousPassengers];
+
+            updated[index] = {
+                ...updated[index],
+                [field]: value,
+            };
+
             return updated;
         });
     };
 
-    const handleConfirm = async () => {
-        if (!selectedItem) return;
+    const isPassengerFormValid =
+        passengers.length > 0 &&
+        passengers.every((passenger) => {
+            const errors =
+                getPassengerErrors(passenger);
+
+            return Object.keys(errors).length === 0;
+        });
+
+    const handleConfirm = async (event) => {
+        event?.preventDefault();
+
+        if (
+            (!selectedItem && !isEditMode) ||
+            !isPassengerFormValid ||
+            isSubmitting
+        ) {
+            return;
+        }
+
         setSubmitError("");
 
-        const startDate = isFlight
-            ? toDateOnly(selectedItem.departureTime)
-            : toDateOnly(bookingDetails?.checkIn);
-        const endDate = isFlight
-            ? toDateOnly(selectedItem.returnDepartureTime) || startDate
-            : toDateOnly(bookingDetails?.checkOut);
+        const startDate = selectedItem
+            ? isFlight
+                ? toDateOnly(
+                    selectedItem.departureTime
+                )
+                : toDateOnly(
+                    bookingDetails?.checkIn
+                )
+            : toDateOnly(editData?.startDate);
+
+        const endDate = selectedItem
+            ? isFlight
+                ? toDateOnly(
+                    selectedItem.returnDepartureTime
+                ) || startDate
+                : toDateOnly(
+                    bookingDetails?.checkOut
+                )
+            : toDateOnly(editData?.endDate) ||
+            startDate;
 
         const payload = {
+            sessionId: sessionId || null,
             type: isFlight ? "FLIGHT" : "HOTEL",
-            itemName: isFlight ? selectedItem.airline : (selectedItem.name || selectedItem.hotelId || "-"),
-            destination: isFlight
-                ? (bookingDetails?.arrivalCity || "-")
-                : (bookingDetails?.city || selectedItem.region || "-"),
+            itemName: selectedItem
+                ? isFlight
+                    ? selectedItem.airline
+                    : selectedItem.name ||
+                    selectedItem.hotelId ||
+                    "-"
+                : editData?.itemName ||
+                editData?.title ||
+                "-",
+            destination: selectedItem
+                ? isFlight
+                    ? bookingDetails?.arrivalCity ||
+                    "-"
+                    : bookingDetails?.city ||
+                    selectedItem.region ||
+                    "-"
+                : editData?.destination || "-",
             startDate,
             endDate,
-            totalPrice: Number(selectedItem.price) || 0,
-            currency: selectedItem.currency || "TRY",
-            passengers: passengers.map((p) => ({
-                firstName: p.firstName,
-                lastName: p.lastName,
-                email: p.email || '',
-                phoneNumber: p.phone || '',
-                identityNumber: p.identityNumber,
-                birthDate: p.birthDate,
-                gender: p.gender,
-                nationality: p.nationality,
-            })),
+            totalPrice: selectedItem
+                ? Number(selectedItem.price) || 0
+                : Number(editData?.totalPrice) || 0,
+            currency:
+                selectedItem?.currency ||
+                editData?.currency ||
+                "TRY",
+            passengers: passengers.map(
+                (passenger) => ({
+                    firstName:
+                        passenger.firstName.trim(),
+                    lastName:
+                        passenger.lastName.trim(),
+                    email:
+                        passenger.email.trim(),
+                    phoneNumber:
+                        passenger.phone || "",
+                    identityNumber:
+                        passenger.identityNumber.trim(),
+                    birthDate:
+                        passenger.birthDate || null,
+                    gender:
+                        passenger.gender ||
+                        (passenger.type === "CHILD"
+                            ? "CHD"
+                            : "MR"),
+                    nationality:
+                        passenger.nationality || "TR",
+                })
+            ),
         };
 
         setIsSubmitting(true);
+
         try {
-            const response = await api.post("/api/reservations", payload);
+            let response;
+
+            if (isEditMode && editData?.id) {
+                response = await api.put(
+                    `/api/reservations/${editData.id}`,
+                    payload
+                );
+            } else {
+                response = await api.post(
+                    "/api/reservations",
+                    payload
+                );
+            }
+
             setReservationResult(response.data);
-        } catch (err) {
-            console.error("Reservation creation failed", err);
-            setSubmitError(t("reservation_confirm_error"));
+        } catch (error) {
+            console.error(
+                "Reservation request failed",
+                error
+            );
+
+            setSubmitError(
+                t("reservation_confirm_error")
+            );
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const getPassengerErrors = (p) => {
-        const errors = {};
-        if (!p.firstName?.trim()) errors.firstName = "Ad gereklidir.";
-        if (!p.lastName?.trim()) errors.lastName = "Soyad gereklidir.";
-        
-        if (p.nationality?.toUpperCase() === 'TR') {
-            if (!/^[1-9]\d{10}$/.test(p.identityNumber)) {
-                errors.identityNumber = "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
-            }
-        } else {
-            if (!p.identityNumber?.trim() || p.identityNumber.trim().length < 5) {
-                errors.identityNumber = "Geçersiz Pasaport No (en az 5 karakter).";
-            }
-        }
-        
-        if (!p.birthDate) {
-            errors.birthDate = "Doğum tarihi gereklidir.";
-        } else if (new Date(p.birthDate) >= new Date()) {
-            errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
-        }
-        
-        if (!p.email?.trim()) {
-            errors.email = "E-posta gereklidir.";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) {
-            errors.email = "Geçersiz e-posta formatı (örn: ad@example.com).";
-        }
-        
-        if (!p.phone) {
-            errors.phone = "Telefon numarası gereklidir.";
-        } else if (!isValidPhoneNumber(p.phone)) {
-            errors.phone = "Ülke formatına uymuyor (geçersiz uzunluk).";
-        }
-        
-        return errors;
-    };
-
-    const isPassengerFormValid = passengers.length > 0 && passengers.every((p) => {
-        const errors = getPassengerErrors(p);
-        return Object.keys(errors).length === 0;
-    });
-
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
-            {/* Katman 1 (z-0): Background Video */}
+        <div className="relative flex h-screen w-full overflow-hidden bg-transparent font-sans">
             <video
                 ref={videoRef}
-                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                src={
+                    theme === "dark"
+                        ? "/videos/darkmode_bg.mp4"
+                        : "/videos/chatbot_bg.mp4"
+                }
                 autoPlay
                 loop
                 muted
                 playsInline
                 preload="auto"
-                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+                className="pointer-events-none fixed inset-0 z-0 h-full w-full object-cover"
             />
 
-            {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
-            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+            <div className="pointer-events-none fixed inset-0 z-10 bg-white/20 dark:bg-slate-950/60" />
 
-            {/* Katman 3 (z-30): Sidebar */}
             <ChatSidebar
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
 
-            {/* Katman 3 (z-20): Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
+            <div className="relative z-20 flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-transparent">
                 {!isSidebarOpen && (
                     <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
-                        title={t("reservation_expand_sidebar")}
+                        type="button"
+                        onClick={() =>
+                            setIsSidebarOpen(true)
+                        }
+                        className="fixed left-4 top-4 z-40 cursor-pointer rounded-xl border border-slate-200 bg-white p-2 text-slate-500 shadow-md transition-all hover:bg-slate-50 hover:text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        title={t(
+                            "reservation_expand_sidebar"
+                        )}
                     >
                         <PanelLeftOpen size={18} />
                     </button>
                 )}
 
-                <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
-                    <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
-                        {/* Main Reservation Card */}
-                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-slate-200 dark:border-slate-800">
-                            
-                            <h1 className="text-[28px] font-bold text-slate-900 dark:text-white leading-tight mb-6">
-                                {t("reservation_title")}
+                <div className="z-20 flex flex-1 items-start justify-center overflow-y-auto px-4 py-8 md:py-12">
+                    <div className="mt-4 w-full max-w-[672px] md:mt-6">
+                        <div className="rounded-[20px] border border-slate-200 bg-white/95 p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900/95 md:p-10">
+                            <h1 className="mb-6 text-[28px] font-bold leading-tight text-slate-900 dark:text-white">
+                                {isEditMode
+                                    ? t(
+                                        "reservation_edit_title",
+                                        "Rezervasyon Düzenle"
+                                    )
+                                    : t("reservation_title")}
                             </h1>
 
-                            {!selectedItem ? (
-                                <div className="text-center py-8">
-                                    <p className="text-slate-800 dark:text-slate-200 font-medium mb-6">{t("reservation_no_item")}</p>
+                            {!activeItem ? (
+                                <div className="py-8 text-center">
+                                    <p className="mb-6 font-medium text-slate-800 dark:text-slate-200">
+                                        {t("reservation_no_item")}
+                                    </p>
+
                                     <button
-                                        onClick={backToChat}
-                                        className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
+                                        type="button"
+                                        onClick={handleBack}
+                                        className="mx-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#2563EB]"
                                     >
                                         <ArrowLeft size={16} />
-                                        {t("reservation_back_to_chat")}
+                                        {isEditMode
+                                            ? "Geçmiş Randevulara Dön"
+                                            : t(
+                                                "reservation_back_to_chat"
+                                            )}
                                     </button>
                                 </div>
                             ) : reservationResult ? (
-                                <div className="text-center py-8">
-                                    <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-4" />
-                                    <p className="text-slate-800 dark:text-slate-200 font-medium mb-6">
-                                        {t("reservation_confirm_success", { number: reservationResult.reservationNumber })}
+                                <div className="py-8 text-center">
+                                    <CheckCircle2
+                                        size={48}
+                                        className="mx-auto mb-4 text-emerald-500"
+                                    />
+
+                                    <p className="mb-6 font-medium text-slate-800 dark:text-slate-200">
+                                        {isEditMode
+                                            ? "Rezervasyon başarıyla güncellendi."
+                                            : t(
+                                                "reservation_confirm_success",
+                                                {
+                                                    number:
+                                                        reservationResult.reservationNumber ||
+                                                        reservationResult.id,
+                                                }
+                                            )}
                                     </p>
+
                                     <button
-                                        onClick={backToChat}
-                                        className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
+                                        type="button"
+                                        onClick={handleBack}
+                                        className="mx-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#2563EB]"
                                     >
                                         <ArrowLeft size={16} />
-                                        {t("reservation_back_to_chat")}
+                                        {isEditMode
+                                            ? "Geçmiş Randevulara Dön"
+                                            : t(
+                                                "reservation_back_to_chat"
+                                            )}
                                     </button>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {selectedItem.airline !== undefined ? (
-                                        <div className="bg-white/50 dark:bg-slate-900/40 border border-white/20 dark:border-slate-850/40 rounded-[16px] p-6">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <span className="font-bold text-[#1E232C] dark:text-white text-xl">✈️ {selectedItem.airline}</span>
-                                                <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-xl">{formatPrice(selectedItem.price)} {selectedItem.currency}</span>
+                                <form
+                                    onSubmit={handleConfirm}
+                                    className="space-y-4"
+                                >
+                                    {isFlight ? (
+                                        <div className="rounded-[16px] border border-slate-200 bg-white/50 p-6 dark:border-slate-800 dark:bg-slate-900/40">
+                                            <div className="mb-4 flex items-center justify-between gap-4">
+                                                <span className="text-xl font-bold text-[#1E232C] dark:text-white">
+                                                    ✈️{" "}
+                                                    {selectedItem?.airline ||
+                                                        editData?.itemName}
+                                                </span>
+
+                                                <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
+                                                    {formatPrice(
+                                                        selectedItem?.price ??
+                                                        editData?.totalPrice
+                                                    )}{" "}
+                                                    {selectedItem?.currency ||
+                                                        editData?.currency ||
+                                                        "TRY"}
+                                                </span>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4 text-sm text-slate-800 dark:text-slate-200 font-medium">
-                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_departure")}</span> {formatFlightDateTime(selectedItem.departureTime)}</div>
-                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_arrival")}</span> {formatFlightDateTime(selectedItem.arrivalTime)}</div>
-                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.transfers}</div>
-                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.baggage, t)}</div>
+
+                                            <div className="grid grid-cols-1 gap-4 text-sm font-medium text-slate-800 dark:text-slate-200 md:grid-cols-2">
+                                                <div>
+                                                    <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                        {t(
+                                                            "reservation_departure"
+                                                        )}
+                                                    </span>
+                                                    {formatFlightDateTime(
+                                                        selectedItem?.departureTime ||
+                                                        editData?.startDate
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                        {t(
+                                                            "reservation_arrival"
+                                                        )}
+                                                    </span>
+                                                    {formatFlightDateTime(
+                                                        selectedItem?.arrivalTime ||
+                                                        editData?.endDate
+                                                    )}
+                                                </div>
+
+                                                {selectedItem?.transfers && (
+                                                    <div>
+                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                            {t(
+                                                                "reservation_transfers"
+                                                            )}
+                                                        </span>
+                                                        {
+                                                            selectedItem.transfers
+                                                        }
+                                                    </div>
+                                                )}
+
+                                                {selectedItem?.baggage && (
+                                                    <div>
+                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                            {t(
+                                                                "reservation_baggage"
+                                                            )}
+                                                        </span>
+                                                        {formatBaggage(
+                                                            selectedItem.baggage,
+                                                            t
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-                                            {selectedItem.returnDepartureTime && (
-                                                <div className="grid grid-cols-2 gap-4 text-sm text-slate-800 dark:text-slate-200 font-medium pt-4 mt-4 border-t border-dashed border-slate-300 dark:border-slate-800">
-                                                    <div className="col-span-2 font-bold">↩ {selectedItem.returnAirline || selectedItem.airline}</div>
-                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_return_departure")}</span> {formatFlightDateTime(selectedItem.returnDepartureTime)}</div>
-                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_return_arrival")}</span> {formatFlightDateTime(selectedItem.returnArrivalTime)}</div>
-                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.returnTransfers}</div>
-                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.returnBaggage, t)}</div>
+
+                                            {selectedItem?.returnDepartureTime && (
+                                                <div className="mt-4 grid grid-cols-1 gap-4 border-t border-dashed border-slate-300 pt-4 text-sm font-medium text-slate-800 dark:border-slate-800 dark:text-slate-200 md:grid-cols-2">
+                                                    <div className="col-span-full font-bold">
+                                                        ↩{" "}
+                                                        {selectedItem.returnAirline ||
+                                                            selectedItem.airline}
+                                                    </div>
+
+                                                    <div>
+                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                            {t(
+                                                                "reservation_return_departure"
+                                                            )}
+                                                        </span>
+                                                        {formatFlightDateTime(
+                                                            selectedItem.returnDepartureTime
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                            {t(
+                                                                "reservation_return_arrival"
+                                                            )}
+                                                        </span>
+                                                        {formatFlightDateTime(
+                                                            selectedItem.returnArrivalTime
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="bg-white/50 dark:bg-slate-900/40 border border-white/20 dark:border-slate-850/40 rounded-[16px] p-6">
-                                            <div className="flex items-start justify-between mb-4">
+                                        <div className="rounded-[16px] border border-slate-200 bg-white/50 p-6 dark:border-slate-800 dark:bg-slate-900/40">
+                                            <div className="mb-4 flex items-start justify-between gap-4">
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-[#1E232C] dark:text-white text-xl">🏨 {selectedItem.name || selectedItem.hotelId}</span>
-                                                    <span className="text-sm text-slate-600 dark:text-slate-400 mt-1">{selectedItem.region} • {selectedItem.stars}★</span>
+                                                    <span className="text-xl font-bold text-[#1E232C] dark:text-white">
+                                                        🏨{" "}
+                                                        {selectedItem?.name ||
+                                                            selectedItem?.hotelId ||
+                                                            editData?.itemName ||
+                                                            editData?.title}
+                                                    </span>
+
+                                                    <span className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                                        {selectedItem?.region ||
+                                                            editData?.destination}
+                                                        {selectedItem?.stars
+                                                            ? ` • ${selectedItem.stars}★`
+                                                            : ""}
+                                                    </span>
                                                 </div>
-                                                <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-xl">{formatPrice(selectedItem.price)} {selectedItem.currency}</span>
+
+                                                <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
+                                                    {formatPrice(
+                                                        selectedItem?.price ??
+                                                        editData?.totalPrice
+                                                    )}{" "}
+                                                    {selectedItem?.currency ||
+                                                        editData?.currency ||
+                                                        "TRY"}
+                                                </span>
                                             </div>
-                                            <div className="text-sm text-slate-800 dark:text-slate-200 font-medium pt-4 border-t border-white/30 dark:border-slate-800">
-                                                <span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_board_pension")}</span>
-                                                {selectedItem.boardType || selectedItem.pensionType || t("reservation_na")}
-                                            </div>
+
+                                            {selectedItem && (
+                                                <div className="border-t border-slate-200 pt-4 text-sm font-medium text-slate-800 dark:border-slate-800 dark:text-slate-200">
+                                                    <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                        {t(
+                                                            "reservation_board_pension"
+                                                        )}
+                                                    </span>
+
+                                                    {selectedItem.boardType ||
+                                                        selectedItem.pensionType ||
+                                                        t("reservation_na")}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
                                     <div className="space-y-4">
-                                        <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2">
-                                            {t("reservation_passenger_info")}
+                                        <h2 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-white">
+                                            {t(
+                                                "reservation_passenger_info"
+                                            )}
                                         </h2>
-                                        {passengers.map((p, index) => {
-                                            const isExpanded = expandedGuestId === p.id;
-                                            const guestTitle = p.type === 'ADULT'
-                                                ? `${index + 1}. ${t("unit_adult")}`
-                                                : `${index - adultCount + 1}. ${t("unit_child")}`;
+                                        {passengers.map((passenger, index) => {
+                                            const isExpanded =
+                                                expandedGuestId === passenger.id;
+
+                                            const guestTitle =
+                                                passenger.type === "ADULT"
+                                                    ? `${index + 1}. ${t(
+                                                        "unit_adult",
+                                                        "Yetişkin"
+                                                    )}`
+                                                    : `${index - adultCount + 1
+                                                    }. ${t(
+                                                        "unit_child",
+                                                        "Çocuk"
+                                                    )}`;
+
+                                            const errors =
+                                                getPassengerErrors(passenger);
 
                                             return (
-                                                <div key={p.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-[16px] shadow-sm overflow-hidden transition-all duration-200">
+                                                <div
+                                                    key={passenger.id || index}
+                                                    className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm transition-all duration-200 dark:border-slate-700/80 dark:bg-slate-800"
+                                                >
                                                     <button
                                                         type="button"
-                                                        onClick={() => setExpandedGuestId(isExpanded ? null : p.id)}
-                                                        className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                                        onClick={() =>
+                                                            setExpandedGuestId(
+                                                                isExpanded
+                                                                    ? null
+                                                                    : passenger.id
+                                                            )
+                                                        }
+                                                        className="flex w-full items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/50"
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            {p.type === 'ADULT' ? <User size={18} className="text-[#3B82F6]" /> : <Baby size={18} className="text-amber-500" />}
-                                                            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
-
-                                                            {!isExpanded && (p.firstName || p.lastName) && (
-                                                                <span className="text-sm text-slate-500 dark:text-slate-400 ml-2 border-l border-slate-200 dark:border-slate-700 pl-4 font-medium">
-                                                                    {p.firstName} {p.lastName}
-                                                                </span>
+                                                            {passenger.type === "ADULT" ? (
+                                                                <User
+                                                                    size={18}
+                                                                    className="text-[#3B82F6]"
+                                                                />
+                                                            ) : (
+                                                                <Baby
+                                                                    size={18}
+                                                                    className="text-amber-500"
+                                                                />
                                                             )}
+
+                                                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                                                {guestTitle}
+                                                            </span>
+
+                                                            {!isExpanded &&
+                                                                (passenger.firstName ||
+                                                                    passenger.lastName) && (
+                                                                    <span className="ml-2 border-l border-slate-200 pl-4 text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                                                        {passenger.firstName}{" "}
+                                                                        {passenger.lastName}
+                                                                    </span>
+                                                                )}
                                                         </div>
+
                                                         <div className="text-slate-400 dark:text-slate-500">
-                                                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                            {isExpanded ? (
+                                                                <ChevronUp size={20} />
+                                                            ) : (
+                                                                <ChevronDown size={20} />
+                                                            )}
                                                         </div>
                                                     </button>
 
-                                                    {isExpanded && (() => {
-                                                        const errors = getPassengerErrors(p);
-                                                        return (
-                                                            <div className="p-5 border-t border-slate-200/80 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/60 space-y-4">
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">{t("reservation_first_name")}</label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            value={p.firstName}
-                                                                            onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
-                                                                        />
-                                                                        {errors.firstName && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.firstName}</span>}
-                                                                    </div>
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">{t("reservation_last_name")}</label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            value={p.lastName}
-                                                                            onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
-                                                                        />
-                                                                        {errors.lastName && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.lastName}</span>}
-                                                                    </div>
+                                                    {isExpanded && (
+                                                        <div className="space-y-4 border-t border-slate-200/80 bg-slate-50/70 p-5 dark:border-slate-700/60 dark:bg-slate-900/60">
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        {t("reservation_first_name")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={passenger.firstName || ""}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "firstName",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.firstName
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.firstName && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.firstName}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
 
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Cinsiyet</label>
-                                                                        <select
-                                                                            required
-                                                                            value={p.gender || 'MR'}
-                                                                            onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
-                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
-                                                                        >
-                                                                            <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Bay (Mr.)</option>
-                                                                            <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Bayan (Mrs.)</option>
-                                                                            <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Çocuk (Child)</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Doğum Tarihi</label>
-                                                                        <input
-                                                                            required
-                                                                            type="date"
-                                                                            max={new Date().toISOString().split('T')[0]}
-                                                                            value={p.birthDate || ''}
-                                                                            onChange={(e) => handlePassengerChange(index, 'birthDate', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
-                                                                        />
-                                                                        {errors.birthDate && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.birthDate}</span>}
-                                                                    </div>
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        {t("reservation_last_name")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={passenger.lastName || ""}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "lastName",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.lastName
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.lastName && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.lastName}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
-
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Uyruk</label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            value={p.nationality || 'TR'}
-                                                                            onChange={(e) => handlePassengerChange(index, 'nationality', e.target.value)}
-                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
-                                                                            <ShieldCheck size={12} /> {t("reservation_identity_number")}
-                                                                        </label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            value={p.identityNumber}
-                                                                            onChange={(e) => handlePassengerChange(index, 'identityNumber', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
-                                                                        />
-                                                                        {errors.identityNumber && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.identityNumber}</span>}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
-                                                                            <Mail size={12} /> {t("reservation_email")}
-                                                                        </label>
-                                                                        <input
-                                                                            required
-                                                                            type="email"
-                                                                            value={p.email || ''}
-                                                                            onChange={(e) => handlePassengerChange(index, 'email', e.target.value)}
-                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-700 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
-                                                                        />
-                                                                        {errors.email && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.email}</span>}
-                                                                    </div>
-                                                                    <div className="col-span-1">
-                                                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
-                                                                            <Phone size={12} /> {t("reservation_phone")}
-                                                                        </label>
-                                                                        <PhoneInput
-                                                                            international
-                                                                            defaultCountry="TR"
-                                                                            value={p.phone || ''}
-                                                                            onChange={(val) => handlePassengerChange(index, 'phone', val)}
-                                                                            className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 dark:border-red-500 ring-1 ring-red-500 dark:ring-red-400/50 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-300 dark:border-slate-700 focus-within:ring-[#3B82F6]/50 focus-within:border-[#3B82F6]'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
-                                                                            numberInputProps={{
-                                                                                required: true,
-                                                                                className: 'bg-transparent border-0 outline-none w-full text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 focus:ring-0 ml-2 py-1',
-                                                                            }}
-                                                                        />
-                                                                        {errors.phone && <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block font-medium">{errors.phone}</span>}
-                                                                    </div>
-                                                                </div>
-
-                                                                {p.type === 'CHILD' && (
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div className="col-span-1">
-                                                                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Yaş</label>
-                                                                            <input
-                                                                                required
-                                                                                type="number"
-                                                                                min="0"
-                                                                                max="17"
-                                                                                value={p.age}
-                                                                                onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
-                                                                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
                                                             </div>
-                                                        );
-                                                    })()}
+
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        Cinsiyet
+                                                                    </label>
+                                                                    <select
+                                                                        required
+                                                                        value={
+                                                                            passenger.gender ||
+                                                                            (passenger.type === "CHILD"
+                                                                                ? "CHD"
+                                                                                : "MR")
+                                                                        }
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "gender",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                                                    >
+                                                                        <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                                                            Bay (Mr.)
+                                                                        </option>
+                                                                        <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                                                            Bayan (Mrs.)
+                                                                        </option>
+                                                                        <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                                                            Çocuk (Child)
+                                                                        </option>
+                                                                    </select>
+                                                                </div>
+
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        Doğum Tarihi
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="date"
+                                                                        max={
+                                                                            new Date()
+                                                                                .toISOString()
+                                                                                .split("T")[0]
+                                                                        }
+                                                                        value={passenger.birthDate || ""}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "birthDate",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.birthDate && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.birthDate}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        Uyruk
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={passenger.nationality || "TR"}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "nationality",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400"
+                                                                    />
+                                                                </div>
+
+                                                                <div>
+                                                                    <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        <ShieldCheck size={12} />
+                                                                        {t("reservation_identity_number")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        value={passenger.identityNumber || ""}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "identityNumber",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.identityNumber
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.identityNumber && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.identityNumber}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        <Mail size={12} />
+                                                                        {t("reservation_email")}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="email"
+                                                                        value={passenger.email || ""}
+                                                                        onChange={(event) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "email",
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.email
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.email && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.email}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                <div>
+                                                                    <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        <Phone size={12} />
+                                                                        {t("reservation_phone")}
+                                                                    </label>
+
+                                                                    <PhoneInput
+                                                                        international
+                                                                        defaultCountry="TR"
+                                                                        value={passenger.phone || ""}
+                                                                        onChange={(value) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "phone",
+                                                                                value || ""
+                                                                            )
+                                                                        }
+                                                                        className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
+                                                                            ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                                                            : "border-slate-300 focus-within:border-[#3B82F6] focus-within:ring-2 focus-within:ring-[#3B82F6]/50 dark:border-slate-700"
+                                                                            }`}
+                                                                        numberInputProps={{
+                                                                            required: true,
+                                                                            className:
+                                                                                "ml-2 w-full border-0 bg-transparent py-1 text-slate-900 outline-none focus:ring-0 dark:text-white placeholder-slate-400 dark:placeholder-slate-400",
+                                                                        }}
+                                                                    />
+
+                                                                    {errors.phone && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                                                            {errors.phone}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {passenger.type === "CHILD" && (
+                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                    <div>
+                                                                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                            Yaş
+                                                                        </label>
+                                                                        <input
+                                                                            required
+                                                                            type="number"
+                                                                            min="0"
+                                                                            max="17"
+                                                                            value={passenger.age || ""}
+                                                                            onChange={(event) =>
+                                                                                handlePassengerChange(
+                                                                                    index,
+                                                                                    "age",
+                                                                                    event.target.value
+                                                                                )
+                                                                            }
+                                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
                                     </div>
 
                                     {submitError && (
-                                        <p className="text-red-600 dark:text-red-400 text-sm font-medium text-right">{submitError}</p>
+                                        <p className="text-right text-sm font-medium text-red-600 dark:text-red-400">
+                                            {submitError}
+                                        </p>
                                     )}
 
                                     <div className="mt-8 flex justify-end gap-4">
                                         <button
-                                            onClick={backToChat}
+                                            type="button"
+                                            onClick={handleBack}
                                             disabled={isSubmitting}
-                                            className="px-6 py-3 border border-slate-700/20 dark:border-slate-750 hover:bg-slate-700/10 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-[12px] transition-colors duration-200 text-[14px] disabled:opacity-50"
+                                            className="rounded-[12px] border border-slate-300 px-6 py-3 text-[14px] font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                                         >
                                             {t("reservation_cancel")}
                                         </button>
+
                                         <button
-                                            onClick={handleConfirm}
-                                            disabled={!isPassengerFormValid || isSubmitting}
-                                            className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] disabled:bg-slate-400 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold rounded-[12px] shadow-md transition-colors duration-200 text-[14px]"
+                                            type="submit"
+                                            disabled={
+                                                !isPassengerFormValid ||
+                                                isSubmitting
+                                            }
+                                            className="rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
                                         >
-                                            {isSubmitting ? t("reservation_submitting") : t("reservation_confirm_proceed")}
+                                            {isSubmitting
+                                                ? t(
+                                                    "reservation_submitting"
+                                                )
+                                                : isEditMode
+                                                    ? t(
+                                                        "reservation_update_confirm",
+                                                        "Güncelle"
+                                                    )
+                                                    : t(
+                                                        "reservation_confirm_proceed"
+                                                    )}
                                         </button>
                                     </div>
-                                </div>
+                                </form>
                             )}
-
                         </div>
                     </div>
                 </div>
