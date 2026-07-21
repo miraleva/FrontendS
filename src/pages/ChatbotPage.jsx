@@ -262,19 +262,25 @@ export default function Index() {
               const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
               const c = criteriaResponse.data;
               if (c) {
+                // Backend'den gelen kriter (c) her zaman TAM ve GÜNCEL bir anlık
+                // görüntüdür (bkz. ChatCriteriaSummary.from) — hiçbir zaman kısmi
+                // değildir. Bu yüzden burada `|| prev.X` gibi bir "eskiyi koru"
+                // yedeği KULLANMIYORUZ: aksi hâlde backend bir alanı gerçekten
+                // sıfırladığında (ör. reddedilen bir arama geri alındığında) panel
+                // hâlâ eski/"hayalet" değeri göstermeye devam ederdi.
                 setBookingDetails(prev => ({
                   ...prev,
-                  city: c.locationOrHotelName || prev.city,
-                  checkIn: c.checkInDate || c.departureDate || prev.checkIn,
-                  checkOut: c.checkOutDate || prev.checkOut,
-                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || prev.guests,
+                  city: c.locationOrHotelName || "",
+                  checkIn: c.checkInDate || c.departureDate || "",
+                  checkOut: c.checkOutDate || "",
+                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || "",
                   adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
                   childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
-                  childAges: c.childAges || prev.childAges,
+                  childAges: c.childAges || [],
                   passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
-                  departureCity: c.departureLocation || prev.departureCity,
-                  arrivalCity: c.arrivalLocation || prev.arrivalCity,
-                  returnDate: c.returnDate || prev.returnDate
+                  departureCity: c.departureLocation || "",
+                  arrivalCity: c.arrivalLocation || "",
+                  returnDate: c.returnDate || ""
                 }));
               }
             } catch (criteriaErr) {
@@ -417,19 +423,22 @@ export default function Index() {
       // sayısı gibi alanlar artık kullanıcı bunları söyler söylemez dolar).
       if (data.criteria) {
         const c = data.criteria;
+        // Aynı gerekçe: c backend'in o anki TAM kriter anlık görüntüsüdür, `|| prev.X`
+        // yedeği burada da eski/"hayalet" değerlerin panelde takılı kalmasına yol açardı
+        // (ör. reddedilip geri alınan bir arama sonrası eski konuk sayısının görünmesi).
         setBookingDetails(prev => ({
           ...prev,
-          city: c.locationOrHotelName || prev.city,
-          checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
-          checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
-          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || prev.guests,
+          city: c.locationOrHotelName || "",
+          checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || "",
+          checkOut: c.checkOutDate || extractedFromQuery.checkOut || "",
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || "",
           adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
           childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
-          childAges: c.childAges || prev.childAges,
+          childAges: c.childAges || [],
           passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
-          departureCity: c.departureLocation || prev.departureCity,
-          arrivalCity: c.arrivalLocation || prev.arrivalCity,
-          returnDate: c.returnDate || prev.returnDate
+          departureCity: c.departureLocation || "",
+          arrivalCity: c.arrivalLocation || "",
+          returnDate: c.returnDate || ""
         }));
       } else {
         // Backend kriteri dönmediyse (ör. kapsam dışı mesaj) en azından kullanıcının
