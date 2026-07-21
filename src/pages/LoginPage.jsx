@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, User as UserIcon } from 'lucide-react';
 import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
 import api from '../services/api';
@@ -503,6 +503,15 @@ export default function LoginPage() {
               </span>
               <span className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700"></span>
             </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('/chat')}
+              className="w-full py-3 px-4 rounded-xl border border-blue-500/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <UserIcon size={18} />
+              {t('continue_as_guest', 'Misafir (Guest) Olarak Devam Et')}
+            </button>
 
             {/* Admin Modunu Aktif Eden Buton */}
             <button

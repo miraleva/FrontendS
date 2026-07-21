@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, User as UserIcon } from 'lucide-react';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
@@ -461,7 +461,7 @@ export default function SignupPage() {
         </form>
 
         {/* Bottom Text */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center flex flex-col gap-4">
           <p className="text-[16px] text-slate-600 dark:text-slate-300">
             {t('have_account')}{' '}
             <Link
@@ -471,6 +471,23 @@ export default function SignupPage() {
               {t('login_link')}
             </Link>
           </p>
+
+          <div className="flex items-center justify-center gap-2 px-10">
+            <span className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700"></span>
+            <span className="text-[12px] text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+              {t('or', 'or')}
+            </span>
+            <span className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700"></span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/chat')}
+            className="w-full py-3 px-4 rounded-xl border border-blue-500/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <UserIcon size={18} />
+            {t('continue_as_guest', 'Misafir (Guest) Olarak Devam Et')}
+          </button>
         </div>
       </div>
     </div>

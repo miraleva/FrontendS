@@ -448,7 +448,7 @@ export default function ReservationFormPanel({
             className="mb-4 text-emerald-500"
           />
 
-          <p className="mb-6 max-w-sm font-medium text-slate-800 dark:text-slate-200">
+          <p className="mb-4 max-w-sm font-medium text-slate-800 dark:text-slate-200">
             {bookingDetails?.editMode
               ? "Rezervasyon başarıyla güncellendi."
               : t("reservation_confirm_success", {
@@ -456,6 +456,14 @@ export default function ReservationFormPanel({
                   reservationResult.reservationNumber ||
                   reservationResult.id,
               })}
+          </p>
+
+          <p className="mb-6 max-w-md rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-xs md:text-sm font-medium text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+            Rezervasyon detaylarınız ve biletiniz{" "}
+            <strong className="font-bold text-blue-600 dark:text-blue-400">
+              {guests[0]?.email || reservationResult?.passengers?.[0]?.email || "e-posta"}
+            </strong>{" "}
+            adresine e-posta olarak gönderilmiştir.
           </p>
 
           <button
