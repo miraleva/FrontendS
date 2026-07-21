@@ -11,7 +11,6 @@ import {
   Settings,
   ChevronDown,
   Check,
-  ListFilter,
   Trash2,
   Sun,   // <-- YENİ: İkon eklendi
   Moon   // <-- YENİ: İkon eklendi
@@ -35,22 +34,9 @@ export default function ChatSidebar({
   const isAppointmentsActive = location.pathname === '/appointments';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('None');
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsFilterDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const [sessions, setSessions] = useState([]);
 
@@ -97,15 +83,6 @@ export default function ChatSidebar({
     return () => clearInterval(interval);
   }, []);
 
-  const getVisualCategory = (title) => {
-    if (!title) return 'General SOP';
-    const t = title.toLowerCase();
-    if (t.includes('hotel') || t.includes('titanic') || t.includes('stay')) return 'Hotel';
-    if (t.includes('flight') || t.includes('ticket') || t.includes('thy')) return 'Flight';
-    if (t.includes('transfer') || t.includes('airport')) return 'Transfer';
-    return 'General SOP';
-  };
-
   const formatTimestamp = (ts) => {
     if (!ts) return '';
     try {
@@ -119,16 +96,7 @@ export default function ChatSidebar({
   const filteredSessions = sessions
     .filter(session => {
       const title = session.title || 'Chat Session';
-      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
-      const category = getVisualCategory(title);
-
-      if (activeFilter === 'Hotels') {
-        return matchesSearch && category === 'Hotel';
-      }
-      if (activeFilter === 'Flights') {
-        return matchesSearch && category === 'Flight';
-      }
-      return matchesSearch;
+      return title.toLowerCase().includes(searchQuery.toLowerCase());
     })
     .sort((a, b) => {
       const tA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : 0;
@@ -151,7 +119,7 @@ export default function ChatSidebar({
   return (
     // YENİ: h h-screen bg-white sınıfı, dark mod uyumlu yapıldı: bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800
     <div
-      className={`h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-30 ${isOpen ? 'w-[330px]' : 'w-0 border-r-0'
+      className={`h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden relative z-30 ${isOpen ? 'w-[340px]' : 'w-0 border-r-0'
         }`}
     >
       {/* 1. Top Row (Logo Alanı) */}
@@ -247,35 +215,6 @@ export default function ChatSidebar({
       <div className="flex flex-col flex-1 min-h-0">
         <div className="bg-transparent text-[#0B5FFF] dark:text-[#3b82f6] text-[11px] font-bold uppercase tracking-wider px-5 py-2 flex items-center justify-between">
           <span>{t('sidebar_recent_chats')}</span>
-
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-[#0B5FFF] dark:text-[#3b82f6] transition-all focus:outline-none cursor-pointer"
-              title={`Filter: ${activeFilter}`}
-            >
-              <ListFilter size={14} />
-            </button>
-
-            {isFilterDropdownOpen && (
-              // YENİ: bg-white dark:bg-slate-800 text-text-primary dark:text-slate-200 border-border dark:border-slate-700
-              <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-slate-800 text-text-primary dark:text-slate-200 border border-border dark:border-slate-700 rounded-lg shadow-lg py-1 z-50 animate-fade-in font-normal normal-case text-xs">
-                {['None', 'Hotels', 'Flights', 'Date'].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      setActiveFilter(option);
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between transition-colors focus:outline-none"
-                  >
-                    <span>{option}</span>
-                    {activeFilter === option && <Check size={12} className="text-primary dark:text-blue-400" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* 6. Recent Chats Session List */}
@@ -340,12 +279,12 @@ export default function ChatSidebar({
         </div>
 
         {/* Dil Seçimi (LanguageSelector - Dropup) */}
-        <LanguageSelector direction="up" className="relative" />
+        <LanguageSelector direction="up" className="relative" align="left" />
 
         {/* Tema Değiştirme Butonu */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-primary dark:hover:text-slate-200 transition-colors focus:outline-none cursor-pointer flex-shrink-0"
+          className="p-2 rounded-lg text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-orange-400 transition-colors focus:outline-none cursor-pointer flex-shrink-0"
           title={theme === 'light' ? t('theme_dark') : t('theme_light')}
         >
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
@@ -355,8 +294,8 @@ export default function ChatSidebar({
         <button
           onClick={() => navigate('/settings')}
           className={`p-2 rounded-lg transition-colors focus:outline-none flex-shrink-0 ${location.pathname === '/settings'
-            ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-400'
-            : 'text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-primary dark:hover:text-slate-200'
+            ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-orange-400'
+            : 'text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-orange-400'
             }`}
           title="Settings"
         >

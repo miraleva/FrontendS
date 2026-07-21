@@ -322,5 +322,9 @@
   "past_appointments_drawer_btn_start_new": "Yeni Rezervasyon Başlat",
   "past_appointments_drawer_btn_resume_chat": "Sohbete Devam Et",
   "theme_light": "Açık Tema",
-  "theme_dark": "Karanlık Tema"
+  "theme_dark": "Karanlık Tema",
+  "continue_with_google": "Google ile Devam Et",
+  "or_continue_with": "veya şununla devam edin",
+  "social_login_error": "Sosyal giriş sırasında bir hata oluştu",
+  "social_login_cancelled": "Giriş iptal edildi"
 }

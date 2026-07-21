@@ -32,7 +32,7 @@ export default function Sidebar() {
         </nav>
       </div>
       <div className="p-4 border-t border-white/10 flex items-center justify-between">
-        <LanguageSelector direction="up" className="relative" />
+        <LanguageSelector direction="up" className="relative" align="left" />
       </div>
     </aside>
   );

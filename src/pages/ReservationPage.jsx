@@ -1121,7 +1121,7 @@ export default function ReservationPage() {
                                                                             required
                                                                             value={
                                                                                 passenger.nationality ||
-                                                                                "TR"
+                                                                                ""
                                                                             }
                                                                             onChange={(event) => {
                                                                                 handlePassengerChange(
