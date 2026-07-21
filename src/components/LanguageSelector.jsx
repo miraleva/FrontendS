@@ -36,7 +36,10 @@ export default function LanguageSelector({
       <button
         type="button"
         onClick={() => setIsLangOpen(!isLangOpen)}
-        className="p-2 rounded-lg text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-primary dark:hover:text-slate-200 transition-colors focus:outline-none cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+        className={`p-2 rounded-lg transition-colors focus:outline-none cursor-pointer flex items-center gap-1.5 flex-shrink-0 ${isLangOpen
+          ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-orange-400'
+          : 'text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-orange-400'
+          }`}
         title={t('select_language', 'Dil Seçin / Select Language')}
       >
         <Globe size={18} />
@@ -45,9 +48,8 @@ export default function LanguageSelector({
 
       {isLangOpen && (
         <div
-          className={`absolute ${
-            isDropup ? 'bottom-full mb-2' : 'top-full mt-2'
-          } left-1/2 -translate-x-1/2 min-w-[135px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in`}
+          className={`absolute ${isDropup ? 'bottom-full mb-2' : 'top-full mt-2'
+            } right-0 min-w-[135px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-fade-in`}
         >
           {languages.map((lang) => {
             const isSelected = currentLangCode === lang.code;
@@ -60,11 +62,10 @@ export default function LanguageSelector({
                   localStorage.setItem('i18nextLng', lang.code);
                   setIsLangOpen(false);
                 }}
-                className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between transition-colors duration-150 cursor-pointer ${
-                  isSelected
-                    ? 'bg-primary/10 dark:bg-blue-500/20 text-primary dark:text-blue-400'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60'
-                }`}
+                className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between transition-colors duration-150 cursor-pointer ${isSelected
+                  ? 'bg-primary/10 dark:bg-blue-500/20 text-primary dark:text-blue-400'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                  }`}
               >
                 <span>{lang.label}</span>
                 {isSelected && <Check size={14} className="text-primary dark:text-blue-400 ml-1.5 flex-shrink-0" />}
