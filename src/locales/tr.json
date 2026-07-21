@@ -1,4 +1,19 @@
 {
+  "auth": {
+    "googleLogin": "Google ile Giriş Yap",
+    "continueAsGuest": "Misafir Olarak Devam Et",
+    "or": "VEYA",
+    "orContinueWith": "VEYA ŞUNUNLA DEVAM EDİN"
+  },
+  "guest": {
+    "bannerText": "Misafir olarak oturum açtınız. Sohbet geçmişinizi kaydetmek için",
+    "loginLink": "Giriş Yap",
+    "or": "veya",
+    "registerLink": "Kayıt Ol",
+    "guestUserTitle": "Misafir",
+    "loginAction": "Giriş Yap →",
+    "loginTitle": "Giriş Yap / Kayıt Ol"
+  },
   "baggage_not_included": "Bagaj dahil değil",
   "reservation_title": "Rezervasyon Onayı",
   "reservation_no_item": "Hiçbir öğe seçilmedi",

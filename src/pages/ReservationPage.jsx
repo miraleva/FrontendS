@@ -447,9 +447,9 @@ export default function ReservationPage() {
 
     const isPassengerFormValid =
         passengers.length > 0 &&
-        passengers.every((passenger) => {
+        passengers.every((passenger, passengerIndex) => {
             const errors =
-                getPassengerErrors(passenger, index);
+                getPassengerErrors(passenger, passengerIndex);
 
             return Object.keys(errors).length === 0;
         });
@@ -518,17 +518,17 @@ export default function ReservationPage() {
                 editData?.currency ||
                 "TRY",
             passengers: passengers.map(
-                (passenger) => ({
+                (passenger, passengerIndex) => ({
                     firstName:
-                        passenger.firstName.trim(),
+                        passenger.firstName?.trim() || "",
                     lastName:
-                        passenger.lastName.trim(),
+                        passenger.lastName?.trim() || "",
                     email:
-                        index === 0 ? passenger.email?.trim() || "" : "",
+                        passengerIndex === 0 ? passenger.email?.trim() || "" : "",
                     phoneNumber:
-                        index === 0 ? passenger.phone?.trim() || "" : "",
+                        passengerIndex === 0 ? passenger.phone?.trim() || "" : "",
                     identityNumber:
-                        passenger.identityNumber.trim(),
+                        passenger.identityNumber?.trim() || "",
                     birthDate:
                         passenger.birthDate || null,
                     gender:

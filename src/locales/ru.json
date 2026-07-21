@@ -1,4 +1,19 @@
 {
+  "auth": {
+    "googleLogin": "Войти через Google",
+    "continueAsGuest": "Продолжить как гость",
+    "or": "ИЛИ",
+    "orContinueWith": "ИЛИ ПРОДОЛЖИТЬ С"
+  },
+  "guest": {
+    "bannerText": "Вы вошли как гость. Чтобы сохранить историю чата",
+    "loginLink": "Войти",
+    "or": "или",
+    "registerLink": "Зарегистрируйтесь",
+    "guestUserTitle": "Гость",
+    "loginAction": "Войти →",
+    "loginTitle": "Войти / Регистрация"
+  },
   "baggage_not_included": "Багаж не включен",
   "reservation_title": "Подтверждение бронирования",
   "reservation_no_item": "Ничего не выбрано",

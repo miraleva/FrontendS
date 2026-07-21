@@ -477,7 +477,7 @@ export default function SignupPage() {
           <div className="flex items-center justify-center gap-2 px-10">
             <span className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700"></span>
             <span className="text-[12px] text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-              {t('or', 'or')}
+              {t('auth.or', 'VEYA')}
             </span>
             <span className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700"></span>
           </div>
@@ -491,7 +491,7 @@ export default function SignupPage() {
             className="w-full py-3 px-4 rounded-xl border border-blue-500/40 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-2 shadow-sm"
           >
             <UserIcon size={18} />
-            {t('continue_as_guest', 'Misafir (Guest) Olarak Devam Et')}
+            {t('auth.continueAsGuest', 'Misafir Olarak Devam Et')}
           </button>
         </div>
       </div>

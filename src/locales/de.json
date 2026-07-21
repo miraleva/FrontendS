@@ -1,4 +1,19 @@
 {
+  "auth": {
+    "googleLogin": "Mit Google anmelden",
+    "continueAsGuest": "Als Gast fortfahren",
+    "or": "ODER",
+    "orContinueWith": "ODER FORTFAHREN MIT"
+  },
+  "guest": {
+    "bannerText": "Sie sind als Gast angemeldet. Um Ihren Chatverlauf zu speichern",
+    "loginLink": "Anmelden",
+    "or": "oder",
+    "registerLink": "Registrieren",
+    "guestUserTitle": "Gast",
+    "loginAction": "Anmelden →",
+    "loginTitle": "Anmelden / Registrieren"
+  },
   "baggage_not_included": "Gepäck nicht inbegriffen",
   "reservation_title": "Reservierungsbestätigung",
   "reservation_no_item": "Kein Element ausgewählt",

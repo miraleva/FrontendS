@@ -4,43 +4,38 @@ import api from './api';
 // Google Sign-In (Google Identity Services) - Simplified for Debugging
 // ──────────────────────────────────────────────────────────────────
 
-let googleScriptLoaded = false;
-let googleScriptLoading = false;
+let currentLoadedLanguage = null;
 
 /**
- * Dynamically loads the Google Identity Services script.
+ * Dynamically loads the Google Identity Services script with host language parameter (hl).
  * Returns a promise that resolves when the script is ready.
  */
-export function loadGoogleScript() {
+export function loadGoogleScript(lang = 'tr') {
+  const langCode = (lang || 'tr').slice(0, 2).toLowerCase();
+
   return new Promise((resolve, reject) => {
-    if (googleScriptLoaded && window.google?.accounts?.id) {
+    const scriptId = 'google-gsi-client-script';
+    const existingScript = document.getElementById(scriptId);
+
+    if (existingScript && currentLoadedLanguage === langCode && window.google?.accounts?.id) {
       resolve();
       return;
     }
 
-    if (googleScriptLoading) {
-      const interval = setInterval(() => {
-        if (window.google?.accounts?.id) {
-          clearInterval(interval);
-          googleScriptLoaded = true;
-          resolve();
-        }
-      }, 100);
-      return;
+    if (existingScript) {
+      existingScript.remove();
     }
 
-    googleScriptLoading = true;
+    currentLoadedLanguage = langCode;
     const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
+    script.id = scriptId;
+    script.src = `https://accounts.google.com/gsi/client?hl=${langCode}`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      googleScriptLoaded = true;
-      googleScriptLoading = false;
       resolve();
     };
     script.onerror = () => {
-      googleScriptLoading = false;
       reject(new Error('Failed to load Google Identity Services script'));
     };
     document.head.appendChild(script);
@@ -50,18 +45,25 @@ export function loadGoogleScript() {
 /**
  * Simplified Google Auth Initialization for Isolation Testing
  */
-export function initGoogleAuth(targetElementId, callbacks = {}) {
+export function initGoogleAuth(targetElementId, callbacks = {}, options = {}) {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1058043134555-n4q6pioq7ui2i0gjlt8tqlttgq363apd.apps.googleusercontent.com';
+  const locale = (options.locale || 'tr').slice(0, 2).toLowerCase();
 
   // Debug logs requested for origin & client id inspection
   console.log('[DEBUG] window.location.origin:', window.location.origin);
   console.log('[DEBUG] import.meta.env.VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
   console.log('[DEBUG] Effective Google Client ID:', clientId);
+  console.log('[DEBUG] Google Auth locale:', locale);
 
-  return loadGoogleScript().then(() => {
+  return loadGoogleScript(locale).then(() => {
     const targetElement = document.getElementById(targetElementId);
     if (!targetElement) {
       console.error(`[DEBUG] Element with id "${targetElementId}" not found in DOM.`);
+      return;
+    }
+
+    if (!window.google?.accounts?.id) {
+      console.error('[DEBUG] window.google.accounts.id unavailable after script load.');
       return;
     }
 
@@ -84,7 +86,7 @@ export function initGoogleAuth(targetElementId, callbacks = {}) {
     targetElement.innerHTML = '';
     window.google.accounts.id.renderButton(
       targetElement,
-      { theme: "outline", size: "large" }
+      { theme: "outline", size: "large", locale: locale }
     );
   }).catch((err) => {
     console.error('[DEBUG] Failed to initialize Google Auth:', err);
@@ -97,13 +99,14 @@ export function initGoogleAuth(targetElementId, callbacks = {}) {
 /**
  * Initiates Google Sign-In and returns the credential (ID token).
  */
-export function signInWithGoogle() {
+export function signInWithGoogle(options = {}) {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1058043134555-n4q6pioq7ui2i0gjlt8tqlttgq363apd.apps.googleusercontent.com';
+  const locale = typeof options === 'string' ? options.slice(0, 2).toLowerCase() : (options.locale || 'tr').slice(0, 2).toLowerCase();
 
   console.log('[DEBUG] window.location.origin:', window.location.origin);
   console.log('[DEBUG] import.meta.env.VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
-  return loadGoogleScript().then(() => {
+  return loadGoogleScript(locale).then(() => {
     return new Promise((resolve, reject) => {
       window.google.accounts.id.initialize({
         client_id: clientId,
@@ -129,7 +132,8 @@ export function signInWithGoogle() {
       try {
         window.google.accounts.id.renderButton(tempDiv, {
           theme: 'outline',
-          size: 'large'
+          size: 'large',
+          locale: locale
         });
 
         const btn = tempDiv.querySelector('[role="button"]') || tempDiv.querySelector('div[id^="g_"]');

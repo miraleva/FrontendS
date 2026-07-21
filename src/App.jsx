@@ -94,10 +94,6 @@ export default function App() {
                     element={<SearchChats />}
                   />
                   <Route
-                    path="/appointments"
-                    element={<PastAppointments />}
-                  />
-                  <Route
                     path="/documents"
                     element={<DocumentPagePlaceholder />}
                   />
@@ -106,16 +102,26 @@ export default function App() {
                     element={<HistoryPagePlaceholder />}
                   />
                   <Route
+                    path="/reservation"
+                    element={<Reservation />}
+                  />
+                </Route>
+              </Route>
+
+              {/* SADECE GİRİŞ YAPMIŞ KULLANICI ROTALARI */}
+              <Route element={<ProtectedRoute allowedTypes={['authenticated']} redirectGuestTo="/chat" />}>
+                <Route element={<MainLayout />}>
+                  <Route
+                    path="/appointments"
+                    element={<PastAppointments />}
+                  />
+                  <Route
                     path="/profile"
                     element={<ProfilePage />}
                   />
                   <Route
                     path="/settings"
                     element={<Settings />}
-                  />
-                  <Route
-                    path="/reservation"
-                    element={<Reservation />}
                   />
                 </Route>
               </Route>
