@@ -7,12 +7,41 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach bearer token to header
+// Request Interceptor: Attach bearer token to header (except for public auth endpoints or invalid tokens)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const url = config.url || '';
+    const isPublicAuthEndpoint =
+      url.includes('/api/auth') ||
+      url.includes('/api/authenticationservice/login');
+
+    if (isPublicAuthEndpoint) {
+      // Preserve explicit Authorization header if provided by caller (e.g. Bearer google_id_token for oauth-login)
+      const hasExplicitAuthHeader =
+        config.headers?.Authorization ||
+        config.headers?.authorization ||
+        (typeof config.headers?.get === 'function' && config.headers.get('Authorization'));
+
+      if (!hasExplicitAuthHeader) {
+        delete config.headers.Authorization;
+        delete config.headers['Authorization'];
+        if (typeof config.headers?.delete === 'function') {
+          config.headers.delete('Authorization');
+          config.headers.delete('authorization');
+        }
+      }
+    } else {
+      const token = localStorage.getItem('token');
+      if (token && token !== 'null' && token !== 'undefined' && token.trim() !== '') {
+        config.headers.Authorization = `Bearer ${token.trim()}`;
+      } else {
+        delete config.headers.Authorization;
+        delete config.headers['Authorization'];
+        if (typeof config.headers?.delete === 'function') {
+          config.headers.delete('Authorization');
+          config.headers.delete('authorization');
+        }
+      }
     }
     return config;
   },
@@ -27,8 +56,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const url = error.config?.url || '';
-      // Avoid redirecting when login or signup fails due to bad credentials
-      if (!url.includes('/api/auth/login') && !url.includes('/api/auth/signup')) {
+      // Avoid redirecting when public auth endpoints fail
+      if (!url.includes('/api/auth')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userId');

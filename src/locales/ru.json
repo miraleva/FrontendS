@@ -325,5 +325,9 @@
   "past_appointments_drawer_btn_start_new": "Начать новое бронирование",
   "past_appointments_drawer_btn_resume_chat": "Продолжить чат",
   "theme_light": "Светлая тема",
-  "theme_dark": "Темная тема"
+  "theme_dark": "Темная тема",
+  "continue_with_google": "Продолжить с Google",
+  "or_continue_with": "или продолжить с",
+  "social_login_error": "Ошибка при входе через социальную сеть",
+  "social_login_cancelled": "Вход отменён"
 }

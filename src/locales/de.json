@@ -325,5 +325,9 @@
   "profile_settings": "Einstellungen",
   "profile_logout": "Abmelden",
   "theme_light": "Heller Modus",
-  "theme_dark": "Dunkler Modus"
+  "theme_dark": "Dunkler Modus",
+  "continue_with_google": "Weiter mit Google",
+  "or_continue_with": "oder fortfahren mit",
+  "social_login_error": "Beim Social Login ist ein Fehler aufgetreten",
+  "social_login_cancelled": "Anmeldung abgebrochen"
 }
