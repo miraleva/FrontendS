@@ -1,16 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Sun, Moon } from 'lucide-react';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import SannyLogo from '../components/SannyLogo';
 import LanguageSelector from '../components/LanguageSelector';
 import 'react-phone-number-input/style.css';
 import api from '../services/api';
 import { isPhoneNumberTooLong, getPhoneInputMaxLength } from '../utils/phoneLimits';
-
+import { useTheme } from '../components/ThemeContext';
 
 export default function SignupPage() {
   const { t } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
+    }
+  }, []);
   const [formData, setFormData] = useState({
     name: '',
     lastname: '',
@@ -65,9 +75,13 @@ export default function SignupPage() {
       return t('required_error');
     } else {
       if (field === 'name' || field === 'lastname') {
-        const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
-        if (!nameRegex.test(trimmedVal)) {
-          err = t('letters_error');
+        if (trimmedVal.length > 25) {
+          err = t('name_max_error');
+        } else {
+          const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
+          if (!nameRegex.test(trimmedVal)) {
+            err = t('letters_error');
+          }
         }
       } else if (field === 'email') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -128,9 +142,14 @@ export default function SignupPage() {
     } catch (err) {
       if (err.response) {
         if (err.response.status === 409) {
+          const fields = err.response.data?.fields || [];
+          const message = err.response.data?.message || '';
+          const hasEmail = fields.includes('email') || message.toLowerCase().includes('email');
+          const hasPhone = fields.includes('phone') || message.toLowerCase().includes('phone');
           setFieldErrors((prev) => ({
             ...prev,
-            email: "Email already exists"
+            ...(hasEmail && { email: "Email already exists" }),
+            ...(hasPhone && { phone: "Phone number already exists" })
           }));
         } else if (err.response.status === 400) {
           setFieldErrors((prev) => ({
@@ -180,36 +199,48 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative z-10 font-sans">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative font-sans bg-transparent">
       {/* Shared Header Bar Logo on Left */}
       <SannyLogo />
 
-      {/* Shared Floating Language Switcher Dropdown */}
-      <LanguageSelector />
-
-      {/* Background Video Container */}
-      <div className="fixed inset-0 w-screen h-screen -z-20 bg-black">
-        <video
-          src="/videos/background.mp4"
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          onTimeUpdate={handleTimeUpdate}
-          className="w-full h-full object-cover"
-        />
+      {/* Top Right Controls (Theme Toggle + Language Selector) */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center gap-2 shadow-lg"
+          title={theme === 'dark' ? (t('theme_light', 'Aydınlık Mod')) : (t('theme_dark', 'Karanlık Mod'))}
+        >
+          {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-slate-700" />}
+          <span className="text-xs font-semibold hidden sm:inline text-slate-700 dark:text-slate-200">
+            {theme === 'dark' ? (t('theme_light', 'Aydınlık')) : (t('theme_dark', 'Karanlık'))}
+          </span>
+        </button>
+        <LanguageSelector className="relative" />
       </div>
 
-      {/* Dark Overlay */}
-      <div className="fixed inset-0 w-screen h-screen bg-black/40 -z-10" />
+      {/* Katman 1 (z-0): Background Video */}
+      <video
+        ref={videoRef}
+        src="/videos/background.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+      />
 
-      {/* Glassmorphism Container */}
-      <div className="w-full max-w-[550px] bg-white/5 backdrop-blur-sm border border-white/20 rounded-[32px] shadow-2xl p-6 md:p-8 animate-fade-in my-8">
+      {/* Katman 2 (z-10): Overlay Mask */}
+      <div className="fixed inset-0 z-10 pointer-events-none bg-slate-900/20 dark:bg-slate-950/70" />
+
+      {/* Katman 3 (z-20): Form Container */}
+      <div className="relative z-20 w-full max-w-[550px] bg-white/70 backdrop-blur-md border border-white/40 dark:bg-slate-900/75 dark:border-slate-800/50 rounded-[32px] shadow-2xl p-6 md:p-8 animate-fade-in my-8">
         <div className="text-center mb-8">
-          <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-white mb-2 font-display">
+          <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-display">
             {t('create_account_title')}
           </h1>
-          <p className="text-[16px] md:text-[18px] text-white/80">
+          <p className="text-[16px] md:text-[18px] text-slate-600 dark:text-slate-300">
             {renderSubtitle(t('signup_subtitle'))}
           </p>
         </div>
@@ -219,11 +250,11 @@ export default function SignupPage() {
           <div className="flex gap-3">
             {/* First Name Input */}
             <div className="flex flex-col gap-2 flex-1">
-              <label htmlFor="name" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+              <label htmlFor="name" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
                 {t('first_name_label')}
               </label>
               <div className="relative flex items-center">
-                <div className="absolute left-5 text-white/60 pointer-events-none">
+                <div className="absolute left-5 text-slate-400 dark:text-slate-500 pointer-events-none">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
@@ -236,22 +267,22 @@ export default function SignupPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur('name')}
                   placeholder={t('first_name_placeholder')}
-                  maxLength={40}
-                  className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
+                  maxLength={25}
+                  className="w-full bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full pl-12 pr-6 py-4 text-[16px] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
                 />
               </div>
               {fieldErrors.name && (
-                <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.name}</p>
+                <p className="text-[14px] text-red-500 pl-4 mt-1">{fieldErrors.name}</p>
               )}
             </div>
 
             {/* Last Name Input */}
             <div className="flex flex-col gap-2 flex-1">
-              <label htmlFor="lastname" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+              <label htmlFor="lastname" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
                 {t('last_name_label')}
               </label>
               <div className="relative flex items-center">
-                <div className="absolute left-5 text-white/60 pointer-events-none">
+                <div className="absolute left-5 text-slate-400 dark:text-slate-500 pointer-events-none">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
@@ -264,23 +295,23 @@ export default function SignupPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur('lastname')}
                   placeholder={t('last_name_placeholder')}
-                  maxLength={40}
-                  className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
+                  maxLength={25}
+                  className="w-full bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full pl-12 pr-6 py-4 text-[16px] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
                 />
               </div>
               {fieldErrors.lastname && (
-                <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.lastname}</p>
+                <p className="text-[14px] text-red-500 pl-4 mt-1">{fieldErrors.lastname}</p>
               )}
             </div>
           </div>
 
           {/* Email Input */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="email" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
               {t('email_label')}
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-5 text-white/60 pointer-events-none">
+              <div className="absolute left-5 text-slate-400 dark:text-slate-500 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
@@ -294,17 +325,17 @@ export default function SignupPage() {
                 onBlur={() => handleBlur('email')}
                 placeholder={t('email_placeholder')}
                 maxLength={100}
-                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-6 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
+                className="w-full bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full pl-12 pr-6 py-4 text-[16px] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
               />
             </div>
             {fieldErrors.email && (
-              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.email}</p>
+              <p className="text-[14px] text-red-500 pl-4 mt-1">{fieldErrors.email}</p>
             )}
           </div>
 
           {/* Phone Number Input */}
           <div className="flex flex-col gap-2 relative z-50">
-            <label htmlFor="phone" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="phone" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
               {t('phone_label')}
             </label>
             <PhoneInput
@@ -313,26 +344,26 @@ export default function SignupPage() {
               value={formData.phone}
               onChange={handlePhoneChange}
               onBlur={() => handleBlur('phone')}
-              className="flex items-center w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full px-5 py-3 text-white focus-within:ring-2 focus-within:ring-primary/50 focus-within:bg-black/50 transition-all duration-300"
+              className="flex items-center w-full bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full px-5 py-3 text-slate-900 dark:text-slate-100 focus-within:ring-2 focus-within:ring-primary/50 transition-all duration-300"
               numberInputProps={{
-                className: 'bg-transparent border-0 outline-none w-full text-[16px] text-white placeholder-white/40 focus:ring-0 focus:outline-none ml-3',
+                className: 'bg-transparent border-0 outline-none w-full text-[16px] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 focus:ring-0 focus:outline-none ml-3',
                 placeholder: t('phone_placeholder'),
                 id: 'phone',
                 maxLength: getPhoneInputMaxLength(formData.phone)
               }}
             />
             {fieldErrors.phone && (
-              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.phone}</p>
+              <p className="text-[14px] text-red-500 pl-4 mt-1">{fieldErrors.phone}</p>
             )}
           </div>
 
           {/* Password Input */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="password" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
               {t('password_label')}
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-5 text-white/60 pointer-events-none">
+              <div className="absolute left-5 text-slate-400 dark:text-slate-500 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -346,12 +377,12 @@ export default function SignupPage() {
                 onBlur={() => handleBlur('password')}
                 placeholder={t('password_placeholder')}
                 maxLength={30}
-                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-14 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
+                className="w-full bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full pl-12 pr-14 py-4 text-[16px] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 text-white/60 hover:text-white transition-colors duration-200"
+                className="absolute right-5 text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors duration-200"
               >
                 {showPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -369,17 +400,17 @@ export default function SignupPage() {
               </button>
             </div>
             {fieldErrors.password && (
-              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.password}</p>
+              <p className="text-[14px] text-red-500 pl-4 mt-1">{fieldErrors.password}</p>
             )}
           </div>
 
           {/* Confirm Password Input */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="confirmPassword" className="text-[15px] font-semibold text-white/90 uppercase tracking-wider pl-4">
+            <label htmlFor="confirmPassword" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
               {t('confirm_password_label')}
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-5 text-white/60 pointer-events-none">
+              <div className="absolute left-5 text-slate-400 dark:text-slate-500 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -393,12 +424,12 @@ export default function SignupPage() {
                 onBlur={() => handleBlur('confirmPassword')}
                 placeholder={t('confirm_password_placeholder')}
                 maxLength={30}
-                className="w-full bg-black/30 hover:bg-black/40 border border-white/10 rounded-full pl-12 pr-14 py-4 text-[16px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-black/50 transition-all duration-300"
+                className="w-full bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full pl-12 pr-14 py-4 text-[16px] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-5 text-white/60 hover:text-white transition-colors duration-200"
+                className="absolute right-5 text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors duration-200"
               >
                 {showConfirmPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -416,7 +447,7 @@ export default function SignupPage() {
               </button>
             </div>
             {fieldErrors.confirmPassword && (
-              <p className="text-[14px] text-red-400 pl-4 mt-1">{fieldErrors.confirmPassword}</p>
+              <p className="text-[14px] text-red-500 pl-4 mt-1">{fieldErrors.confirmPassword}</p>
             )}
           </div>
 
@@ -431,11 +462,11 @@ export default function SignupPage() {
 
         {/* Bottom Text */}
         <div className="mt-8 text-center">
-          <p className="text-[16px] text-white/60">
+          <p className="text-[16px] text-slate-600 dark:text-slate-300">
             {t('have_account')}{' '}
             <Link
               to="/login"
-              className="text-[#0096c7] hover:text-[#023e8a] font-semibold hover:underline transition-colors duration-200"
+              className="text-[#0096c7] dark:text-cyan-400 hover:text-[#023e8a] dark:hover:text-cyan-300 font-semibold hover:underline transition-colors duration-200"
             >
               {t('login_link')}
             </Link>

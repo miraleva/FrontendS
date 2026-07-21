@@ -20,11 +20,11 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="h-14 bg-surface border-b border-border flex items-center justify-between px-6">
-      <span className="text-sm font-medium text-text-secondary">Operasyon Asistani</span>
+    <header className="h-14 bg-surface dark:bg-slate-900 border-b border-border dark:border-slate-800 flex items-center justify-between px-6">
+      <span className="text-sm font-medium text-text-secondary dark:text-slate-400">Operasyon Asistani</span>
       <div data-slot="header-actions" className="flex items-center gap-2">
         <span className={`w-2.5 h-2.5 rounded-full ${isUp ? 'bg-accent' : 'bg-rose-500 animate-pulse'}`} />
-        <span className="text-xs text-text-secondary">
+        <span className="text-xs text-text-secondary dark:text-slate-400">
           {isUp ? 'Servisler aktif' : 'Servisler devre dışı'}
         </span>
       </div>

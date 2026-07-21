@@ -1,781 +1,551 @@
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import ChatSidebar from "../components/ChatSidebar";
+import { PanelLeftOpen, ArrowLeft, CheckCircle2, User, Baby, Mail, Phone, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import api from "../services/api";
+import { useTheme } from "../components/ThemeContext";
 
-import React, { useState } from 'react';
-import api from '../services/api';
-import {
-    ChevronLeft,
-    Calendar,
-    Users,
-    DollarSign,
-    Phone,
-    Mail,
-    MapPin,
-    Plus,
-    CheckCircle2,
-    AlertCircle,
-    Home,
-    ArrowRight,
-} from 'lucide-react';
+function formatPrice(price) {
+    const num = Number(price);
+    if (Number.isNaN(num)) return price;
+    return Math.round(num).toLocaleString("tr-TR");
+}
 
-export default function Reservation() {
-    const [step, setStep] = useState('form');
+function formatFlightDateTime(value) {
+    if (!value) return value;
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString("tr-TR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+    });
+}
 
-    const [guests, setGuests] = useState([
-        {
-            ad: 'Ayşe',
-            soyad: 'Yılmaz',
-            dogumTarihi: '12.05.1990',
-            kimlikNo: '12345678901',
-            cinsiyet: 'Kadın',
-        },
-        {
-            ad: 'Mehmet',
-            soyad: 'Yılmaz',
-            dogumTarihi: '08.03.1988',
-            kimlikNo: '98765432109',
-            cinsiyet: 'Erkek',
-        },
-    ]);
+function formatBaggage(baggage, t) {
+    if (!baggage || baggage === "0kg" || baggage === "0 kg") {
+        return t ? t("baggage_not_included") : "Baggage not included";
+    }
+    return baggage;
+}
 
-    const [phone, setPhone] = useState('+90 555 123 45 67');
-    const [email, setEmail] = useState('ornek@mail.com');
-    const [address, setAddress] = useState(
-        'Otelimiz Kaleiçi bölgesindedir.'
-    );
-    const [agreed, setAgreed] = useState(true);
+function toDateOnly(value) {
+    if (!value) return null;
+    const match = /^\d{4}-\d{2}-\d{2}/.exec(value);
+    if (match) return match[0];
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString().slice(0, 10);
+}
 
-    const handleAddGuest = () => {
-        setGuests([
-            ...guests,
-            {
-                ad: '',
-                soyad: '',
-                dogumTarihi: '',
-                kimlikNo: '',
-                cinsiyet: 'Seçiniz',
-            },
-        ]);
+export default function ReservationPage() {
+    const { t } = useTranslation();
+    const { theme } = useTheme();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
+        }
+    }, [theme]);
+
+    const selectedItem = location.state?.selectedItem;
+    const bookingDetails = location.state?.bookingDetails;
+    const sessionId = location.state?.sessionId;
+
+    const isFlight = selectedItem?.airline !== undefined;
+    const adultCount = isFlight
+        ? (parseInt(bookingDetails?.passengerCount) || 1)
+        : (parseInt(bookingDetails?.adultCount) || 1);
+    const childCount = isFlight
+        ? 0
+        : (parseInt(bookingDetails?.childCount) || 0);
+    const childAges = isFlight
+        ? []
+        : (bookingDetails?.childAges || []);
+
+    const [passengers, setPassengers] = useState([]);
+    const [expandedGuestId, setExpandedGuestId] = useState('adult-0');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
+    const [reservationResult, setReservationResult] = useState(null);
+
+    // Sayfa yüklendiğinde backend'den profil bilgilerini alarak formu önceden doldur
+    useEffect(() => {
+        const fetchPrefill = async () => {
+            try {
+                const response = await api.get("/api/reservations/prefill");
+                const data = response.data;
+                setPassengers((prev) => {
+                    if (!prev || prev.length === 0) return prev;
+                    const updated = [...prev];
+                    updated[0] = {
+                        ...updated[0],
+                        firstName: updated[0].firstName || data.firstName || '',
+                        lastName: updated[0].lastName || data.lastName || '',
+                        email: updated[0].email || data.email || '',
+                        phone: updated[0].phone || data.phoneNumber || '',
+                    };
+                    return updated;
+                });
+            } catch {
+                // Kullanıcı giriş yapmamışsa veya istek başarısız olursa form boş başlar
+            }
+        };
+        fetchPrefill();
+    }, []);
+
+    // Geldiğimiz sohbete geri dön (sessionId varsa o oturumla, yoksa genel sohbet sayfasına)
+    const backToChat = () => navigate(sessionId ? `/chat?sessionId=${sessionId}` : '/chat');
+
+    useEffect(() => {
+        if (selectedItem) {
+            const initialPassengers = [];
+            for (let i = 0; i < adultCount; i++) {
+                initialPassengers.push({
+                    id: `adult-${i}`,
+                    type: 'ADULT',
+                    firstName: '',
+                    lastName: '',
+                    identityNumber: '',
+                    email: '',
+                    phone: '',
+                    birthDate: '',
+                    gender: 'MR',
+                    nationality: 'TR',
+                });
+            }
+            for (let i = 0; i < childCount; i++) {
+                initialPassengers.push({
+                    id: `child-${i}`,
+                    type: 'CHILD',
+                    firstName: '',
+                    lastName: '',
+                    identityNumber: '',
+                    email: '',
+                    phone: '',
+                    birthDate: '',
+                    gender: 'CHD',
+                    nationality: 'TR',
+                    age: childAges[i] !== undefined ? childAges[i].toString() : '',
+                });
+            }
+            setPassengers(initialPassengers);
+        }
+    }, [selectedItem, bookingDetails, adultCount, childCount, childAges]);
+
+    const handlePassengerChange = (index, field, value) => {
+        setPassengers((prev) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
     };
 
-    const handleGuestChange = (index, field, value) => {
-        const updatedGuests = [...guests];
+    const handleConfirm = async () => {
+        if (!selectedItem) return;
+        setSubmitError("");
 
-        updatedGuests[index] = {
-            ...updatedGuests[index],
-            [field]: value,
+        const startDate = isFlight
+            ? toDateOnly(selectedItem.departureTime)
+            : toDateOnly(bookingDetails?.checkIn);
+        const endDate = isFlight
+            ? toDateOnly(selectedItem.returnDepartureTime) || startDate
+            : toDateOnly(bookingDetails?.checkOut);
+
+        const payload = {
+            type: isFlight ? "FLIGHT" : "HOTEL",
+            itemName: isFlight ? selectedItem.airline : (selectedItem.name || selectedItem.hotelId || "-"),
+            destination: isFlight
+                ? (bookingDetails?.arrivalCity || "-")
+                : (bookingDetails?.city || selectedItem.region || "-"),
+            startDate,
+            endDate,
+            totalPrice: Number(selectedItem.price) || 0,
+            currency: selectedItem.currency || "TRY",
+            passengers: passengers.map((p) => ({
+                firstName: p.firstName,
+                lastName: p.lastName,
+                email: p.email || '',
+                phoneNumber: p.phone || '',
+                identityNumber: p.identityNumber,
+                birthDate: p.birthDate,
+                gender: p.gender,
+                nationality: p.nationality,
+            })),
         };
 
-        setGuests(updatedGuests);
-    };
-
-    const handleCreateReservation = async () => {
+        setIsSubmitting(true);
         try {
-            const passengers = guests.map(g => ({
-                firstName: g.ad || "Guest",
-                lastName: g.soyad || "User",
-                email: email || "user@example.com",
-                phoneNumber: phone || "+905550000000",
-                identityNumber: g.kimlikNo || "11111111111"
-            }));
-
-            const payload = {
-                type: "HOTEL",
-                itemName: "Antalya Şehir Turu",
-                destination: "Antalya",
-                startDate: "2026-07-15",
-                endDate: "2026-07-16",
-                totalPrice: 2400.0,
-                currency: "TRY",
-                passengers: passengers
-            };
-
-            await api.post('/api/reservations', payload);
-            setStep('success');
+            const response = await api.post("/api/reservations", payload);
+            setReservationResult(response.data);
         } catch (err) {
-            console.error("Failed to create reservation", err);
-            alert("Failed to submit reservation to database.");
+            console.error("Reservation creation failed", err);
+            setSubmitError(t("reservation_confirm_error"));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const handleRetry = () => {
-        setStep('form');
+    const getPassengerErrors = (p) => {
+        const errors = {};
+        if (!p.firstName?.trim()) errors.firstName = "Ad gereklidir.";
+        if (!p.lastName?.trim()) errors.lastName = "Soyad gereklidir.";
+        
+        if (p.nationality?.toUpperCase() === 'TR') {
+            if (!/^[1-9]\d{10}$/.test(p.identityNumber)) {
+                errors.identityNumber = "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+            }
+        } else {
+            if (!p.identityNumber?.trim() || p.identityNumber.trim().length < 5) {
+                errors.identityNumber = "Geçersiz Pasaport No (en az 5 karakter).";
+            }
+        }
+        
+        if (!p.birthDate) {
+            errors.birthDate = "Doğum tarihi gereklidir.";
+        } else if (new Date(p.birthDate) >= new Date()) {
+            errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+        }
+        
+        if (!p.email?.trim()) {
+            errors.email = "E-posta gereklidir.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) {
+            errors.email = "Geçersiz e-posta formatı (örn: ad@example.com).";
+        }
+        
+        if (!p.phone) {
+            errors.phone = "Telefon numarası gereklidir.";
+        } else if (!isValidPhoneNumber(p.phone)) {
+            errors.phone = "Ülke formatına uymuyor (geçersiz uzunluk).";
+        }
+        
+        return errors;
     };
 
-    const handleGoHome = () => {
-        setStep('form');
-    };
-
-    const productImage =
-        'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&h=200&fit=crop';
+    const isPassengerFormValid = passengers.length > 0 && passengers.every((p) => {
+        const errors = getPassengerErrors(p);
+        return Object.keys(errors).length === 0;
+    });
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="sticky top-0 z-50 bg-gradient-to-r from-[#1a3a52] to-[#2d5a7b] text-white shadow-lg">
-                <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+            {/* Katman 1 (z-0): Background Video */}
+            <video
+                ref={videoRef}
+                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            />
+
+            {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+            {/* Katman 3 (z-30): Sidebar */}
+            <ChatSidebar
+                isOpen={isSidebarOpen}
+                setIsOpen={setIsSidebarOpen}
+            />
+
+            {/* Katman 3 (z-20): Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
+                {!isSidebarOpen && (
                     <button
-                        type="button"
-                        className="rounded-lg p-2 text-white transition hover:bg-white/10"
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
+                        title={t("reservation_expand_sidebar")}
                     >
-                        <ChevronLeft size={24} />
+                        <PanelLeftOpen size={18} />
                     </button>
+                )}
 
-                    <h1 className="text-xl font-semibold">
-                        Rezervasyon Oluştur
-                    </h1>
+                <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
+                    <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
+                        {/* Main Reservation Card */}
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-slate-200 dark:border-slate-800">
+                            
+                            <h1 className="text-[28px] font-bold text-slate-900 dark:text-white leading-tight mb-6">
+                                {t("reservation_title")}
+                            </h1>
 
-                    <div className="w-10" />
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="mx-auto max-w-7xl px-4 py-6">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    {/* Left Column */}
-                    <div className="lg:col-span-2">
-                        {step === 'form' && (
-                            <div className="space-y-6">
-                                {/* Section 1: Product Summary */}
-                                <div className="rounded-xl bg-white p-6 shadow-md">
-                                    <div className="mb-6 flex items-start gap-4">
-                                        <div className="bg-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-white">
-                                            1
-                                        </div>
-
-                                        <h2 className="text-primary text-lg font-semibold">
-                                            Seçilen Ürün Özeti
-                                        </h2>
-                                    </div>
-
-                                    <div className="mb-4 flex gap-4">
-                                        <img
-                                            src={productImage}
-                                            alt="Antalya Şehir Turu"
-                                            className="h-32 w-32 rounded-lg object-cover"
-                                        />
-
-                                        <div className="flex-1">
-                                            <h3 className="mb-3 text-lg font-semibold text-gray-900">
-                                                Antalya Şehir Turu
-                                            </h3>
-
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <Calendar size={16} />
-                                                    <span>Tarih: 15 Temmuz 2026</span>
-                                                </div>
-
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <Users size={16} />
-                                                    <span>Kişi Sayısı: 2 Yetişkin</span>
-                                                </div>
-
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <DollarSign size={16} />
-                                                    <span>
-                                                        Fiyat: 1200 TL (Kişi Başı)
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between border-t pt-4">
-                                        <span className="font-medium text-gray-600">
-                                            Toplam Tutar:
-                                        </span>
-
-                                        <span className="text-primary text-2xl font-bold">
-                                            2.400 TL
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Section 2: Guest Information */}
-                                <div className="rounded-xl bg-white p-6 shadow-md">
-                                    <div className="mb-6 flex items-start gap-4">
-                                        <div className="bg-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-white">
-                                            2
-                                        </div>
-
-                                        <h2 className="text-primary text-lg font-semibold">
-                                            Yolcu / Misafir Bilgileri
-                                        </h2>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        {guests.map((guest, index) => (
-                                            <div
-                                                key={index}
-                                                className="border-b pb-6 last:border-b-0 last:pb-0"
-                                            >
-                                                <h3 className="mb-4 font-semibold text-gray-900">
-                                                    Misafir {index + 1}
-                                                </h3>
-
-                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                    <div>
-                                                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                            Ad
-                                                        </label>
-
-                                                        <input
-                                                            type="text"
-                                                            value={guest.ad}
-                                                            onChange={(event) =>
-                                                                handleGuestChange(
-                                                                    index,
-                                                                    'ad',
-                                                                    event.target.value
-                                                                )
-                                                            }
-                                                            className="focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-                                                            placeholder="Adınız"
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                            Soyad
-                                                        </label>
-
-                                                        <input
-                                                            type="text"
-                                                            value={guest.soyad}
-                                                            onChange={(event) =>
-                                                                handleGuestChange(
-                                                                    index,
-                                                                    'soyad',
-                                                                    event.target.value
-                                                                )
-                                                            }
-                                                            className="focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-                                                            placeholder="Soyadınız"
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                            Doğum Tarihi
-                                                        </label>
-
-                                                        <input
-                                                            type="text"
-                                                            value={guest.dogumTarihi}
-                                                            onChange={(event) =>
-                                                                handleGuestChange(
-                                                                    index,
-                                                                    'dogumTarihi',
-                                                                    event.target.value
-                                                                )
-                                                            }
-                                                            className="focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-                                                            placeholder="GG.AA.YYYY"
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                            Kimlik / Pasaport No
-                                                        </label>
-
-                                                        <input
-                                                            type="text"
-                                                            value={guest.kimlikNo}
-                                                            onChange={(event) =>
-                                                                handleGuestChange(
-                                                                    index,
-                                                                    'kimlikNo',
-                                                                    event.target.value
-                                                                )
-                                                            }
-                                                            className="focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-                                                            placeholder="Kimlik No"
-                                                        />
-                                                    </div>
-
-                                                    <div className="sm:col-span-2">
-                                                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                            Cinsiyet
-                                                        </label>
-
-                                                        <select
-                                                            value={guest.cinsiyet}
-                                                            onChange={(event) =>
-                                                                handleGuestChange(
-                                                                    index,
-                                                                    'cinsiyet',
-                                                                    event.target.value
-                                                                )
-                                                            }
-                                                            className="focus:ring-primary w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-                                                        >
-                                                            <option>Seçiniz</option>
-                                                            <option>Kadın</option>
-                                                            <option>Erkek</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
+                            {!selectedItem ? (
+                                <div className="text-center py-8">
+                                    <p className="text-slate-800 dark:text-slate-200 font-medium mb-6">{t("reservation_no_item")}</p>
                                     <button
-                                        type="button"
-                                        onClick={handleAddGuest}
-                                        className="border-primary text-primary hover:bg-primary/5 mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed py-3 font-medium transition"
+                                        onClick={backToChat}
+                                        className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
                                     >
-                                        <Plus size={18} />
-                                        Yeni Misafir Ekle
+                                        <ArrowLeft size={16} />
+                                        {t("reservation_back_to_chat")}
                                     </button>
                                 </div>
-
-                                {/* Section 3: Contact Information */}
-                                <div className="rounded-xl bg-white p-6 shadow-md">
-                                    <div className="mb-6 flex items-start gap-4">
-                                        <div className="bg-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-white">
-                                            3
+                            ) : reservationResult ? (
+                                <div className="text-center py-8">
+                                    <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-4" />
+                                    <p className="text-slate-800 dark:text-slate-200 font-medium mb-6">
+                                        {t("reservation_confirm_success", { number: reservationResult.reservationNumber })}
+                                    </p>
+                                    <button
+                                        onClick={backToChat}
+                                        className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-[12px] transition-colors duration-200 text-[14px] flex items-center justify-center gap-2 mx-auto"
+                                    >
+                                        <ArrowLeft size={16} />
+                                        {t("reservation_back_to_chat")}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {selectedItem.airline !== undefined ? (
+                                        <div className="bg-white/50 dark:bg-slate-900/40 border border-white/20 dark:border-slate-850/40 rounded-[16px] p-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <span className="font-bold text-[#1E232C] dark:text-white text-xl">✈️ {selectedItem.airline}</span>
+                                                <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-xl">{formatPrice(selectedItem.price)} {selectedItem.currency}</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 text-sm text-slate-800 dark:text-slate-200 font-medium">
+                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_departure")}</span> {formatFlightDateTime(selectedItem.departureTime)}</div>
+                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_arrival")}</span> {formatFlightDateTime(selectedItem.arrivalTime)}</div>
+                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.transfers}</div>
+                                                <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.baggage, t)}</div>
+                                            </div>
+                                            {selectedItem.returnDepartureTime && (
+                                                <div className="grid grid-cols-2 gap-4 text-sm text-slate-800 dark:text-slate-200 font-medium pt-4 mt-4 border-t border-dashed border-slate-300 dark:border-slate-800">
+                                                    <div className="col-span-2 font-bold">↩ {selectedItem.returnAirline || selectedItem.airline}</div>
+                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_return_departure")}</span> {formatFlightDateTime(selectedItem.returnDepartureTime)}</div>
+                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_return_arrival")}</span> {formatFlightDateTime(selectedItem.returnArrivalTime)}</div>
+                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_transfers")}</span> {selectedItem.returnTransfers}</div>
+                                                    <div><span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_baggage")}</span> {formatBaggage(selectedItem.returnBaggage, t)}</div>
+                                                </div>
+                                            )}
                                         </div>
-
-                                        <h2 className="text-primary text-lg font-semibold">
-                                            İletişim Bilgileri
-                                        </h2>
-                                    </div>
+                                    ) : (
+                                        <div className="bg-white/50 dark:bg-slate-900/40 border border-white/20 dark:border-slate-850/40 rounded-[16px] p-6">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-[#1E232C] dark:text-white text-xl">🏨 {selectedItem.name || selectedItem.hotelId}</span>
+                                                    <span className="text-sm text-slate-600 dark:text-slate-400 mt-1">{selectedItem.region} • {selectedItem.stars}★</span>
+                                                </div>
+                                                <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-xl">{formatPrice(selectedItem.price)} {selectedItem.currency}</span>
+                                            </div>
+                                            <div className="text-sm text-slate-800 dark:text-slate-200 font-medium pt-4 border-t border-white/30 dark:border-slate-800">
+                                                <span className="text-slate-500 dark:text-slate-400 uppercase text-xs block mb-1">{t("reservation_board_pension")}</span>
+                                                {selectedItem.boardType || selectedItem.pensionType || t("reservation_na")}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-4">
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                Telefon Numarası
-                                            </label>
-
-                                            <div className="relative">
-                                                <Phone
-                                                    size={16}
-                                                    className="absolute left-3 top-3.5 text-gray-400"
-                                                />
-
-                                                <input
-                                                    type="tel"
-                                                    value={phone}
-                                                    onChange={(event) =>
-                                                        setPhone(event.target.value)
-                                                    }
-                                                    className="focus:ring-primary w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:outline-none focus:ring-2"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                E-posta Adresi
-                                            </label>
-
-                                            <div className="relative">
-                                                <Mail
-                                                    size={16}
-                                                    className="absolute left-3 top-3.5 text-gray-400"
-                                                />
-
-                                                <input
-                                                    type="email"
-                                                    value={email}
-                                                    onChange={(event) =>
-                                                        setEmail(event.target.value)
-                                                    }
-                                                    className="focus:ring-primary w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:outline-none focus:ring-2"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                Adres / Not
-                                            </label>
-
-                                            <div className="relative">
-                                                <MapPin
-                                                    size={16}
-                                                    className="absolute left-3 top-3.5 text-gray-400"
-                                                />
-
-                                                <textarea
-                                                    value={address}
-                                                    onChange={(event) =>
-                                                        setAddress(event.target.value)
-                                                    }
-                                                    className="focus:ring-primary w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:outline-none focus:ring-2"
-                                                    rows={3}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Section 4: Confirmation */}
-                                <div className="rounded-xl bg-white p-6 shadow-md">
-                                    <div className="mb-6 flex items-start gap-4">
-                                        <div className="bg-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-white">
-                                            4
-                                        </div>
-
-                                        <h2 className="text-primary text-lg font-semibold">
-                                            Kullanıcı Onay Kutusu
+                                        <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2">
+                                            {t("reservation_passenger_info")}
                                         </h2>
+                                        {passengers.map((p, index) => {
+                                            const isExpanded = expandedGuestId === p.id;
+                                            const guestTitle = p.type === 'ADULT'
+                                                ? `${index + 1}. ${t("unit_adult")}`
+                                                : `${index - adultCount + 1}. ${t("unit_child")}`;
+
+                                            return (
+                                                <div key={p.id} className="bg-white/50 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/40 rounded-[16px] shadow-sm overflow-hidden transition-all duration-200">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setExpandedGuestId(isExpanded ? null : p.id)}
+                                                        className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/10 dark:hover:bg-slate-800/30 transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            {p.type === 'ADULT' ? <User size={18} className="text-[#3B82F6]" /> : <Baby size={18} className="text-amber-500" />}
+                                                            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">{guestTitle}</span>
+
+                                                            {!isExpanded && (p.firstName || p.lastName) && (
+                                                                <span className="text-sm text-slate-600 dark:text-slate-400 ml-2 border-l border-slate-300 dark:border-slate-700 pl-4 font-medium">
+                                                                    {p.firstName} {p.lastName}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-slate-500 dark:text-slate-400">
+                                                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                        </div>
+                                                    </button>
+
+                                                    {isExpanded && (() => {
+                                                        const errors = getPassengerErrors(p);
+                                                        return (
+                                                            <div className="p-5 border-t border-white/20 dark:border-slate-800/40 bg-white/20 dark:bg-slate-900/20 space-y-4">
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t("reservation_first_name")}</label>
+                                                                        <input
+                                                                            required
+                                                                            type="text"
+                                                                            value={p.firstName}
+                                                                            onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.firstName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                        />
+                                                                        {errors.firstName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.firstName}</span>}
+                                                                    </div>
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t("reservation_last_name")}</label>
+                                                                        <input
+                                                                            required
+                                                                            type="text"
+                                                                            value={p.lastName}
+                                                                            onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.lastName ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                        />
+                                                                        {errors.lastName && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.lastName}</span>}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cinsiyet</label>
+                                                                        <select
+                                                                            required
+                                                                            value={p.gender || 'MR'}
+                                                                            onChange={(e) => handlePassengerChange(index, 'gender', e.target.value)}
+                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
+                                                                        >
+                                                                            <option value="MR">Bay (Mr.)</option>
+                                                                            <option value="MRS">Bayan (Mrs.)</option>
+                                                                            <option value="CHD">Çocuk (Child)</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Doğum Tarihi</label>
+                                                                        <input
+                                                                            required
+                                                                            type="date"
+                                                                            max={new Date().toISOString().split('T')[0]}
+                                                                            value={p.birthDate || ''}
+                                                                            onChange={(e) => handlePassengerChange(index, 'birthDate', e.target.value)}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.birthDate ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                        />
+                                                                        {errors.birthDate && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.birthDate}</span>}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Uyruk</label>
+                                                                        <input
+                                                                            required
+                                                                            type="text"
+                                                                            value={p.nationality || 'TR'}
+                                                                            onChange={(e) => handlePassengerChange(index, 'nationality', e.target.value)}
+                                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6] transition-colors"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                                            <ShieldCheck size={12} /> {t("reservation_identity_number")}
+                                                                        </label>
+                                                                        <input
+                                                                            required
+                                                                            type="text"
+                                                                            value={p.identityNumber}
+                                                                            onChange={(e) => handlePassengerChange(index, 'identityNumber', e.target.value)}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.identityNumber ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                        />
+                                                                        {errors.identityNumber && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.identityNumber}</span>}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                                            <Mail size={12} /> {t("reservation_email")}
+                                                                        </label>
+                                                                        <input
+                                                                            required
+                                                                            type="email"
+                                                                            value={p.email || ''}
+                                                                            onChange={(e) => handlePassengerChange(index, 'email', e.target.value)}
+                                                                            className={`w-full bg-white dark:bg-slate-900 border ${errors.email ? 'border-red-500 ring-1 ring-red-500 focus:ring-red-500/50 focus:border-red-500' : 'border-slate-300 dark:border-slate-800 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]'} text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors`}
+                                                                        />
+                                                                        {errors.email && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.email}</span>}
+                                                                    </div>
+                                                                    <div className="col-span-1">
+                                                                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                                            <Phone size={12} /> {t("reservation_phone")}
+                                                                        </label>
+                                                                        <PhoneInput
+                                                                            international
+                                                                            defaultCountry="TR"
+                                                                            value={p.phone || ''}
+                                                                            onChange={(val) => handlePassengerChange(index, 'phone', val)}
+                                                                            className={`flex items-center w-full bg-white dark:bg-slate-900 border ${errors.phone ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500/50 focus-within:border-red-500' : 'border-slate-300 dark:border-slate-800 focus-within:ring-[#3B82F6]/50 focus-within:border-[#3B82F6]'} rounded-lg px-3 py-1.5 text-sm transition-colors`}
+                                                                            numberInputProps={{
+                                                                                required: true,
+                                                                                className: 'bg-transparent border-0 outline-none w-full text-slate-800 dark:text-slate-100 focus:ring-0 ml-2 py-1',
+                                                                            }}
+                                                                        />
+                                                                        {errors.phone && <span className="text-[10px] text-red-500 mt-1 block font-medium">{errors.phone}</span>}
+                                                                    </div>
+                                                                </div>
+
+                                                                {p.type === 'CHILD' && (
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div className="col-span-1">
+                                                                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Yaş</label>
+                                                                            <input
+                                                                                required
+                                                                                type="number"
+                                                                                min="0"
+                                                                                max="17"
+                                                                                value={p.age}
+                                                                                onChange={(e) => handlePassengerChange(index, 'age', e.target.value)}
+                                                                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
-                                    <label className="flex cursor-pointer items-start gap-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={agreed}
-                                            onChange={(event) =>
-                                                setAgreed(event.target.checked)
-                                            }
-                                            className="text-success focus:ring-success mt-0.5 h-5 w-5 rounded border-gray-300 bg-white"
-                                        />
+                                    {submitError && (
+                                        <p className="text-red-600 dark:text-red-400 text-sm font-medium text-right">{submitError}</p>
+                                    )}
 
-                                        <span className="text-gray-700">
-                                            Rezervasyon bilgilerimin doğru olduğunu ve
-                                            şartları kabul ettiğimi onaylıyorum.{' '}
-                                            <a
-                                                href="#"
-                                                className="text-primary font-medium hover:underline"
-                                            >
-                                                Şartları Oku
-                                            </a>
-                                        </span>
-                                    </label>
-                                </div>
-
-                                {/* Section 5: Submit */}
-                                <div className="rounded-xl bg-white p-6 shadow-md">
-                                    <div className="mb-6 flex items-start gap-4">
-                                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 font-bold text-white">
-                                            5
-                                        </div>
-
-                                        <h2 className="text-lg font-semibold text-gray-900">
-                                            Rezervasyon Onayı
-                                        </h2>
-                                    </div>
-
-                                    <div className="mb-6">
-                                        <p className="mb-3 text-sm font-medium text-gray-700">
-                                            Tur Seçimi
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-3">
-                                            <button
-                                                type="button"
-                                                className="rounded-full bg-orange-500 px-4 py-2 font-medium text-white transition hover:bg-orange-600"
-                                            >
-                                                Antalya Şehir Turu
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className="rounded-full bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
-                                            >
-                                                Diğer Turlar
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-6">
-                                        <p className="mb-3 text-sm font-medium text-gray-700">
-                                            Ödeme Tercihi
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-3">
-                                            <button
-                                                type="button"
-                                                className="rounded-full bg-orange-500 px-4 py-2 font-medium text-white transition hover:bg-orange-600"
-                                            >
-                                                Kredi Kartı
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className="rounded-full bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
-                                            >
-                                                Banka Transferi
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className="rounded-full bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
-                                            >
-                                                Taksit
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-between gap-3">
+                                    <div className="mt-8 flex justify-end gap-4">
                                         <button
-                                            type="button"
-                                            className="px-6 py-2 font-medium text-gray-700 transition hover:bg-gray-100"
+                                            onClick={backToChat}
+                                            disabled={isSubmitting}
+                                            className="px-6 py-3 border border-slate-700/20 dark:border-slate-750 hover:bg-slate-700/10 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-[12px] transition-colors duration-200 text-[14px] disabled:opacity-50"
                                         >
-                                            İptal
+                                            {t("reservation_cancel")}
                                         </button>
-
                                         <button
-                                            type="button"
-                                            onClick={handleCreateReservation}
-                                            disabled={!agreed}
-                                            className="rounded-lg bg-orange-500 px-8 py-2 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                            onClick={handleConfirm}
+                                            disabled={!isPassengerFormValid || isSubmitting}
+                                            className="px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] disabled:bg-slate-400 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold rounded-[12px] shadow-md transition-colors duration-200 text-[14px]"
                                         >
-                                            Değişiklikleri Kaydet
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Success State */}
-                        {step === 'success' && (
-                            <div className="mx-auto max-w-2xl">
-                                <div className="border-success rounded-xl border-4 bg-white p-8 shadow-lg">
-                                    <div className="mb-6 flex justify-center">
-                                        <div className="relative">
-                                            <div className="bg-success/20 absolute inset-0 rounded-full blur-xl" />
-
-                                            <CheckCircle2
-                                                size={80}
-                                                className="text-success relative"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <h2 className="text-success mb-3 text-center text-3xl font-bold">
-                                        Rezervasyon Başarılı!
-                                    </h2>
-
-                                    <p className="mb-6 text-center text-gray-600">
-                                        Rezervasyonunuz başarıyla oluşturuldu. Bilgiler
-                                        e-posta adresinize gönderildi.
-                                    </p>
-
-                                    <div className="mb-6 rounded-lg bg-green-50 p-4">
-                                        <p className="text-success text-center text-lg font-semibold">
-                                            Rezervasyon Numaranız
-                                        </p>
-
-                                        <p className="text-success mt-1 text-center text-2xl font-bold">
-                                            RSV-20260709-001
-                                        </p>
-                                    </div>
-
-                                    <div className="mb-6 space-y-3 rounded-lg bg-gray-50 p-4 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Ürün:
-                                            </span>
-                                            <span className="font-medium">
-                                                Antalya Şehir Turu
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Tarih:
-                                            </span>
-                                            <span className="font-medium">
-                                                15 Temmuz 2026
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Misafir Sayısı:
-                                            </span>
-                                            <span className="font-medium">
-                                                {guests.length} Yetişkin
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between border-t pt-3 font-semibold">
-                                            <span>Toplam Tutar:</span>
-                                            <span className="text-success">
-                                                2.400 TL
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setStep('form')}
-                                            className="bg-success hover:bg-success/90 flex w-full items-center justify-center gap-2 rounded-lg py-3 font-semibold text-white transition"
-                                        >
-                                            <ArrowRight size={18} />
-                                            Rezervasyon Detayına Git
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={handleGoHome}
-                                            className="border-success text-success hover:bg-success/5 flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 font-semibold transition"
-                                        >
-                                            <Home size={18} />
-                                            Ana Sayfaya Dön
+                                            {isSubmitting ? t("reservation_submitting") : t("reservation_confirm_proceed")}
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Error State */}
-                        {step === 'error' && (
-                            <div className="mx-auto max-w-2xl">
-                                <div className="border-destructive rounded-xl border-4 bg-white p-8 shadow-lg">
-                                    <div className="mb-6 flex justify-center">
-                                        <div className="relative">
-                                            <div className="bg-destructive/20 absolute inset-0 rounded-full blur-xl" />
-
-                                            <AlertCircle
-                                                size={80}
-                                                className="text-destructive relative"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <h2 className="text-destructive mb-3 text-center text-3xl font-bold">
-                                        Rezervasyon Oluşturulamadı
-                                    </h2>
-
-                                    <p className="mb-6 text-center text-gray-600">
-                                        Bir hata oluştu. Lütfen bilgilerinizi kontrol
-                                        edip tekrar deneyiniz.
-                                    </p>
-
-                                    <div className="border-destructive mb-6 rounded border-l-4 bg-red-50 p-4">
-                                        <h3 className="mb-2 font-semibold text-gray-900">
-                                            Hata Detayı
-                                        </h3>
-
-                                        <p className="text-sm text-gray-700">
-                                            Lütfen tüm zorunlu alanları doldurduğunuzdan
-                                            emin olun.
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <button
-                                            type="button"
-                                            onClick={handleRetry}
-                                            className="bg-destructive hover:bg-destructive/90 w-full rounded-lg py-3 font-semibold text-white transition"
-                                        >
-                                            Tekrar Dene
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={handleGoHome}
-                                            className="border-destructive text-destructive hover:bg-destructive/5 flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 font-semibold transition"
-                                        >
-                                            <Home size={18} />
-                                            Ana Sayfaya Dön
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right Column - Preview */}
-                    {step === 'form' && (
-                        <div className="lg:col-span-1">
-                            <div className="sticky top-24 rounded-xl bg-white p-6 shadow-md">
-                                <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                                    Rezervasyon Önizleme
-                                </h3>
-
-                                <div className="space-y-4 text-sm">
-                                    <div>
-                                        <p className="mb-1 font-medium text-gray-500">
-                                            Ürün
-                                        </p>
-                                        <p className="font-medium text-gray-900">
-                                            Antalya Şehir Turu
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="mb-1 font-medium text-gray-500">
-                                            Tarih
-                                        </p>
-                                        <p className="font-medium text-gray-900">
-                                            15 Temmuz 2026
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="mb-1 font-medium text-gray-500">
-                                            Misafir Sayısı
-                                        </p>
-                                        <p className="font-medium text-gray-900">
-                                            {guests.length} Yetişkin
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="mb-1 font-medium text-gray-500">
-                                            Misafirler
-                                        </p>
-
-                                        <ul className="space-y-1 text-gray-900">
-                                            {guests.map((guest, index) => (
-                                                <li key={index} className="flex gap-1">
-                                                    <span>•</span>
-                                                    <span>
-                                                        {guest.ad || 'İsimsiz'}{' '}
-                                                        {guest.soyad}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    <div>
-                                        <p className="mb-1 font-medium text-gray-500">
-                                            İletişim
-                                        </p>
-
-                                        <p className="break-all font-medium text-gray-900">
-                                            {phone}
-                                        </p>
-
-                                        <p className="break-all font-medium text-gray-900">
-                                            {email}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="mb-1 font-medium text-gray-500">
-                                            Not
-                                        </p>
-
-                                        <p className="text-xs text-gray-900">
-                                            {address}
-                                        </p>
-                                    </div>
-
-                                    <div className="border-t pt-4">
-                                        <div className="flex items-center justify-between">
-                                            <p className="font-medium text-gray-500">
-                                                Toplam Tutar
-                                            </p>
-
-                                            <p className="text-primary text-lg font-bold">
-                                                2.400 TL
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
-

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
@@ -7,6 +7,7 @@ import "react-phone-number-input/style.css";
 import ChatSidebar from "../components/ChatSidebar";
 import { PanelLeftOpen } from "lucide-react";
 import { isPhoneNumberTooLong, getPhoneInputMaxLength } from "../utils/phoneLimits";
+import { useTheme } from "../components/ThemeContext";
 
 // Helper to convert "DD.MM.YYYY" to "YYYY-MM-DD" for the backend API
 const toISODate = (ddmmyyyy) => {
@@ -32,7 +33,17 @@ const toDisplayDate = (isoDate) => {
 
 export default function Profile() {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const navigate = useNavigate();
+
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
+        }
+    }, [theme]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -200,6 +211,9 @@ export default function Profile() {
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
             return t("profile_dob_invalid_date");
         }
+        if (year < 1906) {
+            return t("profile_dob_too_old");
+        }
         if (date > now) {
             return t("profile_dob_future");
         }
@@ -213,6 +227,8 @@ export default function Profile() {
         if (field === "firstName" || field === "lastName") {
             if (!trimmedVal) {
                 err = t("required_error");
+            } else if (trimmedVal.length > 25) {
+                err = t("name_max_error");
             } else {
                 const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
                 if (!nameRegex.test(trimmedVal)) {
@@ -333,49 +349,61 @@ export default function Profile() {
     };
 
     // Gerçek silme işlemini yapan fonksiyon
-    const handleConfirmDelete = () => {
-        console.log("Deleting account permanently...");
-        localStorage.clear();
-        setShowDeleteModal(false);
-        navigate("/login");
+    const handleConfirmDelete = async () => {
+        try {
+            console.log("Deleting account permanently...");
+            await api.delete('/api/profile');
+            localStorage.clear();
+            setShowDeleteModal(false);
+            navigate("/login");
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+        }
     };
 
     const inputMaxLength = getPhoneInputMaxLength(formData.phone);
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
-            {/* Collapsible Chat Sidebar */}
+        <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+            {/* Katman 1 (z-0): Background Video */}
+            <video
+                ref={videoRef}
+                src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            />
+
+            {/* Katman 2 (z-10): Overlay Mask (No Blur) */}
+            <div className="fixed inset-0 z-10 pointer-events-none bg-white/20 dark:bg-slate-950/60" />
+
+            {/* Katman 3 (z-30): Sidebar */}
             <ChatSidebar
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+            {/* Katman 3 (z-20): Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
                 {/* Toggle open button when sidebar is collapsed */}
                 {!isSidebarOpen && (
                     <button
                         onClick={() => setIsSidebarOpen(true)}
-                        className="absolute top-[16px] left-[16px] z-30 p-[8px] bg-white border border-slate-200 rounded-[12px] shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer"
-                        title="Expand Sidebar"
+                        className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
+                        title="Open Sidebar"
                     >
                         <PanelLeftOpen size={18} />
                     </button>
                 )}
 
-                {/* Background Video */}
-                <video autoPlay loop muted playsInline className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none">
-                    <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-
-                <div className="absolute top-0 left-0 w-full h-full bg-black/20 z-10 pointer-events-none" />
-
                 {/* Scrollable Container holding the Glass Card */}
                 <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
                         {/* Main Profile Info Card */}
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-xl rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-white/20">
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-slate-200 dark:border-slate-800">
                             {/* Header Section */}
                             <div className="flex items-center justify-between mb-[32px]">
                                 <div className="flex items-center gap-[16px]">
@@ -384,12 +412,12 @@ export default function Profile() {
                                         {avatarLetter}
                                     </div>
                                     <div className="flex flex-col">
-                                        <h1 className="text-[24px] font-bold text-slate-900 leading-tight">
+                                        <h1 className="text-[24px] font-bold text-slate-900 dark:text-white leading-tight">
                                             {fullName}
                                         </h1>
                                         <div className="flex flex-col mt-[2px]">
-                                            <p className="text-slate-500 text-[14px] font-medium leading-none">@{displayHandle}</p>
-                                            <p className="text-slate-600 text-[11px] font-medium mt-[6px] leading-none">
+                                            <p className="text-slate-500 dark:text-slate-400 text-[14px] font-medium leading-none">@{displayHandle}</p>
+                                            <p className="text-slate-600 dark:text-slate-300 text-[11px] font-medium mt-[6px] leading-none">
                                                 {t("profile_member_since")}: May 2024
                                             </p>
                                         </div>
@@ -400,7 +428,7 @@ export default function Profile() {
                                 {!isEditing ? (
                                     <button
                                         onClick={handleEditStart}
-                                        className="px-[20px] py-[8px] border border-slate-700 hover:bg-slate-700/10 text-slate-700 font-semibold rounded-[12px] transition-all duration-200 text-[14px] focus:outline-none cursor-pointer"
+                                        className="px-[20px] py-[8px] border border-slate-700 dark:border-slate-400 hover:bg-slate-700/10 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-[12px] transition-all duration-200 text-[14px] focus:outline-none cursor-pointer"
                                     >
                                         {t("profile_edit")}
                                     </button>
@@ -408,7 +436,7 @@ export default function Profile() {
                                     <div className="flex gap-[8px]">
                                         <button
                                             onClick={handleCancel}
-                                            className="px-[16px] py-[8px] border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-[12px] transition-all duration-200 text-[14px] focus:outline-none cursor-pointer"
+                                            className="px-[16px] py-[8px] border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-[12px] transition-all duration-200 text-[14px] focus:outline-none cursor-pointer"
                                         >
                                             {t("profile_cancel")}
                                         </button>
@@ -437,7 +465,8 @@ export default function Profile() {
                                                 value={formData.firstName}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("firstName")}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                                maxLength={25}
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.firstName && (
                                                 <p className="text-[14px] text-red-400 pl-[16px] mt-[4px]">
@@ -446,7 +475,7 @@ export default function Profile() {
                                             )}
                                         </div>
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.firstName || "—"}
                                         </span>
                                     )}
@@ -454,7 +483,7 @@ export default function Profile() {
 
                                 {/* Last Name */}
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-[4px]">
+                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-[4px]">
                                         {t("last_name_label")}
                                     </span>
                                     {isEditing ? (
@@ -465,7 +494,8 @@ export default function Profile() {
                                                 value={formData.lastName}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("lastName")}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                                maxLength={25}
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.lastName && (
                                                 <p className="text-[14px] text-red-400 pl-[16px] mt-[4px]">
@@ -474,7 +504,7 @@ export default function Profile() {
                                             )}
                                         </div>
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.lastName || "—"}
                                         </span>
                                     )}
@@ -482,7 +512,7 @@ export default function Profile() {
 
                                 {/* Email */}
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-[4px]">
+                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-[4px]">
                                         {t("email_label")}
                                     </span>
                                     {isEditing ? (
@@ -493,7 +523,7 @@ export default function Profile() {
                                                 value={formData.email}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("email")}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.email && (
                                                 <p className="text-[14px] text-red-400 pl-[16px] mt-[4px]">
@@ -502,7 +532,7 @@ export default function Profile() {
                                             )}
                                         </div>
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.email || "—"}
                                         </span>
                                     )}
@@ -510,7 +540,7 @@ export default function Profile() {
 
                                 {/* Phone Number */}
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-[4px]">
+                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-[4px]">
                                         {t("phone_label")}
                                     </span>
                                     {isEditing ? (
@@ -523,10 +553,10 @@ export default function Profile() {
                                                 onChange={handlePhoneChange}
                                                 onBlur={() => handleBlur("phone")}
                                                 smartCaret={false}
-                                                className="flex items-center w-full bg-white/50 border border-white/20 rounded-[12px] px-[16px] py-[12px] text-slate-900 text-[15px] focus-within:ring-2 focus-within:ring-[#219ebc]/40 focus-within:bg-white/70 transition-all duration-200"
+                                                className="flex items-center w-full bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 rounded-[12px] px-[16px] py-[12px] text-slate-900 dark:text-white text-[15px] focus-within:ring-2 focus-within:ring-[#219ebc]/40 focus-within:bg-white/70 dark:focus-within:bg-slate-800 transition-all duration-200"
                                                 numberInputProps={{
                                                     className:
-                                                        "bg-transparent border-0 outline-none w-full text-[15px] text-slate-900 placeholder-slate-400 focus:ring-0 focus:outline-none ml-[12px]",
+                                                        "bg-transparent border-0 outline-none w-full text-[15px] text-slate-900 dark:text-white placeholder-slate-400 focus:ring-0 focus:outline-none ml-[12px]",
                                                     placeholder: t("phone_placeholder"),
                                                     maxLength: inputMaxLength,
                                                 }}
@@ -538,7 +568,7 @@ export default function Profile() {
                                             )}
                                         </div>
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.phone || "—"}
                                         </span>
                                     )}
@@ -546,7 +576,7 @@ export default function Profile() {
 
                                 {/* Country */}
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-[4px]">
+                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-[4px]">
                                         {t("profile_country_label")}
                                     </span>
                                     {isEditing ? (
@@ -556,10 +586,10 @@ export default function Profile() {
                                             value={formData.country}
                                             onChange={handleInputChange}
                                             onBlur={() => handleBlur("country")}
-                                            className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                            className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                         />
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.country || "—"}
                                         </span>
                                     )}
@@ -567,7 +597,7 @@ export default function Profile() {
 
                                 {/* Gender */}
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-[4px]">
+                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-[4px]">
                                         {t("profile_gender")}
                                     </span>
                                     {isEditing ? (
@@ -576,7 +606,7 @@ export default function Profile() {
                                             value={formData.gender}
                                             onChange={handleInputChange}
                                             onBlur={() => handleBlur("gender")}
-                                            className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200 cursor-pointer"
+                                            className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200 cursor-pointer"
                                         >
                                             <option value="" disabled className="text-slate-400 bg-slate-800 text-white">
                                                 {t("profile_gender")}
@@ -595,7 +625,7 @@ export default function Profile() {
                                             </option>
                                         </select>
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.gender ? t(`profile_gender_${formData.gender.toLowerCase()}`) : "—"}
                                         </span>
                                     )}
@@ -603,7 +633,7 @@ export default function Profile() {
 
                                 {/* Date of Birth */}
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-[4px]">
+                                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-[4px]">
                                         {t("profile_dob")}
                                     </span>
                                     {isEditing ? (
@@ -615,7 +645,7 @@ export default function Profile() {
                                                 value={formData.dateOfBirth}
                                                 onChange={handleInputChange}
                                                 onBlur={() => handleBlur("dateOfBirth")}
-                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 border border-white/20 text-slate-900 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 transition-all duration-200"
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200"
                                             />
                                             {errors.dateOfBirth && (
                                                 <p className="text-[14px] text-red-400 pl-[16px] mt-[4px]">
@@ -624,7 +654,7 @@ export default function Profile() {
                                             )}
                                         </div>
                                     ) : (
-                                        <span className="text-[15px] font-medium text-slate-900">
+                                        <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.dateOfBirth || "—"}
                                         </span>
                                     )}
@@ -633,8 +663,8 @@ export default function Profile() {
                         </div>
 
                         {/* Account Actions Card */}
-                        <div className="bg-gradient-to-b from-white/[0.22] to-white/[0.10] backdrop-blur-xl rounded-[20px] shadow-xl p-[24px] md:p-[32px] border border-white/20 mt-[24px]">
-                            <h2 className="text-[18px] font-bold text-slate-900 mb-[16px] flex items-center gap-[8px]">
+                        <div className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[24px] md:p-[32px] border border-slate-200 dark:border-slate-800 mt-[24px]">
+                            <h2 className="text-[18px] font-bold text-slate-900 dark:text-slate-100 mb-[16px] flex items-center gap-[8px]">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0B5FFF]">
                                     <circle cx="12" cy="12" r="3" />
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -643,13 +673,13 @@ export default function Profile() {
                             </h2>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[16px] py-[8px]">
                                 <div>
-                                    <p className="text-[14px] font-semibold text-slate-800">{t("profile_account_management")}</p>
-                                    <p className="text-[12px] text-slate-500">Manage your session status or permanently delete your account.</p>
+                                    <p className="text-[14px] font-semibold text-slate-800 dark:text-slate-200">{t("profile_account_management")}</p>
+                                    <p className="text-[12px] text-slate-500 dark:text-slate-400">Manage your session status or permanently delete your account.</p>
                                 </div>
                                 <div className="flex items-center gap-[12px] shrink-0">
                                     <button
-                                        onClick={() => setShowLogoutModal(true)} // Modal'ı açar
-                                        className="px-[16px] py-[8px] border border-slate-700 hover:bg-slate-700/10 text-slate-700 font-semibold rounded-[12px] transition-colors duration-200 text-[12px] focus:outline-none cursor-pointer"
+                                        onClick={() => setShowLogoutModal(true)}
+                                        className="px-[16px] py-[8px] border border-slate-700 dark:border-slate-600 hover:bg-slate-700/10 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-[12px] transition-colors duration-200 text-[12px] focus:outline-none cursor-pointer"
                                     >
                                         {t("profile_logout")}
                                     </button>
@@ -666,23 +696,23 @@ export default function Profile() {
                 </div>
             </div>
 
-            {/* --- GLASSMORPHIC LOG OUT CONFIRMATION MODAL PENCERESI --- */}
+            {/* --- LOG OUT CONFIRMATION MODAL PENCERESI --- */}
             {showLogoutModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] backdrop-blur-md bg-black/10 animate-fade-in">
-                    <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.25] to-white/[0.08] backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] bg-black/40 animate-fade-in">
+                    <div className="w-full max-w-[440px] bg-white dark:bg-slate-900 rounded-[24px] p-[32px] border border-slate-200 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
 
-                        <h3 className="text-[22px] font-bold text-slate-900 tracking-tight mb-[12px]">
+                        <h3 className="text-[22px] font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-[12px]">
                             {t("profile_logout_title", "Log Out?")}
                         </h3>
 
-                        <p className="text-[14px] font-medium text-slate-600/90 leading-relaxed max-w-[320px] mb-[32px]">
+                        <p className="text-[14px] font-medium text-slate-600 dark:text-slate-300 leading-relaxed max-w-[320px] mb-[32px]">
                             {t("profile_logout_confirm", "Are you sure you want to log out of your current session?")}
                         </p>
 
                         <div className="flex items-center justify-center gap-[40px] w-full">
                             <button
                                 onClick={() => setShowLogoutModal(false)}
-                                className="text-[15px] font-bold text-slate-700 hover:text-slate-900 transition-colors duration-150 focus:outline-none cursor-pointer"
+                                className="text-[15px] font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors duration-150 focus:outline-none cursor-pointer"
                             >
                                 {t("profile_cancel", "Cancel")}
                             </button>
@@ -696,23 +726,23 @@ export default function Profile() {
                 </div>
             )}
 
-            {/* --- GLASSMORPHIC DELETE ACCOUNT CONFIRMATION MODAL PENCERESI --- */}
+            {/* --- DELETE ACCOUNT CONFIRMATION MODAL PENCERESI --- */}
             {showDeleteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] backdrop-blur-md bg-black/10 animate-fade-in">
-                    <div className="w-full max-w-[440px] bg-gradient-to-b from-white/[0.25] to-white/[0.08] backdrop-blur-2xl rounded-[24px] p-[32px] border border-white/20 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-[16px] bg-black/40 animate-fade-in">
+                    <div className="w-full max-w-[440px] bg-white dark:bg-slate-900 rounded-[24px] p-[32px] border border-slate-200 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.3)] flex flex-col items-center text-center">
 
-                        <h3 className="text-[22px] font-bold text-slate-900 tracking-tight mb-[12px]">
+                        <h3 className="text-[22px] font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-[12px]">
                             {t("profile_delete_title", "Remove Account?")}
                         </h3>
 
-                        <p className="text-[14px] font-medium text-slate-600/90 leading-relaxed max-w-[320px] mb-[32px]">
+                        <p className="text-[14px] font-medium text-slate-600 dark:text-slate-300 leading-relaxed max-w-[320px] mb-[32px]">
                             {t("profile_delete_confirm", "Are you sure you want to delete your account? This action cannot be undone.")}
                         </p>
 
                         <div className="flex items-center justify-center gap-[40px] w-full">
                             <button
                                 onClick={() => setShowDeleteModal(false)}
-                                className="text-[15px] font-bold text-slate-700 hover:text-slate-900 transition-colors duration-150 focus:outline-none cursor-pointer"
+                                className="text-[15px] font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors duration-150 focus:outline-none cursor-pointer"
                             >
                                 {t("profile_cancel", "Cancel")}
                             </button>

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   PanelLeftOpen,
+  PanelRightOpen,
+  PanelRightClose,
   Send,
-  Paperclip,
   Mic,
   ArrowUp,
   Star,
@@ -17,14 +18,106 @@ import {
   Sparkles
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "../components/ThemeContext";
 import ChatSidebar from "../components/ChatSidebar";
+import HotelDetailPanel from "../components/HotelDetailPanel";
+import ReservationFormPanel from "../components/ReservationFormPanel";
+import RightSidebar from "../components/RightSidebar";
 
 function cn(...inputs) {
   return inputs.filter(Boolean).join(" ");
 }
 
+function formatPrice(price) {
+  const num = Number(price);
+  if (Number.isNaN(num)) return price;
+  return Math.round(num).toLocaleString("tr-TR");
+}
+
+// TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
+// ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
+// gösterilir.
+function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount) {
+  if (adultCount) {
+    const parts = [`${adultCount} ${t("unit_adult")}`];
+    if (childCount) {
+      parts.push(`${childCount} ${t("unit_child")}`);
+    }
+    if (infantCount) {
+      parts.push(`${infantCount} ${t("unit_infant")}`);
+    }
+    return parts.join(", ");
+  }
+  if (passengerCount) {
+    return `${passengerCount} ${t("unit_person")}`;
+  }
+  return null;
+}
+
+function formatFlightDateTime(value) {
+  if (!value) return value;
+  // Sadece tarih ("2026-08-01") ile tarih+saat ("2026-08-01T09:05:00") ayrımı yap
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    ...(isDateOnly ? {} : { hour: "2-digit", minute: "2-digit" })
+  });
+}
+
+// TourVisio GetProductInfo yanıtını HotelDetailPanel'in beklediği düz alanlara çevirir
+// (fotoğraf galerisi, açıklama metni, olanaklar/temalar isim listeleri).
+function mapProductInfoToHotelDetail(productInfo) {
+  const hotel = productInfo?.body?.hotel;
+  if (!hotel) return {};
+
+  const photoUrls = new Set();
+  if (hotel.mediaFiles) {
+    hotel.mediaFiles.forEach(m => photoUrls.add(m.urlFull || m.url));
+  }
+  (hotel.seasons || []).forEach(season => {
+    (season.mediaFiles || []).forEach(m => photoUrls.add(m.urlFull || m.url));
+  });
+
+  let description = "";
+  const firstSeason = (hotel.seasons || [])[0];
+  if (firstSeason?.textCategories) {
+    const texts = firstSeason.textCategories
+      .flatMap(cat => cat.presentations || [])
+      .map(p => p.text)
+      .filter(Boolean);
+    description = texts.join("\n\n");
+  }
+
+  const facilities = new Set();
+  if (firstSeason?.facilityCategories) {
+    firstSeason.facilityCategories.forEach(cat => {
+      (cat.facilities || []).forEach(f => { if (f.name) facilities.add(f.name); });
+    });
+  }
+
+  return {
+    address: hotel.address || null,
+    photos: [...photoUrls].filter(Boolean),
+    description: description || null,
+    facilities: [...facilities],
+    themes: (hotel.themes || []).map(t => t.name).filter(Boolean),
+  };
+}
+
+function formatBaggage(baggage, t) {
+  if (!baggage || baggage === "0kg" || baggage === "0 kg") {
+    return t ? t("baggage_not_included") : "Baggage not included";
+  }
+  return baggage;
+}
+
 export default function Index() {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatActive, setIsChatActive] = useState(false);
@@ -32,32 +125,48 @@ export default function Index() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
 
+  // --- Seçilen Otel / Uçuş Objesi ---
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [hotelDetailLoading, setHotelDetailLoading] = useState(false);
+
   // --- Arama Tipi ("hotel" | "flight") ---
   const [searchType, setSearchType] = useState("hotel");
+
+  // --- Slide-in Panel State ---
+  const [activePanel, setActivePanel] = useState(null); // 'hotelDetail' | 'reservation' | null
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+
+  // --- Reservation Form Preserved State ---
+  const [reservationGuests, setReservationGuests] = useState(null);
+  const [reservationTermsAccepted, setReservationTermsAccepted] = useState(false);
 
   // --- Rezervasyon Önizleme State'leri ---
   const [bookingDetails, setBookingDetails] = useState({
     city: "",           // Otel için: Nerede (Konum)
-    checkIn: "",        // Otel için Giriş / Uçak için Uçuş Tarihi
+    checkIn: "",        // Otel için Giriş / Uçak için Gidiş Tarihi
     checkOut: "",       // Sadece Otel için Çıkış Tarihi
     guests: "",
+    adultCount: 1,
+    childCount: 0,
+    childAges: [],
+    passengerCount: 1,
     hotelName: "",
     price: "",
     departureCity: "",  // Uçak için: Kalkış Noktası
     arrivalCity: "",    // Uçak için: Varış Noktası
-    airline: ""         // Uçak için: Havayolu
+    airline: "",        // Uçak için: Havayolu
+    returnDate: ""       // Uçak için: Dönüş Tarihi (sadece gidiş-dönüşte dolu)
   });
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const sessionId = searchParams.get('sessionId') || '';
   const [isListening, setIsListening] = useState(false);
 
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
-
-  const welcomeFileInputRef = useRef(null);
-  const chatFileInputRef = useRef(null);
 
   const email = localStorage.getItem('userId') || "";
   let storedUserForGreeting = null;
@@ -71,133 +180,15 @@ export default function Index() {
     : null;
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
-  // --- Metinden Akıllı Parametre Çıkarıcı (Regex & Kelime Analizi) ---
-  const extractBookingDetails = (chatHistory) => {
-    let extracted = {
-      city: "",
-      departureCity: "",
-      arrivalCity: "",
-      checkIn: "",
-      checkOut: "",
-      guests: "",
-      hotelName: "",
-      airline: "",
-      price: ""
-    };
-
-    let detectedType = null;
-
-    chatHistory.forEach(msg => {
-      const text = msg.text.toLowerCase();
-
-      // 1. Arama Tipini Belirle
-      if (text.includes("uçak") || text.includes("bilet") || text.includes("flight") || text.includes("uçuş")) {
-        detectedType = "flight";
-      } else if (text.includes("otel") || text.includes("konaklama") || text.includes("hotel") || text.includes("pansiyon")) {
-        detectedType = "hotel";
-      }
-
-      // 2. Şehirleri Yakala (Örnek Havuz)
-      const cities = ["antalya", "muğla", "istanbul", "izmir", "bodrum", "fethiye", "ankara", "london", "paris", "berlin", "roma"];
-      let foundCities = [];
-      cities.forEach(c => {
-        if (text.includes(c)) {
-          foundCities.push(c.charAt(0).toUpperCase() + c.slice(1));
-        }
-      });
-
-      // Uçak modunda kalkış/varış ayrımı (Örn: "İstanbul'dan Antalya'ya")
-      if (text.includes("dan ") || text.includes("den ") || text.includes("ten ") || text.includes("tan ")) {
-        foundCities.forEach(city => {
-          const lowerCity = city.toLowerCase();
-          if (text.includes(lowerCity + "dan") || text.includes(lowerCity + " den") || text.includes(lowerCity + " tan") || text.includes(lowerCity + " ten")) {
-            extracted.departureCity = city;
-          } else {
-            extracted.arrivalCity = city;
-          }
-        });
-      } else {
-        // Doğrudan iki şehir yazıldıysa ilkini kalkış, ikincisini varış yapalım
-        if (foundCities.length >= 2) {
-          extracted.departureCity = foundCities[0];
-          extracted.arrivalCity = foundCities[1];
-        } else if (foundCities.length === 1) {
-          extracted.city = foundCities[0]; // Otel için tek konum
-          extracted.arrivalCity = foundCities[0]; // Uçak için tek varış noktası varsayalım
-        }
-      }
-
-      // 3. Kişi Sayısı
-      const guestMatch = text.match(/(\d+)\s*(kişi|yetişkin|guest|adult)/);
-      if (guestMatch) {
-        extracted.guests = `${guestMatch[1]} Kişi`;
-      }
-
-      // 4. Tarih Aralığı
-      const dateRegex = /(\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december|\d{1,2})[\s-]*\d{1,2}\s*(?:ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december|\d{2,4})?)/;
-      const dateMatch = text.match(dateRegex);
-      if (dateMatch) {
-        const parts = dateMatch[0].split("-");
-        if (parts.length > 1) {
-          extracted.checkIn = parts[0].trim();
-          extracted.checkOut = parts[1].trim();
-        } else {
-          extracted.checkIn = dateMatch[0];
-          extracted.checkOut = "";
-        }
-      }
-
-      // 5. Kart/Sonuç Kartından Gelen Veriyi Yakalama (Otel veya Havayolu)
-      if (msg.results && msg.results.length > 0) {
-        const firstResult = msg.results[0];
-        const isFlightResult = firstResult.airline !== undefined;
-
-        if (isFlightResult) {
-          detectedType = "flight";
-          extracted.airline = firstResult.airline;
-          extracted.price = `${firstResult.price} ${firstResult.currency || 'TRY'}`;
-        } else {
-          detectedType = "hotel";
-          extracted.hotelName = firstResult.name || firstResult.hotelId;
-          extracted.price = `${firstResult.price} ${firstResult.currency || 'TRY'}`;
-          if (firstResult.region) extracted.city = firstResult.region;
-        }
-      }
-    });
-
-    if (detectedType) {
-      setSearchType(detectedType);
-    }
-
-    setBookingDetails(prev => ({
-      ...prev,
-      city: extracted.city || prev.city,
-      departureCity: extracted.departureCity || prev.departureCity,
-      arrivalCity: extracted.arrivalCity || prev.arrivalCity,
-      guests: extracted.guests || prev.guests,
-      checkIn: extracted.checkIn || prev.checkIn,
-      checkOut: extracted.checkOut || prev.checkOut,
-      hotelName: extracted.hotelName || prev.hotelName,
-      airline: extracted.airline || prev.airline,
-      price: extracted.price || prev.price,
-    }));
-  };
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      extractBookingDetails(messages);
-    }
-  }, [messages]);
-
+  // --- HTML5 Video Autoplay Engeli Çözümü & Tema Değişimi ---
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(error => {
-        console.log("Video autoplay engeline takıldı:", error);
-      });
+      videoRef.current.load();
+      videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
     }
-  }, []);
+  }, [theme]);
 
+  // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
   useEffect(() => {
     if (sessionId) {
       const loadHistory = async () => {
@@ -205,14 +196,62 @@ export default function Index() {
           setIsThinking(true);
           setThinkingStep("Loading history...");
           const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+
           const history = response.data.map((msg, idx) => ({
             id: idx,
             text: msg.text,
             sender: msg.sender,
-            results: msg.results || null
+            results: msg.results || null,
+            chatStatus: msg.chatStatus || null,
+            selectedItem: msg.selectedItem || null,
+            bookingMeta: msg.bookingMeta || null
           }));
+
           setMessages(history);
           setIsChatActive(history.length > 0);
+
+          // Arama tipini, en güncel sonuç içeren mesajdaki verinin şekline göre belirle
+          // (bookingMeta hiç yazılmamış eski sohbetlerde bile doğru çalışır)
+          const lastResultMessage = [...response.data].reverse().find(msg => msg.results && msg.results.length > 0);
+          if (lastResultMessage) {
+            const isFlight = lastResultMessage.results[0].airline !== undefined;
+            setSearchType(isFlight ? "flight" : "hotel");
+          }
+
+          // Geçmiş mesajlar içinde en güncel bookingMeta'yı bulup sağ tarafa doldur
+          const lastMetaMessage = [...response.data].reverse().find(msg => msg.bookingMeta);
+          if (lastMetaMessage && lastMetaMessage.bookingMeta) {
+            setBookingDetails(prev => ({ ...prev, ...lastMetaMessage.bookingMeta }));
+            if (!lastResultMessage && lastMetaMessage.bookingMeta.type) {
+              setSearchType(lastMetaMessage.bookingMeta.type);
+            }
+          }
+
+            // Bu oturum için backend'de toplanmış kriterleri (kalkış/varış/yolcu/tarih)
+            // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
+            // kriter kaydından (search_criteria_json) geliyor.
+            try {
+              const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
+              const c = criteriaResponse.data;
+              if (c) {
+                setBookingDetails(prev => ({
+                  ...prev,
+                  city: c.locationOrHotelName || prev.city,
+                  checkIn: c.checkInDate || c.departureDate || prev.checkIn,
+                  checkOut: c.checkOutDate || prev.checkOut,
+                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || prev.guests,
+                  adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
+                  childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
+                  childAges: c.childAges || prev.childAges,
+                  passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
+                  departureCity: c.departureLocation || prev.departureCity,
+                  arrivalCity: c.arrivalLocation || prev.arrivalCity,
+                  returnDate: c.returnDate || prev.returnDate
+                }));
+              }
+            } catch (criteriaErr) {
+            console.error("Failed to load session criteria", sessionId, criteriaErr);
+          }
         } catch (err) {
           console.error("Failed to load message history for session", sessionId, err);
         } finally {
@@ -224,7 +263,9 @@ export default function Index() {
       setMessages([]);
       setIsChatActive(false);
       setSearchType("hotel");
-      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "" });
+      setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
+      setSelectedHotel(null);
+      setSelectedFlight(null);
     }
   }, [sessionId]);
 
@@ -249,6 +290,7 @@ export default function Index() {
     return "greeting_night";
   };
 
+  // --- Yeni Mesaj Gönderme ve bookingMeta Güncelleme ---
   const handleSend = async () => {
     if (!searchQuery.trim()) return;
 
@@ -289,14 +331,109 @@ export default function Index() {
         id: Date.now() + 1,
         text: data.reply,
         sender: "bot",
-        results: data.results
+        results: data.results,
+        chatStatus: data.chatStatus,
+        selectedItem: data.selectedItem,
+        bookingMeta: data.bookingMeta || null
       };
 
       setMessages(prev => [...prev, botMsg]);
 
-      if (data.bookingMeta) {
-        setBookingDetails(prev => ({ ...prev, ...data.bookingMeta }));
-        if (data.bookingMeta.type) setSearchType(data.bookingMeta.type);
+      // 1. Arama Tipini Gelen "searchType" Değerine Göre Güncelle
+      if (data.searchType) {
+        if (data.searchType.includes("HOTEL")) {
+          setSearchType("hotel");
+        } else if (data.searchType.includes("FLIGHT")) {
+          setSearchType("flight");
+        }
+      }
+
+      // 2. Kullanıcının Kendi Yazdığı Mesajdan (Sorgudan) Tarih ve Konuk Bilgilerini Ayıkla (Yedek Plan)
+      let extractedFromQuery = {};
+      const lowerQuery = query.toLowerCase();
+
+      // Konuk Sayısı Ayıklama
+      const guestMatch = lowerQuery.match(/(\d+)\s*(kişi|kisi|yetişkin|yetiskin|guest|adult)/i);
+      if (guestMatch) {
+        extractedFromQuery.guests = `${guestMatch[1]} ${t("unit_person")}`;
+      }
+
+      // Sayısal Tarih Formatı Ayıklama (Örn: 17.07.2026-19.07.2026 veya 17.07-19.07)
+      const numericRangeRegex = /(\d{1,2})[\./-](\d{1,2})(?:[\./-](\d{2,4}))?\s*[-–—]\s*(\d{1,2})[\./-](\d{1,2})(?:[\./-](\d{2,4}))/;
+      const rangeMatch = lowerQuery.match(numericRangeRegex);
+      if (rangeMatch) {
+        const currentYear = new Date().getFullYear();
+        extractedFromQuery.checkIn = `${rangeMatch[1].padStart(2, '0')}.${rangeMatch[2].padStart(2, '0')}.${rangeMatch[3] || currentYear}`;
+        extractedFromQuery.checkOut = `${rangeMatch[4].padStart(2, '0')}.${rangeMatch[5].padStart(2, '0')}.${rangeMatch[6] || rangeMatch[3] || currentYear}`;
+      } else {
+        // Metinsel Tarih Ayıklama (Örn: 17 temmuz - 19 temmuz)
+        const ayIsimleri = "ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december";
+        const singleDateRegex = new RegExp(`(\\d{1,2})\\s*(${ayIsimleri})`, "gi");
+        let matches = [];
+        let m;
+        while ((m = singleDateRegex.exec(lowerQuery)) !== null) {
+          matches.push(`${m[1]} ${m[2].charAt(0).toUpperCase() + m[2].slice(1)}`);
+        }
+        if (matches.length >= 2) {
+          extractedFromQuery.checkIn = matches[0];
+          extractedFromQuery.checkOut = matches[1];
+        } else if (matches.length === 1) {
+          extractedFromQuery.checkIn = matches[0];
+        }
+      }
+
+      // 3. Backend'in çözdüğü arama kriterlerinden (varsa) sağ paneli doldur.
+      // Metinden regex ile tahmin etmek kırılgan; backend zaten SearchCriteria'yı
+      // çözüyor, onu doğrudan kullanmak çok daha güvenilir (kalkış/varış/yolcu
+      // sayısı gibi alanlar artık kullanıcı bunları söyler söylemez dolar).
+      if (data.criteria) {
+        const c = data.criteria;
+        setBookingDetails(prev => ({
+          ...prev,
+          city: c.locationOrHotelName || prev.city,
+          checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || prev.checkIn,
+          checkOut: c.checkOutDate || extractedFromQuery.checkOut || prev.checkOut,
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || prev.guests,
+          adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
+          childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
+          childAges: c.childAges || prev.childAges,
+          passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
+          departureCity: c.departureLocation || prev.departureCity,
+          arrivalCity: c.arrivalLocation || prev.arrivalCity,
+          returnDate: c.returnDate || prev.returnDate
+        }));
+      } else {
+        // Backend kriteri dönmediyse (ör. kapsam dışı mesaj) en azından kullanıcının
+        // sorgusundaki verileri güncelle
+        setBookingDetails(prev => ({
+          ...prev,
+          checkIn: extractedFromQuery.checkIn || prev.checkIn,
+          checkOut: extractedFromQuery.checkOut || prev.checkOut,
+          guests: extractedFromQuery.guests || prev.guests
+        }));
+      }
+
+      // 4. Sonuç listesindeki ilk (en iyi) öğeden otel adı / uçuş fiyatı için bir
+      // varsayılan doldur — kullanıcı bir kart seçtiğinde bu değerler o kartla değişir.
+      if (data.results && data.results.length > 0) {
+        const firstItem = data.results[0];
+        const isFlight = firstItem.airline !== undefined;
+
+        setBookingDetails(prev => {
+          if (isFlight) {
+            return {
+              ...prev,
+              airline: firstItem.airline || prev.airline,
+              price: `${formatPrice(firstItem.price)} ${firstItem.currency || 'TRY'}`
+            };
+          } else {
+            return {
+              ...prev,
+              hotelName: firstItem.name || firstItem.hotelId || prev.hotelName,
+              price: `${formatPrice(firstItem.price)} ${firstItem.currency || 'TRY'}`
+            };
+          }
+        });
       }
 
       if (data.sessionId && data.sessionId !== sessionId) {
@@ -315,7 +452,6 @@ export default function Index() {
       setIsThinking(false);
     }
   };
-
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -328,12 +464,6 @@ export default function Index() {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    console.log("Seçilen dosya başarıyla yakalandı:", file.name);
   };
 
   const recognitionRef = useRef(null);
@@ -410,8 +540,23 @@ export default function Index() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg font-sans relative">
-      {/* Sol Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-transparent font-sans relative">
+      {/* Katman 1 (z-0): Background Video */}
+      <video
+        ref={videoRef}
+        src={theme === 'dark' ? "/videos/darkmode_bg.mp4" : "/videos/chatbot_bg.mp4"}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-80 dark:opacity-40"
+      />
+
+      {/* Katman 2 (z-10): Overlay Mask */}
+      <div className="fixed inset-0 z-10 pointer-events-none bg-white/10 dark:bg-black/30" />
+
+      {/* Katman 3 (z-30): Sol Sidebar */}
       <ChatSidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -420,36 +565,36 @@ export default function Index() {
           setMessages([]);
           setSearchQuery("");
           setSearchType("hotel");
-          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", hotelName: "", airline: "", price: "" });
+          setActivePanel(null);
+          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
+          setSelectedHotel(null);
+          setSelectedFlight(null);
         }}
       />
 
-      {/* Ana İçerik Alanı */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent">
+      {/* Katman 3 (z-20): Ana İçerik Alanı */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
+            className="absolute top-4 left-4 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
             title="Expand Sidebar"
           >
             <PanelLeftOpen size={18} />
           </button>
         )}
 
-        {/* Arka Plan Videosu */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className={`fixed top-0 left-0 w-full h-full object-cover z-0 pointer-events-none transition-all duration-500 ${isChatActive ? "opacity-40 blur-md scale-105" : "opacity-100"}`}
-        >
-          <source src="/videos/chatbot_bg.mp4" type="video/mp4" />
-        </video>
+        {!isRightSidebarOpen && isChatActive && (
+          <button
+            onClick={() => setIsRightSidebarOpen(true)}
+            className="absolute top-4 right-4 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
+            title="Expand Details Panel"
+          >
+            <PanelRightOpen size={18} />
+          </button>
+        )}
 
-        <div className="flex-1 flex h-full relative z-10 w-full overflow-hidden">
+        <div className="flex-1 flex h-full relative z-20 w-full overflow-hidden">
 
           {/* CHAT ALANI */}
           <div className="flex flex-col h-full relative min-w-0 flex-1 transition-all duration-300 ease-in-out w-full">
@@ -465,11 +610,11 @@ export default function Index() {
                         alt="Sanny Logo"
                         className="h-16 md:h-20 w-auto object-contain flex-shrink-0"
                       />
-                      <h1 className="text-2xl md:text-4xl font-extrabold text-[#1E232C] font-display">
+                      <h1 className="text-2xl md:text-4xl font-extrabold text-[#1E232C] dark:text-slate-100 font-display">
                         {t(getGreetingKey(), { username })}
                       </h1>
                     </div>
-                    <p className="text-[#1E232C]/70 text-sm font-semibold">
+                    <p className="text-[#1E232C]/70 dark:text-slate-350 text-sm font-semibold">
                       {t("ops_subtitle")}
                     </p>
                   </div>
@@ -478,8 +623,8 @@ export default function Index() {
                   <div
                     className="w-full rounded-2xl shadow-xl border mb-6 max-w-[700px] transition-all duration-300 relative z-30"
                     style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.08)",
-                      borderColor: "rgba(255, 255, 255, 0.15)",
+                      backgroundColor: theme === 'dark' ? "rgba(15, 23, 42, 0.6)" : "rgba(255, 255, 255, 0.08)",
+                      borderColor: theme === 'dark' ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.15)",
                     }}
                   >
                     <div className="p-3">
@@ -493,22 +638,9 @@ export default function Index() {
                               onChange={handleTextareaChange}
                               onKeyDown={handleKeyDown}
                               placeholder={t("input_placeholder_welcome")}
-                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                             />
                             <div className="absolute right-2 flex items-center gap-1.5 z-40">
-                              <input
-                                type="file"
-                                ref={welcomeFileInputRef}
-                                onChange={handleFileChange}
-                                className="hidden"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => welcomeFileInputRef.current?.click()}
-                                className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
-                              >
-                                <Paperclip size={16} className="pointer-events-none" />
-                              </button>
                               <button
                                 type="button"
                                 onClick={startVoiceRecognition}
@@ -563,41 +695,21 @@ export default function Index() {
                     </div>
                   </div>
 
-                  {/* Hızlı Aksiyonlar */}
-                  <div className="w-full max-w-[700px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-                    {[
-                      { key: "hotel_sop" },
-                      { key: "flight_sop" },
-                      { key: "reservation" },
-                      { key: "cancellation_refund" },
-                      { key: "voucher" }
-                    ].map((action) => (
-                      <button
-                        key={action.key}
-                        onClick={() => handleQuickAction(t(action.key))}
-                        className="flex flex-col items-center justify-center p-3.5 bg-white/40 hover:bg-white/60 border border-white/20 rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:border-[#F59E0B]/40 animate-fade-in"
-                      >
-                        <span className="text-xs font-bold text-slate-800 text-center truncate w-full">{t(action.key)}</span>
-                      </button>
-                    ))}
-                  </div>
-
                   {/* Örnek Soru Çipleri */}
                   <div className="w-full max-w-[700px] flex flex-col items-center gap-2">
-                    <span className="text-[11px] text-[#1E232C]/60 font-semibold uppercase tracking-wider">
+                    <span className="text-[11px] text-[#1E232C]/60 dark:text-slate-400 font-semibold uppercase tracking-wider">
                       {t("try_asking")}
                     </span>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {[
-                        "starter_titanic",
-                        "starter_thy_baggage",
-                        "starter_voucher_refund",
-                        "starter_transfer_delay"
+                        "starter_hotel_antalya",
+                        "starter_flight_ist_ayt",
+                        "starter_best_hotels_antalya"
                       ].map((queryKey) => (
                         <button
                           key={queryKey}
                           onClick={() => setSearchQuery(t(queryKey))}
-                          className="px-3.5 py-1.5 bg-white/40 hover:bg-white/60 border border-white/20 hover:border-amber-500/50 rounded-full text-xs font-semibold text-slate-800 transition-all hover:scale-[1.02] cursor-pointer"
+                          className="px-3.5 py-1.5 bg-white/80 dark:bg-slate-900 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-amber-500 rounded-full text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all hover:scale-[1.02] cursor-pointer"
                         >
                           {t(queryKey)}
                         </button>
@@ -621,48 +733,180 @@ export default function Index() {
                           </div>
                         )}
                         <div className="flex flex-col max-w-[75%]">
-                          <div
-                            className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
-                              ? "bg-amber-500 text-white rounded-tr-none"
-                              : "bg-white/90 border border-white/30 text-[#0F172A] rounded-tl-none backdrop-blur-md"
-                              }`}
-                          >
-                            {msg.text}
-                          </div>
+                          {(msg.text || (msg.chatStatus === "BOOKING" && msg.selectedItem)) && (
+                            <div
+                              className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user"
+                                ? "bg-amber-500 text-white rounded-tr-none"
+                                : "bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-tl-none"
+                                }`}
+                            >
+                              {msg.text}
+                              {msg.chatStatus === "BOOKING" && msg.selectedItem && (
+                                <div className="mt-3 text-right">
+                                  <button
+                                    onClick={() => navigate('/reservation', { state: { selectedItem: msg.selectedItem, sessionId: sessionId } })}
+                                    className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
+                                  >
+                                    {t("proceed_to_reservation", "Proceed to Reservation")}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {msg.results && msg.results.length > 0 && (
                             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                               {msg.results.map((result, idx) => {
                                 const isFlight = result.airline !== undefined;
                                 if (isFlight) {
+                                  const isCurrentlySelected = selectedFlight
+                                    && selectedFlight.airline === result.airline
+                                    && selectedFlight.departureTime === result.departureTime;
+
                                   return (
-                                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setSelectedFlight(result);
+                                        // Tıklanan uçuş bilgisini sağdaki bar state'ine anında aktarıyoruz
+                                        setBookingDetails(prev => ({
+                                          ...prev,
+                                          airline: result.airline,
+                                          checkIn: result.departureTime || prev.checkIn,
+                                          // returnDepartureTime sadece gidiş-dönüş uçuşlarında dolu gelir
+                                          returnDate: result.returnDepartureTime || "",
+                                          price: `${formatPrice(result.price)} ${result.currency || 'TRY'}`
+                                        }));
+                                      }}
+                                      className={cn(
+                                        "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
+                                      )}
+                                    >
                                       <div className="flex justify-between items-center">
-                                        <span className="font-bold text-[#1E232C] text-sm">✈️ {result.airline}</span>
-                                        <span className="text-[#3B82F6] font-bold text-sm">{result.price} {result.currency}</span>
+                                        <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm">✈️ {result.airline}</span>
+                                        <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-sm">{formatPrice(result.price)} {result.currency}</span>
                                       </div>
-                                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                                        <div><strong>Departure:</strong> {result.departureTime}</div>
-                                        <div><strong>Arrival:</strong> {result.arrivalTime}</div>
-                                        <div><strong>Transfers:</strong> {result.transfers}</div>
-                                        <div><strong>Baggage:</strong> {result.baggage}</div>
+                                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+                                        <div><strong>{t("reservation_departure")}:</strong> {formatFlightDateTime(result.departureTime)}</div>
+                                        <div><strong>{t("reservation_arrival")}:</strong> {formatFlightDateTime(result.arrivalTime)}</div>
+                                        <div><strong>{t("reservation_transfers")}:</strong> {result.transfers}</div>
+                                        <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.baggage, t)}</div>
                                       </div>
-                                    </div>
-                                  );
-                                } else {
-                                  return (
-                                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex flex-col">
-                                          <span className="font-bold text-[#1E232C] text-sm">🏨 {result.name || result.hotelId}</span>
-                                          <span className="text-xs text-slate-500">{result.region} • {result.stars}★</span>
+                                      {result.returnDepartureTime && (
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 pt-2 mt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
+                                          <div className="col-span-2 font-bold text-[#1E232C] dark:text-slate-100">↩ {result.returnAirline || result.airline}</div>
+                                          <div><strong>{t("reservation_return_departure_short")}:</strong> {formatFlightDateTime(result.returnDepartureTime)}</div>
+                                          <div><strong>{t("reservation_return_arrival_short")}:</strong> {formatFlightDateTime(result.returnArrivalTime)}</div>
+                                          <div><strong>{t("reservation_transfers")}:</strong> {result.returnTransfers}</div>
+                                          <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.returnBaggage, t)}</div>
                                         </div>
-                                        <span className="text-[#3B82F6] font-bold text-sm">{result.price} {result.currency}</span>
+                                      )}
+                                    </button>
+                                  );
+
+                                } else {
+                                  // Otel kartını tıklanabilir bir butona dönüştürüyoruz
+                                  const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
+
+                                  // Küsüratsız, yuvarlanmış fiyat (kullanıcı isteği: "13463.87" değil "13.463")
+                                  const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
+
+                                  const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
+                                  const uniqueLocationParts = [...new Set(locationParts)];
+                                  const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
+
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={async () => {
+                                        setSelectedHotel(result);
+                                        setActivePanel('hotelDetail');
+                                        setBookingDetails(prev => ({
+                                          ...prev,
+                                          hotelName: result.name || result.hotelId,
+                                          price: formattedPrice
+                                        }));
+
+                                        if (result.hotelId) {
+                                          setHotelDetailLoading(true);
+                                          try {
+                                            const detailResponse = await api.post('/api/hotels/productinfo', {
+                                              productType: 2,
+                                              ownerProvider: result.provider || 2,
+                                              product: result.hotelId,
+                                              culture: 'tr-TR'
+                                            });
+                                            const mappedDetail = mapProductInfoToHotelDetail(detailResponse.data);
+                                            setSelectedHotel(prev =>
+                                              prev && prev.hotelId === result.hotelId ? { ...prev, ...mappedDetail } : prev
+                                            );
+                                          } catch (err) {
+                                            console.log("Otel detayları yüklenemedi:", err);
+                                          } finally {
+                                            setHotelDetailLoading(false);
+                                          }
+                                        }
+                                      }}
+                                      className={cn(
+                                        "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
+                                      )}
+                                    >
+                                      {/* Thumbnail */}
+                                      <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
+                                        {(result.thumbnailFull || result.thumbnail) ? (
+                                          <img
+                                            src={result.thumbnailFull || result.thumbnail}
+                                            alt={result.name || "Hotel"}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <div className={`absolute inset-0 flex items-center justify-center ${(result.thumbnailFull || result.thumbnail) ? 'hidden' : ''}`}>
+                                          <span className="text-xl">🏨</span>
+                                        </div>
                                       </div>
-                                      <div className="text-xs text-slate-600">
-                                        <strong>Board/Pension:</strong> {result.boardType || result.pensionType || "N/A"}
+
+                                      {/* Content */}
+                                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex flex-col min-w-0 pr-2">
+                                            <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm leading-tight flex items-center gap-1 flex-wrap">
+                                              {result.name || result.hotelId}
+                                              {result.stars && (
+                                                <span className="text-amber-400 text-xs flex items-center flex-shrink-0 bg-amber-50 dark:bg-amber-950/30 px-1 py-0.5 rounded">
+                                                  {result.stars}<Star size={10} className="ml-0.5 fill-amber-400" />
+                                                </span>
+                                              )}
+                                            </span>
+                                            {locationText && (
+                                              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
+                                                <MapPin size={10} /> {locationText}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-end mt-1">
+                                          <div className="flex flex-wrap gap-1">
+                                            {(result.boardName || result.boardType || result.pensionType) && (
+                                              <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide inline-flex items-center">
+                                                {result.boardName || result.boardType || result.pensionType}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="text-[#3B82F6] dark:text-blue-400 font-extrabold text-sm flex-shrink-0">
+                                            {formattedPrice}
+                                          </span>
+                                        </div>
                                       </div>
-                                    </div>
+                                    </button>
                                   );
                                 }
                               })}
@@ -682,13 +926,13 @@ export default function Index() {
                           />
                         </div>
                         <div className="space-y-1 max-w-[75%]">
-                          <div className="bg-white/90 border border-white/30 text-[#0F172A] rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3 backdrop-blur-md">
+                          <div className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-slate-100 rounded-2xl rounded-tl-none p-4 shadow-sm flex items-center gap-3">
                             <div className="flex gap-1 flex-shrink-0">
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" />
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.2s]" />
                               <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.4s]" />
                             </div>
-                            <span className="text-xs text-slate-500 italic font-medium">{thinkingStep}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 italic font-medium">{thinkingStep}</span>
                           </div>
                         </div>
                       </div>
@@ -701,9 +945,8 @@ export default function Index() {
                     <div
                       className="rounded-2xl shadow-xl border w-full transition-all duration-300 relative z-30"
                       style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.08)",
-                        borderColor: "rgba(255, 255, 255, 0.15)",
-                        backdropFilter: "blur(20px)"
+                        backgroundColor: theme === 'dark' ? "rgba(15, 23, 42, 0.75)" : "rgba(255, 255, 255, 0.75)",
+                        borderColor: theme === 'dark' ? "rgba(30, 41, 59, 0.8)" : "rgba(226, 232, 240, 0.8)"
                       }}
                     >
                       <div className="p-3">
@@ -715,23 +958,9 @@ export default function Index() {
                             onChange={handleTextareaChange}
                             onKeyDown={handleKeyDown}
                             placeholder={t("input_placeholder_chat")}
-                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black placeholder-black/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                           />
                           <div className="absolute right-2 flex items-center gap-1.5 z-40">
-                            <input
-                              type="file"
-                              ref={chatFileInputRef}
-                              onChange={handleFileChange}
-                              className="hidden"
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() => chatFileInputRef.current?.click()}
-                              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
-                            >
-                              <Paperclip size={16} className="pointer-events-none" />
-                            </button>
                             <button
                               type="button"
                               onClick={startVoiceRecognition}
@@ -758,169 +987,50 @@ export default function Index() {
           </div>
 
           {/* ==================== 3. AKTİF REZERVASYON ÖNİZLEME PANELİ ==================== */}
-          {isChatActive && (
-            <div className="hidden lg:flex w-[320px] h-full border-l border-white/20 bg-white/10 backdrop-blur-xl p-6 flex-col justify-between animate-slide-in relative z-20">
-              <div className="space-y-6">
+          {/* Kullanıcı bir otel/uçuş seçene kadar bu panel boş detaylarla gösterilebilir; ayrıca elle kapatılabilir */}
+          {isChatActive && isRightSidebarOpen && (
+            <RightSidebar
+              isRightSidebarOpen={isRightSidebarOpen}
+              setIsRightSidebarOpen={setIsRightSidebarOpen}
+              searchType={searchType}
+              bookingDetails={bookingDetails}
+              selectedHotel={selectedHotel}
+              selectedFlight={selectedFlight}
+              sessionId={sessionId}
+            />
+          )}
 
-                {/* Panel Başlığı */}
-                <div className="flex items-center gap-2 pb-4 border-b border-white/10">
-                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600">
-                    <Sparkles size={18} className="animate-pulse" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 text-sm">Canlı Rezervasyon</h3>
-                    <p className="text-[10px] text-slate-500">
-                      {searchType === "hotel" ? "Otel aramanız güncelleniyor" : "Uçuş detaylarınız güncelleniyor"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Kart Görünümü */}
-                <div className="bg-white/70 border border-white/40 rounded-2xl p-5 shadow-sm space-y-4">
-
-                  {/* ================= OTEL MODU ALANLARI ================= */}
-                  {searchType === "hotel" && (
-                    <>
-                      {/* Nerede */}
-                      <div className="flex items-start gap-3">
-                        <MapPin size={18} className="text-slate-400 mt-0.5" />
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Nerede</span>
-                          <span className={`text-sm font-semibold ${bookingDetails.city ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.city || "Konum belirtilmedi..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Giriş Tarihi */}
-                      <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                        <Calendar size={18} className="text-slate-400 mt-0.5" />
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Giriş Tarihi</span>
-                          <span className={`text-sm font-semibold ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.checkIn || "Giriş tarihi belirtilmedi..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Çıkış Tarihi */}
-                      <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                        <Calendar size={18} className="text-slate-400 mt-0.5" />
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Çıkış Tarihi</span>
-                          <span className={`text-sm font-semibold ${bookingDetails.checkOut ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.checkOut || "Çıkış tarihi belirtilmedi..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Seçilen Otel */}
-                      <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                        <Hotel size={18} className="text-slate-400 mt-0.5" />
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Seçilen Otel</span>
-                          <span className={`text-sm font-semibold block truncate ${bookingDetails.hotelName ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.hotelName || "Sohbetten seçin..."}
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ================= UÇAK MODU ALANLARI ================= */}
-                  {searchType === "flight" && (
-                    <>
-                      {/* Kalkış Noktası */}
-                      <div className="flex items-start gap-3">
-                        <div className="relative mt-1">
-                          <Plane size={18} className="text-slate-400 rotate-45" />
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Kalkış Noktası</span>
-                          <span className={`text-sm font-semibold ${bookingDetails.departureCity ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.departureCity || "Kalkış noktası belirtilmedi..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Varış Noktası */}
-                      <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                        <div className="relative mt-1">
-                          <Plane size={18} className="text-[#3B82F6] rotate-90" />
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Varış Noktası</span>
-                          <span className={`text-sm font-semibold ${bookingDetails.arrivalCity ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.arrivalCity || "Varış noktası belirtilmedi..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Uçuş Tarihi (Sadece Tek Tarih) */}
-                      <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                        <Calendar size={18} className="text-slate-400 mt-0.5" />
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Uçuş Tarihi</span>
-                          <span className={`text-sm font-semibold ${bookingDetails.checkIn ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.checkIn || "Uçuş tarihi belirtilmedi..."}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Seçilen Havayolu */}
-                      <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200">
-                        <Plane size={18} className="text-slate-400 mt-0.5" />
-                        <div className="flex-1">
-                          <span className="text-[10px] text-slate-400 block font-bold uppercase">Seçilen Havayolu</span>
-                          <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800" : "text-slate-400 italic"}`}>
-                            {bookingDetails.airline || "Sohbetten uçuş seçin..."}
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ================= ORTAK ALAN: YOLCU / KONUK SAYISI ================= */}
-                  <div className="flex items-start gap-3 pt-3 border-t border-slate-200">
-                    <Users size={18} className="text-slate-400 mt-0.5" />
-                    <div className="flex-1">
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase">
-                        {searchType === "hotel" ? "Konuk Sayısı" : "Yolcu Sayısı"}
-                      </span>
-                      <span className={`text-sm font-semibold ${bookingDetails.guests ? "text-slate-800" : "text-slate-400 italic"}`}>
-                        {bookingDetails.guests || "Belirtilmedi..."}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Fiyat Bilgisi */}
-                  {bookingDetails.price && (
-                    <div className="pt-3 border-t border-dashed border-slate-200 flex justify-between items-center">
-                      <span className="text-xs text-slate-500 font-bold">Toplam Tutar:</span>
-                      <span className="text-sm font-extrabold text-amber-600">{bookingDetails.price}</span>
-                    </div>
-                  )}
-
-                </div>
-              </div>
-
-              {/* Alt Bilgi & CTA */}
-              <div className="space-y-3">
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
-                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                    Tüm alanlar tamamlandığında hızlıca ödeme ve onay sayfasına geçebilirsin.
-                  </p>
-                </div>
-                <button
-                  disabled={
-                    searchType === "hotel"
-                      ? !bookingDetails.city || !bookingDetails.checkIn || !bookingDetails.checkOut
-                      : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn
-                  }
-                  className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  {searchType === "hotel" ? "Otel Rezervasyonunu Tamamla" : "Uçuş Biletini Satın Al"}
-                </button>
+          {/* Overlay Backdrop & Centered Modal */}
+          {activePanel && (
+            <div
+              className="fixed inset-0 bg-black/40 z-[100] transition-opacity flex items-center justify-center p-4 sm:p-6"
+              onClick={() => setActivePanel(null)}
+            >
+              <div
+                className="w-full max-w-[850px] h-[85vh] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activePanel === 'hotelDetail' && (
+                  <HotelDetailPanel
+                    hotel={selectedHotel}
+                    bookingDetails={bookingDetails}
+                    loadingDetail={hotelDetailLoading}
+                    onClose={() => setActivePanel(null)}
+                    onProceed={() => setActivePanel('reservation')}
+                  />
+                )}
+                {activePanel === 'reservation' && (
+                  <ReservationFormPanel
+                    hotel={selectedHotel}
+                    bookingDetails={bookingDetails}
+                    onClose={() => setActivePanel(null)}
+                    onBack={() => setActivePanel('hotelDetail')}
+                    guests={reservationGuests}
+                    setGuests={setReservationGuests}
+                    termsAccepted={reservationTermsAccepted}
+                    setTermsAccepted={setReservationTermsAccepted}
+                  />
+                )}
               </div>
             </div>
           )}

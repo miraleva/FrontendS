@@ -4,10 +4,10 @@ import Header from '../components/Header.jsx';
 
 export default function MainLayout() {
   const location = useLocation();
-  const hideGlobalLayout = location.pathname.startsWith('/chat') || location.pathname === '/appointments' || location.pathname === '/profile';
+  const hideGlobalLayout = location.pathname.startsWith('/chat') || location.pathname === '/appointments' || location.pathname === '/profile' || location.pathname === '/settings' || location.pathname === '/reservation';
 
   return (
-    <div className="min-h-screen flex bg-bg">
+    <div className="min-h-screen flex bg-bg dark:bg-slate-950">
       {!hideGlobalLayout && <Sidebar />}
       <div className="flex-1 flex flex-col min-w-0">
         {!hideGlobalLayout && <Header />}
