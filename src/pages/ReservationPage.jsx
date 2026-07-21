@@ -193,7 +193,7 @@ export default function ReservationPage() {
             1,
             (editData?.passengers || []).filter(
                 (passenger) =>
-                    passenger.type !== "CHILD"
+                    passenger.type !== "CHILD" && passenger.type !== "INFANT"
             ).length ||
             editData?.passengers?.length ||
             1
@@ -226,6 +226,30 @@ export default function ReservationPage() {
                 ? []
                 : bookingDetails?.childAges || [],
         [isFlight, bookingDetails?.childAges]
+    );
+
+    // Bebekler için de yolcu formu alanı açılmalı — aksi hâlde "2 yetişkin 1 bebek"
+    // ile arama yapılıp rezervasyona geçildiğinde bebek sessizce yolcu listesinden
+    // düşüyordu (TourVisio'ya giden arama isteğinde bebek yetişkin sayısına
+    // eklenirken, kullanıcıya gösterilen rezervasyon formu bunu hiç bilmiyordu).
+    const infantCount = isEditMode
+        ? (editData?.passengers || []).filter(
+            (passenger) =>
+                passenger.type === "INFANT"
+        ).length
+        : isFlight
+            ? 0
+            : parseInt(
+                bookingDetails?.infantCount,
+                10
+            ) || 0;
+
+    const infantAges = useMemo(
+        () =>
+            isFlight
+                ? []
+                : bookingDetails?.infantAges || [],
+        [isFlight, bookingDetails?.infantAges]
     );
 
     useEffect(() => {
@@ -351,6 +375,30 @@ export default function ReservationPage() {
             });
         }
 
+        for (
+            let index = 0;
+            index < infantCount;
+            index++
+        ) {
+            initialPassengers.push({
+                id: `infant-${index}`,
+                type: "INFANT",
+                firstName: "",
+                lastName: "",
+                identityNumber: "",
+                email: "",
+                phone: "",
+                phoneCountry: "TR",
+                birthDate: "",
+                gender: "CHD",
+                nationality: "TR",
+                age:
+                    infantAges[index] !== undefined
+                        ? String(infantAges[index])
+                        : "",
+            });
+        }
+
         setPassengers(initialPassengers);
         setExpandedGuestId(
             initialPassengers[0]?.id || "adult-0"
@@ -362,6 +410,8 @@ export default function ReservationPage() {
         adultCount,
         childCount,
         childAges,
+        infantCount,
+        infantAges,
     ]);
 
     useEffect(() => {

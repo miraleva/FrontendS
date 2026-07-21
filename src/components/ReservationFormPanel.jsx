@@ -219,6 +219,33 @@ export default function ReservationFormPanel({
           });
         }
 
+        // Bebekler de yolcu formuna dahil edilmeli — aksi hâlde "2 yetişkin 1 bebek"
+        // ile arama yapılıp bu modaldan rezervasyona geçildiğinde bebek sessizce
+        // yolcu listesinden düşüyordu.
+        const infantCount =
+          parseInt(bookingDetails?.infantCount, 10) || 0;
+        const infantAges =
+          bookingDetails?.infantAges || [];
+
+        for (let index = 0; index < infantCount; index++) {
+          initialGuests.push({
+            id: `infant-${index}`,
+            type: "INFANT",
+            firstName: "",
+            lastName: "",
+            identityNumber: "",
+            email: "",
+            phone: "",
+            birthDate: "",
+            gender: "CHD",
+            nationality: "TR",
+            age:
+              infantAges[index] !== undefined
+                ? infantAges[index].toString()
+                : "",
+          });
+        }
+
         setGuests(initialGuests);
 
         api
@@ -273,6 +300,7 @@ export default function ReservationFormPanel({
     bookingDetails?.editData?.passengers,
     bookingDetails?.adultCount,
     bookingDetails?.childCount,
+    bookingDetails?.infantCount,
     hotel,
     guests,
     setGuests,
