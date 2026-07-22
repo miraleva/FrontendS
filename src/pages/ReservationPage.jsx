@@ -117,22 +117,22 @@ function getPassengerErrors(passenger, index = 0) {
             "Geçersiz Pasaport No (en az 5 karakter).";
     }
 
-    if (isPrimaryContact) {
-        if (!passenger.birthDate) {
-            errors.birthDate = "Doğum tarihi gereklidir.";
-        } else {
-            const birthDate = new Date(passenger.birthDate);
-            if (birthDate >= new Date()) {
-                errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
-            } else {
-                const eighteenYearsAgo = new Date();
-                eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
-                if (birthDate > eighteenYearsAgo) {
-                    errors.birthDate = "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
-                }
+    if (!passenger.birthDate) {
+        errors.birthDate = "Doğum tarihi gereklidir.";
+    } else {
+        const birthDate = new Date(passenger.birthDate);
+        if (birthDate >= new Date()) {
+            errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+        } else if (isPrimaryContact) {
+            const eighteenYearsAgo = new Date();
+            eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+            if (birthDate > eighteenYearsAgo) {
+                errors.birthDate = "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
             }
         }
+    }
 
+    if (isPrimaryContact) {
         if (!passenger.email?.trim()) {
             errors.email = "E-posta gereklidir.";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)) {
@@ -1116,23 +1116,63 @@ export default function ReservationPage() {
                                                                 </div>
                                                                 )}
 
+                                                                {index !== 0 && (
+                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                    <div>
+                                                                        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                                            Doğum Tarihi
+                                                                        </label>
+                                                                        <input
+                                                                            required
+                                                                            type="date"
+                                                                            max={new Date()
+                                                                                .toISOString()
+                                                                                .split("T")[0]}
+                                                                            value={
+                                                                                passenger.birthDate ||
+                                                                                ""
+                                                                            }
+                                                                            onChange={(
+                                                                                event
+                                                                            ) =>
+                                                                                handlePassengerChange(
+                                                                                    index,
+                                                                                    "birthDate",
+                                                                                    event.target
+                                                                                        .value
+                                                                                )
+                                                                            }
+                                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
+                                                                                ? "border-red-500 ring-1 ring-red-500"
+                                                                                : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
+                                                                                }`}
+                                                                        />
+                                                                        {errors.birthDate && (
+                                                                            <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                                                                {
+                                                                                    errors.birthDate
+                                                                                }
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                )}
+
                                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                                     <div className="md:col-span-2">
                                                                         <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
                                                                             <ShieldCheck
                                                                                 size={12}
                                                                             />
-                                                                            {index === 0
-                                                                                ? (passenger.nationality === "TR"
-                                                                                    ? "T.C. Kimlik Numarası"
-                                                                                    : "Pasaport Numarası")
-                                                                                : "T.C. Kimlik Numarası"}
+                                                                            {passenger.nationality === "TR"
+                                                                                ? "T.C. Kimlik Numarası"
+                                                                                : "Pasaport Numarası"}
                                                                         </label>
                                                                         <input
                                                                             required
                                                                             type="text"
                                                                             inputMode={
-                                                                                (index !== 0 || passenger.nationality === "TR")
+                                                                                passenger.nationality === "TR"
                                                                                     ? "numeric"
                                                                                     : "text"
                                                                             }
@@ -1143,38 +1183,23 @@ export default function ReservationPage() {
                                                                             onChange={(event) => {
                                                                                 const rawValue =
                                                                                     event.target.value;
+                                                                                const hasLetters = /[A-Za-z]/.test(rawValue);
+                                                                                const cleanValue = hasLetters
+                                                                                    ? rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
+                                                                                    : rawValue.replace(/\D/g, "").slice(0, 11);
 
-                                                                                if (index === 0) {
-                                                                                    const hasLetters = /[A-Za-z]/.test(rawValue);
-                                                                                    const cleanValue = hasLetters
-                                                                                        ? rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
-                                                                                        : rawValue.replace(/\D/g, "").slice(0, 11);
-
-                                                                                    handlePassengerChange(index, "identityNumber", cleanValue);
-                                                                                    handlePassengerChange(index, "nationality", hasLetters ? "OTHER" : "TR");
-                                                                                } else {
-                                                                                    const cleanValue = rawValue.replace(/\D/g, "").slice(0, 11);
-                                                                                    handlePassengerChange(index, "identityNumber", cleanValue);
-                                                                                }
+                                                                                handlePassengerChange(index, "identityNumber", cleanValue);
+                                                                                handlePassengerChange(index, "nationality", hasLetters ? "OTHER" : "TR");
                                                                             }}
                                                                             onInput={(event) => {
                                                                                 const currentValue =
                                                                                     event.currentTarget.value;
-
-                                                                                if (index === 0) {
-                                                                                    const hasLetters = /[A-Za-z]/.test(currentValue);
-                                                                                    event.currentTarget.value = hasLetters
-                                                                                        ? currentValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
-                                                                                        : currentValue.replace(/\D/g, "").slice(0, 11);
-                                                                                } else {
-                                                                                    event.currentTarget.value = currentValue.replace(/\D/g, "").slice(0, 11);
-                                                                                }
+                                                                                const hasLetters = /[A-Za-z]/.test(currentValue);
+                                                                                event.currentTarget.value = hasLetters
+                                                                                    ? currentValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
+                                                                                    : currentValue.replace(/\D/g, "").slice(0, 11);
                                                                             }}
-                                                                            placeholder={
-                                                                                index === 0
-                                                                                    ? "T.C. kimlik no veya pasaport no"
-                                                                                    : "11 haneli T.C. kimlik numarası"
-                                                                            }
+                                                                            placeholder="T.C. kimlik no veya pasaport no"
                                                                             className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
                                                                                 ? "border-red-500 ring-1 ring-red-500"
                                                                                 : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
