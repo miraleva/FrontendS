@@ -124,7 +124,19 @@
   "ops_subtitle": "Sanny Tourismus-Operationen KI-Assistent",
   "hotel_sop": "Hotel",
   "flight_sop": "Flug",
-  "reservation": "Reservierung",
+  "reservation": {
+    "title": "Reservierung",
+    "amount": "Betrag",
+    "viewRelatedChat": "Zugehörigen Chat ansehen",
+    "cancelTitle": "Reservierung stornieren",
+    "cancelBody": "Möchten Sie die Reservierung {{resNumber}} wirklich stornieren?",
+    "cancelConfirmation": "Sind Sie sicher, dass Sie {{title}} stornieren möchten?"
+  },
+  "common": {
+    "edit": "Bearbeiten",
+    "cancel": "Stornieren",
+    "keep": "Behalten"
+  },
   "cancellation_refund": "Stornierung/Rückerstattung",
   "voucher": "Voucher",
   "query_cancel_hotel": "Wie storniere ich eine Hotelreservierung?",

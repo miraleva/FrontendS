@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-export default function AppointmentDetailModal({ appointment, onClose }) {
+export default function AppointmentDetailModal({ appointment, onClose, onEdit, onCancel }) {
   const { t } = useTranslation();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -71,11 +71,11 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
     setShowCancelConfirm(true);
   };
 
-  const confirmCancel = () => {
-    // TODO: Call backend to cancel the reservation
-    console.log(`Cancelling reservation: ${appointment.resNumber}`);
+  const confirmCancel = async () => {
     setShowCancelConfirm(false);
-    // Ideally update local state or trigger a re-fetch, then close
+    if (onCancel) {
+      await onCancel(appointment);
+    }
   };
 
   return (
@@ -316,7 +316,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
           
           <div className="grid grid-cols-2 gap-3 mt-3">
             <button 
-              onClick={() => { /* TODO: edit logic */ }}
+              onClick={() => onEdit && onEdit(appointment)}
               className="py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               <Edit size={16} />

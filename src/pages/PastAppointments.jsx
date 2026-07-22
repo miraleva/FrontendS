@@ -296,30 +296,26 @@ export default function PastAppointments() {
     });
   };
 
-  const handleCancelReservation = async () => {
-    if (!selectedAppt) return;
-
-    const confirmCancel = window.confirm(
-      t('reservation.cancelConfirmation', { title: selectedAppt.title })
-    );
-
-    if (!confirmCancel) return;
+  const handleCancelReservation = async (appointmentToCancel = selectedAppt) => {
+    if (!appointmentToCancel) return;
 
     try {
       setLoading(true);
 
       await api.delete(
-        `/api/reservations/${selectedAppt.id}`
+        `/api/reservations/${appointmentToCancel.id}`
       );
 
       setAppointments((previous) =>
         previous.filter(
           (appointment) =>
-            appointment.id !== selectedAppt.id
+            appointment.id !== appointmentToCancel.id
         )
       );
 
-      setSelectedAppt(null);
+      if (selectedAppt && selectedAppt.id === appointmentToCancel.id) {
+        setSelectedAppt(null);
+      }
     } catch (error) {
       console.error(
         "Rezervasyon iptal edilirken hata oluştu:",
@@ -665,7 +661,9 @@ export default function PastAppointments() {
       {selectedAppt && (
         <AppointmentDetailModal 
           appointment={selectedAppt} 
-          onClose={handleCloseModal} 
+          onClose={handleCloseModal}
+          onEdit={handleEditReservation}
+          onCancel={handleCancelReservation}
         />
       )}
     </div>

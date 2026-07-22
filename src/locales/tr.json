@@ -124,7 +124,19 @@
   "ops_subtitle": "Sanny Turizm Operasyonları Yapay Zeka Asistanı",
   "hotel_sop": "Otel",
   "flight_sop": "Uçuş",
-  "reservation": "Rezervasyon",
+  "reservation": {
+    "title": "Rezervasyon",
+    "amount": "Tutar",
+    "viewRelatedChat": "İlgili Sohbeti Görüntüle",
+    "cancelTitle": "Rezervasyonu İptal Et",
+    "cancelBody": "{{resNumber}} numaralı rezervasyonu iptal etmek istediğinize emin misiniz?",
+    "cancelConfirmation": "{{title}} iptal edilecek, emin misiniz?"
+  },
+  "common": {
+    "edit": "Düzenle",
+    "cancel": "İptal",
+    "keep": "Vazgeç"
+  },
   "cancellation_refund": "İptal/İade",
   "voucher": "Voucher",
   "query_cancel_hotel": "Otel rezervasyonunu nasıl iptal ederim?",

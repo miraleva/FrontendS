@@ -124,7 +124,19 @@
   "ops_subtitle": "Sanny Tourism Operations AI Assistant",
   "hotel_sop": "Hotel",
   "flight_sop": "Flight",
-  "reservation": "Reservation",
+  "reservation": {
+    "title": "Reservation",
+    "amount": "Amount",
+    "viewRelatedChat": "View Related Chat",
+    "cancelTitle": "Cancel Reservation",
+    "cancelBody": "Are you sure you want to cancel reservation {{resNumber}}?",
+    "cancelConfirmation": "Are you sure you want to cancel {{title}}?"
+  },
+  "common": {
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "keep": "Keep"
+  },
   "cancellation_refund": "Cancellation/Refund",
   "voucher": "Voucher",
   "query_cancel_hotel": "How do I cancel a hotel reservation?",

@@ -124,7 +124,19 @@
   "ops_subtitle": "ИИ-ассистент по туристическим операциям Sanny",
   "hotel_sop": "отеля",
   "flight_sop": "рейса",
-  "reservation": "Резервирование",
+  "reservation": {
+    "title": "Резервирование",
+    "amount": "Сумма",
+    "viewRelatedChat": "Просмотр связанного чата",
+    "cancelTitle": "Отменить бронирование",
+    "cancelBody": "Вы уверены, что хотите отменить бронирование {{resNumber}}?",
+    "cancelConfirmation": "Вы уверены, что хотите отменить {{title}}?"
+  },
+  "common": {
+    "edit": "Изменить",
+    "cancel": "Отменить",
+    "keep": "Оставить"
+  },
   "cancellation_refund": "Отмена/Возврат",
   "voucher": "Ваучер",
   "query_cancel_hotel": "Как отменить бронирование отеля?",
