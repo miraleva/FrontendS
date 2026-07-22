@@ -33,8 +33,8 @@ export default function SearchChats() {
 
   // Filtering
   const filteredSessions = mockSessions.filter(session => 
-    session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    session.category.toLowerCase().includes(searchQuery.toLowerCase())
+    session.title.toLocaleLowerCase('tr-TR').includes(searchQuery.toLocaleLowerCase('tr-TR')) ||
+    session.category.toLocaleLowerCase('tr-TR').includes(searchQuery.toLocaleLowerCase('tr-TR'))
   );
 
   const getBadgeStyle = (category) => {

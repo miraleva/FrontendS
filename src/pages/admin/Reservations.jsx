@@ -39,20 +39,20 @@ export default function Reservations() {
     }, []);
 
     const filteredReservations = reservations.filter((reservation) => {
-        const searchValue = searchTerm.trim().toLowerCase();
+        const searchValue = searchTerm.trim().toLocaleLowerCase('tr-TR');
 
         return (
             (reservation.reservationNumber || "")
-                .toLowerCase()
+                .toLocaleLowerCase('tr-TR')
                 .includes(searchValue) ||
             (reservation.itemName || "")
-                .toLowerCase()
+                .toLocaleLowerCase('tr-TR')
                 .includes(searchValue) ||
             (reservation.destination || "")
-                .toLowerCase()
+                .toLocaleLowerCase('tr-TR')
                 .includes(searchValue) ||
             (reservation.type || "")
-                .toLowerCase()
+                .toLocaleLowerCase('tr-TR')
                 .includes(searchValue)
         );
     });

@@ -47,11 +47,11 @@ export default function Users() {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredUsers = users.filter((user) => {
-        const value = searchTerm.toLowerCase();
+        const value = searchTerm.toLocaleLowerCase('tr-TR');
 
         return (
-            user.name.toLowerCase().includes(value) ||
-            user.email.toLowerCase().includes(value)
+            user.name.toLocaleLowerCase('tr-TR').includes(value) ||
+            user.email.toLocaleLowerCase('tr-TR').includes(value)
         );
     });
 

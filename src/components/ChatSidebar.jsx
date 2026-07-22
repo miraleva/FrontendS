@@ -104,7 +104,7 @@ export default function ChatSidebar({
   const filteredSessions = sessions
     .filter(session => {
       const title = session.title || 'Chat Session';
-      return title.toLowerCase().includes(searchQuery.toLowerCase());
+      return title.toLocaleLowerCase('tr-TR').includes(searchQuery.toLocaleLowerCase('tr-TR'));
     })
     .sort((a, b) => {
       const tA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : 0;

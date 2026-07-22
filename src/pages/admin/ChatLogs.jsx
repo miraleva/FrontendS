@@ -39,7 +39,7 @@ export default function ChatLogs() {
     const [selectedChat, setSelectedChat] = useState(chats[0]);
 
     const filteredChats = chats.filter((chat) =>
-        chat.user.toLowerCase().includes(searchTerm.toLowerCase())
+        chat.user.toLocaleLowerCase('tr-TR').includes(searchTerm.toLocaleLowerCase('tr-TR'))
     );
 
     return (
