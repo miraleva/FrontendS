@@ -18,13 +18,6 @@
   "reservation_title": "Подтверждение бронирования",
   "reservation_no_item": "Ничего не выбрано",
   "reservation_back_to_chat": "Вернуться в чат",
-  "sort_by_label": "Сортировать",
-  "sort_price_asc": "Цена: по возрастанию",
-  "sort_price_desc": "Цена: по убыванию",
-  "sort_duration_asc": "Длительность: короче",
-  "sort_duration_desc": "Длительность: длиннее",
-  "sort_stars_desc": "Звёзды: по убыванию",
-  "sort_stars_asc": "Звёзды: по возрастанию",
   "reservation_departure": "Вылет",
   "reservation_arrival": "Прибытие",
   "reservation_transfers": "Пересадки",
@@ -276,7 +269,7 @@
   "admin_dashboard_title": "Панель администратора",
   "admin_dashboard_subtitle": "Управляйте бронированием, чат-ботом, пользователями и данными туров отсюда.",
   "recent_reservations_title": "Последние бронирования",
-  "recent_reservations_subtitle": "Последние заказы от клиентов",
+  "recent_reservations_subtitle": "Последние записи о бронировании, добавленные в систему.",
   "view_all": "Посмотреть все",
   "table_id": "ID",
   "table_client": "Клиент",
@@ -296,13 +289,7 @@
   "services_active": "Сервисы активны",
   "dashboard_title": "Панель управления",
   "dashboard_subtitle": "Здесь вы можете следить за производительностью системы и последними операциями.",
-  "total_reservations": "Всего бронирований",
-  "total_users": "Всего пользователей",
-  "active_tours": "Активные туры",
   "chat_messages": "Сообщения чата",
-  "recent_reservations_title": "Последние бронирования",
-  "recent_reservations_subtitle": "Последние записи о бронировании, добавленные в систему.",
-  "view_all": "Посмотреть все",
   "table_col_reservation": "БРОНИРОВАНИЕ",
   "table_col_client": "КЛИЕНТ",
   "table_col_tour": "ТУР",
@@ -369,25 +356,111 @@
   "or_continue_with": "или продолжить с",
   "social_login_error": "Ошибка при входе через социальную сеть",
   "social_login_cancelled": "Вход отменён",
-  "reservation.currentStatus": "Текущий статус",
-  "reservation.number": "Номер бронирования",
-  "reservation.amount": "Сумма",
-  "reservation.product": "Продукт:",
-  "reservation.paymentStatus": "Статус оплаты:",
-  "reservation.viewRelatedChat": "Посмотреть связанный чат",
-  "reservation.cancelConfirmation": "Вы уверены, что хотите отменить бронирование для {{title}}?",
-  "reservation.cancelTitle": "Отменить бронирование",
-  "reservation.cancelBody": "Вы уверены, что хотите отменить бронирование {{resNumber}}? Это действие невозможно отменить.",
-  "common.edit": "Редактировать",
-  "common.cancel": "Отменить",
-  "common.cancelling": "Отменяется...",
-  "common.keep": "Назад",
-  "status.completed": "Завершено",
-  "status.cancelled": "Отменено",
-  "status.pending": "В ожидании",
-  "status.paid": "Оплачено",
-  "status.refunded": "Возвращено",
-  "status.hotel": "Отель",
-  "status.flight": "Рейс",
-  "status.transfer": "Трансфер"
+  "users_title": "Пользователи",
+  "chat_logs_title": "Журналы чатов",
+  "tours_title": "Туры",
+  "reservations": {
+    "title": "Бронирования",
+    "description": "Просматривайте реальные записи бронирований из базы данных.",
+    "loading": "Загрузка бронирований...",
+    "load_error": "Не удалось загрузить бронирования. Проверьте подключение к серверу.",
+    "reservation_count": "{{count}} бронирований",
+    "search_placeholder": "Поиск по номеру бронирования, продукту или направлению...",
+    "view_details": "Просмотреть детали бронирования",
+    "not_found": "Бронирования не найдены.",
+    "table": {
+      "reservation_number": "Номер бронирования",
+      "type": "Тип",
+      "product": "Продукт",
+      "destination": "Направление",
+      "start_date": "Дата начала",
+      "end_date": "Дата окончания",
+      "passenger": "Пассажир",
+      "total": "Итого",
+      "action": "Действие"
+    }
+  },
+  "users_page": {
+    "title": "Пользователи",
+    "description": "Просматривайте и управляйте зарегистрированными пользователями.",
+    "search_placeholder": "Поиск по имени пользователя или электронной почте...",
+    "role_label": "Роль",
+    "reservation_label": "Бронирования",
+    "make_inactive": "Деактивировать пользователя",
+    "make_active": "Активировать пользователя",
+    "not_found": "Пользователи не найдены.",
+    "status": {
+      "active": "Активен",
+      "inactive": "Неактивен"
+    },
+    "roles": {
+      "admin": "Администратор",
+      "user": "Пользователь"
+    }
+  },
+  "chat_logs_page": {
+    "title": "Журналы чатов",
+    "description": "Просматривайте разговоры пользователей с чат-ботом.",
+    "search_placeholder": "Поиск пользователей...",
+    "view_only": "Этот раздел предназначен только для просмотра.",
+    "sample_chats": {
+      "chat_1": {
+        "question": "Я хочу получить информацию о туре в Каппадокию.",
+        "answer": "Наш тур в Каппадокию длится 3 ночи и 4 дня, проживание включено."
+      },
+      "chat_2": {
+        "question": "Можно ли изменить дату бронирования?",
+        "answer": "Дата бронирования может быть изменена при наличии свободных мест."
+      },
+      "chat_3": {
+        "question": "Включён ли трансфер до отеля в туре в Анталию?",
+        "answer": "Да, в наш тур в Анталию включены трансферы из аэропорта и до отеля."
+      }
+    }
+  },
+  "tours_page": {
+    "title": "Туры",
+    "description": "Просматривайте и управляйте туристическими пакетами.",
+    "add_new": "Добавить новый тур",
+    "date": "Дата",
+    "capacity": "Вместимость",
+    "person_count": "{{count}} человек",
+    "per_person": "С человека",
+    "edit": "Редактировать тур",
+    "delete": "Удалить тур",
+    "delete_confirmation": "Вы уверены, что хотите удалить этот тур?",
+    "not_found": "Туры не найдены.",
+    "status": {
+      "active": "Активен",
+      "inactive": "Неактивен"
+    },
+    "names": {
+      "cappadocia": "Тур в Каппадокию",
+      "antalya": "Отдых в Анталии",
+      "blacksea": "Тур по Чёрному морю",
+      "istanbul": "Культурный тур по Стамбулу"
+    },
+    "form": {
+      "title": "Добавить новый тур",
+      "description": "Введите данные нового туристического пакета.",
+      "name": "Название тура",
+      "name_placeholder": "Например: Культурный тур по Измиру",
+      "location": "Место",
+      "location_placeholder": "Например: Измир",
+      "date": "Дата тура",
+      "price": "Цена с человека",
+      "price_placeholder": "Например: 6500",
+      "capacity": "Вместимость",
+      "capacity_placeholder": "Например: 30",
+      "status": "Статус тура",
+      "save": "Сохранить тур",
+      "cancel": "Отмена",
+      "close": "Закрыть форму",
+      "required_error": "Пожалуйста, заполните все поля.",
+      "positive_number_error": "Цена и вместимость должны быть больше нуля.",
+      "edit_title": "Редактировать тур",
+      "edit_description": "Обновите данные выбранного тура.",
+      "update": "Сохранить изменения"
+    }
+  }
 }

@@ -6,42 +6,43 @@ import {
     ArrowUpRight,
     Clock,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const statistics = [
+const statisticsData = [
     {
-        title: 'Toplam Rezervasyon',
+        key: 'dashboard.stats.totalReservations',
         value: '248',
         change: '+12%',
         icon: CalendarCheck,
     },
     {
-        title: 'Toplam Kullanıcı',
+        key: 'dashboard.stats.totalUsers',
         value: '1.284',
         change: '+8%',
         icon: Users,
     },
     {
-        title: 'Aktif Tur',
+        key: 'dashboard.stats.activeTour',
         value: '24',
         change: '+3',
         icon: Map,
     },
     {
-        title: 'Chat Mesajı',
+        key: 'dashboard.stats.chatMessage',
         value: '3.642',
         change: '+18%',
         icon: MessageSquare,
     },
 ];
 
-const recentReservations = [
+const recentReservationsData = [
     {
         id: 'RSV-1001',
         customer: 'Ayşe Yılmaz',
         tour: 'Kapadokya Turu',
         date: '18.07.2026',
         total: '12.500 TL',
-        status: 'Onaylandı',
+        statusKey: 'dashboard.status.approved',
     },
     {
         id: 'RSV-1002',
@@ -49,7 +50,7 @@ const recentReservations = [
         tour: 'Antalya Tatili',
         date: '21.07.2026',
         total: '18.750 TL',
-        status: 'Bekliyor',
+        statusKey: 'dashboard.status.pending',
     },
     {
         id: 'RSV-1003',
@@ -57,7 +58,7 @@ const recentReservations = [
         tour: 'Karadeniz Turu',
         date: '23.07.2026',
         total: '15.200 TL',
-        status: 'Onaylandı',
+        statusKey: 'dashboard.status.approved',
     },
     {
         id: 'RSV-1004',
@@ -65,43 +66,43 @@ const recentReservations = [
         tour: 'İstanbul Kültür Turu',
         date: '27.07.2026',
         total: '8.400 TL',
-        status: 'İptal',
+        statusKey: 'dashboard.status.cancelled',
     },
 ];
 
-function getStatusClass(status) {
-    if (status === 'Onaylandı') {
-        return 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300';
-    }
-
-    if (status === 'Bekliyor') {
-        return 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300';
-    }
-
-    return 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400';
-}
-
 export default function Dashboard() {
+    const { t } = useTranslation();
+
+    function getStatusClass(statusKey) {
+        if (statusKey === 'dashboard.status.approved') {
+            return 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300';
+        }
+        if (statusKey === 'dashboard.status.pending') {
+            return 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300';
+        }
+        return 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400';
+    }
+
     return (
         <div className="space-y-8">
             {/* BAŞLIK ALANI */}
             <div className="pb-2">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Dashboard
+                    {t('dashboard.title', 'Kontrol Paneli')}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                    Sistem performansını ve son işlemleri buradan takip edebilirsiniz.
+                    {t('dashboard.subtitle', 'Sistem performansını ve son işlemleri buradan takip edebilirsiniz.')}
                 </p>
             </div>
 
             {/* İstatistik kartları */}
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                {statistics.map((item) => {
+                {statisticsData.map((item) => {
                     const Icon = item.icon;
 
                     return (
                         <div
-                            key={item.title}
+                            key={item.key}
                             className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
                         >
                             <div className="flex items-start justify-between">
@@ -115,7 +116,7 @@ export default function Dashboard() {
                             </div>
 
                             <p className="mt-5 text-sm text-gray-500 dark:text-slate-400">
-                                {item.title}
+                                {t(item.key)}
                             </p>
 
                             <h2 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
@@ -129,22 +130,27 @@ export default function Dashboard() {
             <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
                 {/* Son rezervasyonlar */}
                 <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 px-6 py-5">
+                    <div className="relative z-20 flex items-center justify-between border-b border-gray-100 dark:border-slate-800 px-6 py-5">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                Son Rezervasyonlar
+                                {t('dashboard.recentReservations.title', 'Son Rezervasyonlar')}
                             </h2>
 
                             <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                                Sisteme eklenen son rezervasyon kayıtları.
+                                {t('dashboard.recentReservations.subtitle', 'Sisteme eklenen son rezervasyon kayıtları.')}
                             </p>
                         </div>
 
                         <button
                             type="button"
-                            className="flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                window.location.href = "/admin/reservations";
+                            }}
+                            className="relative z-30 flex cursor-pointer items-center gap-2 text-sm font-semibold text-orange-500 transition-colors hover:text-orange-600 pointer-events-auto"
                         >
-                            Tümünü Gör
+                            {t('dashboard.recentReservations.viewAll', 'Tümünü Görüntüle')}
                             <ArrowUpRight size={17} />
                         </button>
                     </div>
@@ -153,17 +159,17 @@ export default function Dashboard() {
                         <table className="w-full min-w-[760px] text-left">
                             <thead className="bg-gray-50 dark:bg-slate-950 text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400">
                                 <tr>
-                                    <th className="px-6 py-4">Rezervasyon</th>
-                                    <th className="px-6 py-4">Müşteri</th>
-                                    <th className="px-6 py-4">Tur</th>
-                                    <th className="px-6 py-4">Tarih</th>
-                                    <th className="px-6 py-4">Tutar</th>
-                                    <th className="px-6 py-4">Durum</th>
+                                    <th className="px-6 py-4">{t('dashboard.recentReservations.columns.reservation', 'Rezervasyon')}</th>
+                                    <th className="px-6 py-4">{t('dashboard.recentReservations.columns.customer', 'Müşteri')}</th>
+                                    <th className="px-6 py-4">{t('dashboard.recentReservations.columns.tour', 'Tur')}</th>
+                                    <th className="px-6 py-4">{t('dashboard.recentReservations.columns.date', 'Tarih')}</th>
+                                    <th className="px-6 py-4">{t('dashboard.recentReservations.columns.total', 'Tutar')}</th>
+                                    <th className="px-6 py-4">{t('dashboard.recentReservations.columns.status', 'Durum')}</th>
                                 </tr>
                             </thead>
 
                             <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-sm text-gray-600 dark:text-slate-300">
-                                {recentReservations.map((reservation) => (
+                                {recentReservationsData.map((reservation) => (
                                     <tr
                                         key={reservation.id}
                                         className="hover:bg-gray-50/40 dark:hover:bg-slate-800/40 transition-colors"
@@ -191,10 +197,10 @@ export default function Dashboard() {
                                         <td className="px-6 py-4">
                                             <span
                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
-                                                    reservation.status
+                                                    reservation.statusKey
                                                 )}`}
                                             >
-                                                {reservation.status}
+                                                {t(reservation.statusKey)}
                                             </span>
                                         </td>
                                     </tr>
@@ -207,11 +213,11 @@ export default function Dashboard() {
                 {/* Hızlı işlemler */}
                 <div className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Hızlı İşlemler
+                        {t('dashboard.quickActions.title', 'Hızlı İşlemler')}
                     </h2>
 
                     <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                        Sık kullanılan yönetim işlemleri.
+                        {t('dashboard.quickActions.subtitle', 'Sık kullanılan yönetim işlemleri.')}
                     </p>
 
                     <div className="mt-6 space-y-3">
@@ -220,7 +226,7 @@ export default function Dashboard() {
                             className="flex w-full items-center gap-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-slate-200 hover:border-orange-200 dark:hover:border-orange-500/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors"
                         >
                             <CalendarCheck size={19} className="text-orange-500" />
-                            Yeni rezervasyon görüntüle
+                            {t('dashboard.quickActions.viewNewReservation', 'Yeni rezervasyon görüntüle')}
                         </button>
 
                         <button
@@ -228,7 +234,7 @@ export default function Dashboard() {
                             className="flex w-full items-center gap-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-955 px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-slate-200 hover:border-orange-200 dark:hover:border-orange-500/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors"
                         >
                             <Users size={19} className="text-orange-500" />
-                            Kullanıcıları yönet
+                            {t('dashboard.quickActions.manageUsers', 'Kullanıcıları yönet')}
                         </button>
 
                         <button
@@ -236,14 +242,14 @@ export default function Dashboard() {
                             className="flex w-full items-center gap-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-955 px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-slate-200 hover:border-orange-200 dark:hover:border-orange-500/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors"
                         >
                             <Map size={19} className="text-orange-500" />
-                            Yeni tur ekle
+                            {t('dashboard.quickActions.addNewTour', 'Yeni tur ekle')}
                         </button>
                     </div>
 
                     <div className="mt-6 rounded-xl bg-gray-50 dark:bg-slate-850/50 p-4 border border-slate-100 dark:border-slate-800/40">
                         <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200">
                             <Clock size={17} className="text-orange-500" />
-                            Son güncelleme
+                            {t('dashboard.quickActions.lastUpdate', 'Son güncelleme')}
                         </div>
 
                         <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">

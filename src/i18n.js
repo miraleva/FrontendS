@@ -26,6 +26,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+
     // lng: 'en', <-- BU SATIRI SİLDİK / YORUMA ALDIK
     fallbackLng: 'en',
     detection: {

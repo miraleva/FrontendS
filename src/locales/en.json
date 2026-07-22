@@ -18,13 +18,6 @@
   "reservation_title": "Reservation Confirmation",
   "reservation_no_item": "No item selected",
   "reservation_back_to_chat": "Back to Chat",
-  "sort_by_label": "Sort",
-  "sort_price_asc": "Price: Low to High",
-  "sort_price_desc": "Price: High to Low",
-  "sort_duration_asc": "Duration: Shortest",
-  "sort_duration_desc": "Duration: Longest",
-  "sort_stars_desc": "Stars: High to Low",
-  "sort_stars_asc": "Stars: Low to High",
   "reservation_departure": "Departure",
   "reservation_arrival": "Arrival",
   "reservation_transfers": "Transfers",
@@ -276,7 +269,7 @@
   "admin_dashboard_title": "Admin Dashboard",
   "admin_dashboard_subtitle": "Manage reservation, chatbot, users and tour data from here.",
   "recent_reservations_title": "Recent Reservations",
-  "recent_reservations_subtitle": "Latest bookings made by clients",
+  "recent_reservations_subtitle": "The latest reservation records added to the system.",
   "view_all": "View All",
   "table_id": "ID",
   "table_client": "Client",
@@ -296,13 +289,7 @@
   "services_active": "Services active",
   "dashboard_title": "Dashboard",
   "dashboard_subtitle": "You can monitor system performance and recent transactions here.",
-  "total_reservations": "Total Reservations",
-  "total_users": "Total Users",
-  "active_tours": "Active Tours",
   "chat_messages": "Chat Messages",
-  "recent_reservations_title": "Recent Reservations",
-  "recent_reservations_subtitle": "The latest reservation records added to the system.",
-  "view_all": "View All",
   "table_col_reservation": "RESERVATION",
   "table_col_client": "CLIENT",
   "table_col_tour": "TOUR",
@@ -369,25 +356,111 @@
   "or_continue_with": "or continue with",
   "social_login_error": "An error occurred during social login",
   "social_login_cancelled": "Login cancelled",
-  "reservation.currentStatus": "Current Status",
-  "reservation.number": "Reservation Number",
-  "reservation.amount": "Amount",
-  "reservation.product": "Product:",
-  "reservation.paymentStatus": "Payment Status:",
-  "reservation.viewRelatedChat": "View Related Chat",
-  "reservation.cancelConfirmation": "Are you sure you want to cancel the reservation for {{title}}?",
-  "reservation.cancelTitle": "Cancel Reservation",
-  "reservation.cancelBody": "Are you sure you want to cancel the reservation {{resNumber}}? This action cannot be undone.",
-  "common.edit": "Edit",
-  "common.cancel": "Cancel",
-  "common.cancelling": "Cancelling...",
-  "common.keep": "Go Back",
-  "status.completed": "Completed",
-  "status.cancelled": "Cancelled",
-  "status.pending": "Pending",
-  "status.paid": "Paid",
-  "status.refunded": "Refunded",
-  "status.hotel": "Hotel",
-  "status.flight": "Flight",
-  "status.transfer": "Transfer"
+  "users_title": "Users",
+  "chat_logs_title": "Chat Logs",
+  "tours_title": "Tours",
+  "reservations": {
+    "title": "Reservations",
+    "description": "View real reservation records from your database.",
+    "loading": "Loading reservations...",
+    "load_error": "Reservations could not be loaded. Check the backend connection.",
+    "reservation_count": "{{count}} reservations",
+    "search_placeholder": "Search reservation number, product or destination...",
+    "view_details": "View reservation details",
+    "not_found": "No reservations found.",
+    "table": {
+      "reservation_number": "Reservation No",
+      "type": "Type",
+      "product": "Product",
+      "destination": "Destination",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "passenger": "Passenger",
+      "total": "Total",
+      "action": "Action"
+    }
+  },
+  "users_page": {
+    "title": "Users",
+    "description": "View and manage users registered in the system.",
+    "search_placeholder": "Search by user name or email...",
+    "role_label": "Role",
+    "reservation_label": "Reservations",
+    "make_inactive": "Deactivate User",
+    "make_active": "Activate User",
+    "not_found": "No users found.",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "roles": {
+      "admin": "Admin",
+      "user": "User"
+    }
+  },
+  "chat_logs_page": {
+    "title": "Chat Logs",
+    "description": "View conversations between users and the chatbot.",
+    "search_placeholder": "Search users...",
+    "view_only": "This area is for viewing only.",
+    "sample_chats": {
+      "chat_1": {
+        "question": "I would like information about the Cappadocia tour.",
+        "answer": "Our Cappadocia tour lasts 3 nights and 4 days, and accommodation is included."
+      },
+      "chat_2": {
+        "question": "Can I change my reservation date?",
+        "answer": "Reservation dates can be changed depending on availability."
+      },
+      "chat_3": {
+        "question": "Is hotel transfer included in the Antalya tour?",
+        "answer": "Yes, airport and hotel transfers are included in our Antalya tour."
+      }
+    }
+  },
+  "tours_page": {
+    "title": "Tours",
+    "description": "View and manage tour packages.",
+    "add_new": "Add New Tour",
+    "date": "Date",
+    "capacity": "Capacity",
+    "person_count": "{{count}} people",
+    "per_person": "Per person",
+    "edit": "Edit tour",
+    "delete": "Delete tour",
+    "delete_confirmation": "Are you sure you want to delete this tour?",
+    "not_found": "No tours found.",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "names": {
+      "cappadocia": "Cappadocia Tour",
+      "antalya": "Antalya Holiday",
+      "blacksea": "Black Sea Tour",
+      "istanbul": "Istanbul Culture Tour"
+    },
+    "form": {
+      "title": "Add New Tour",
+      "description": "Enter the details of the new tour package.",
+      "edit_title": "Edit Tour",
+      "edit_description": "Update the details of the selected tour.",
+      "name": "Tour Name",
+      "name_placeholder": "For example: Izmir Culture Tour",
+      "location": "Location",
+      "location_placeholder": "For example: Izmir",
+      "date": "Tour Date",
+      "price": "Price Per Person",
+      "price_placeholder": "For example: 6500",
+      "capacity": "Capacity",
+      "capacity_placeholder": "For example: 30",
+      "status": "Tour Status",
+      "save": "Save Tour",
+      "update": "Save Changes",
+      "cancel": "Cancel",
+      "close": "Close form",
+      "required_error": "Please complete all fields.",
+      "positive_number_error": "Price and capacity must be greater than zero."
+    }
+  }
 }
