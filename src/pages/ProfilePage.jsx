@@ -113,7 +113,7 @@ const CustomCountrySelect = ({
 };
 
 export default function Profile() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { theme } = useTheme();
     const navigate = useNavigate();
 
@@ -161,6 +161,7 @@ export default function Profile() {
                     country: user.country || '',
                     gender: user.gender || '',
                     dateOfBirth: user.dateOfBirth || '',
+                    createdAt: user.createdAt || null,
                 };
             }
         } catch (e) {
@@ -174,6 +175,7 @@ export default function Profile() {
             country: '',
             gender: '',
             dateOfBirth: '',
+            createdAt: null,
         };
     });
 
@@ -205,6 +207,7 @@ export default function Profile() {
                         country: data.country || '',
                         gender: data.gender || '',
                         dateOfBirth: toDisplayDate(data.dateOfBirth),
+                        createdAt: data.createdAt || null,
                     };
                     setFormData(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -232,6 +235,20 @@ export default function Profile() {
     const fullName = (formData.firstName || formData.lastName)
         ? `${formData.firstName} ${formData.lastName}`.trim()
         : displayHandle;
+
+    const formatMembershipDate = () => {
+        if (!formData.createdAt) return "";
+        try {
+            const dateObj = new Date(formData.createdAt);
+            if (isNaN(dateObj.getTime())) return "";
+            const currentLang = i18n.language || "tr";
+            const formatted = dateObj.toLocaleDateString(currentLang, { month: 'long', year: 'numeric' });
+            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+        } catch (e) {
+            console.error("Error formatting membership date:", e);
+            return "";
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -416,6 +433,7 @@ export default function Profile() {
                 country: data.country || '',
                 gender: data.gender || '',
                 dateOfBirth: toDisplayDate(data.dateOfBirth),
+                createdAt: data.createdAt || formData.createdAt || null,
             };
             setFormData(updatedUser);
             localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -513,7 +531,13 @@ export default function Profile() {
                                         <div className="flex flex-col mt-[2px]">
                                             <p className="text-slate-500 dark:text-slate-400 text-[14px] font-medium leading-none">@{displayHandle}</p>
                                             <p className="text-slate-600 dark:text-slate-300 text-[11px] font-medium mt-[6px] leading-none">
-                                                {t("profile_member_since")}: May 2024
+                                                {formData.createdAt ? (
+                                                    `${t("profile_member_since")}: ${formatMembershipDate()}`
+                                                ) : (
+                                                    localStorage.getItem('isGuest') === 'true' ? null : (
+                                                        <span className="inline-block w-24 h-3 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></span>
+                                                    )
+                                                )}
                                             </p>
                                         </div>
                                     </div>
