@@ -15,7 +15,7 @@
     "loginTitle": "Giriş Yap / Kayıt Ol"
   },
   "baggage_not_included": "Bagaj dahil değil",
-  "reservation_title": "Rezervasyon Onayı",
+  "reservation_title": "Rezervasyonlar",
   "reservation_no_item": "Hiçbir öğe seçilmedi",
   "reservation_back_to_chat": "Sohbete Dön",
   "reservation_departure": "Gidiş",
@@ -267,7 +267,7 @@
   "admin_dashboard_subtitle": "Rezervasyon, chatbot, kullanıcı ve tur verilerini buradan yönetin.",
   "recent_reservations_title": "Son Rezervasyonlar",
   "recent_reservations_subtitle": "Sisteme eklenen son rezervasyon kayıtları.",
-  "view_all": "Tümünü Gör",
+  "view_all": "Tümünü Görüntüle",
   "table_id": "ID",
   "table_client": "Müşteri",
   "table_tour": "Tur",
@@ -284,7 +284,7 @@
   "tours_menu": "Turlar",
   "operations_assistant": "Operasyon Asistanı",
   "services_active": "Servisler aktif",
-  "dashboard_title": "Dashboard",
+  "dashboard_title": "Kontrol Paneli",
   "dashboard_subtitle": "Sistem performansını ve son işlemleri buradan takip edebilirsiniz.",
   "chat_messages": "Chat Mesajı",
   "table_col_reservation": "REZERVASYON",
@@ -294,6 +294,9 @@
   "tour_cappadocia": "Kapadokya Turu",
   "tour_antalya": "Antalya Tatili",
   "tour_blacksea": "Karadeniz Turu",
+  "users_title": "Kullanıcılar",
+  "chat_logs_title": "Sohbet Kayıtları",
+  "tours_title": "Turlar",
   "past_appointments_title": "Geçmiş Randevular",
   "past_appointments_desc": "Geçmiş uçuş, otel ve transfer rezervasyonlarınızın durumunu ve geçmişini görüntüleyin.",
   "past_appointments_expand_sidebar": "Yan Menüyü Genişlet",
@@ -404,5 +407,111 @@
   "res_form_confirm_update": "Güncellemeyi Onayla",
   "res_form_confirm_reservation": "Rezervasyonu Onayla",
   "res_form_invalid_name": "Ad geçerli karakterler içermelidir",
-  "res_form_invalid_surname": "Soyad geçerli karakterler içermelidir"
+  "res_form_invalid_surname": "Soyad geçerli karakterler içermelidir",
+  "reservations": {
+    "title": "Rezervasyonlar",
+    "description": "Veritabanındaki gerçek rezervasyon kayıtlarını görüntüleyin.",
+    "loading": "Rezervasyonlar yükleniyor...",
+    "load_error": "Rezervasyonlar alınamadı. Backend bağlantısını kontrol edin.",
+    "reservation_count": "{{count}} rezervasyon",
+    "search_placeholder": "Rezervasyon no, ürün veya destinasyon ara...",
+    "view_details": "Rezervasyon detayını görüntüle",
+    "not_found": "Rezervasyon bulunamadı.",
+    "table": {
+      "reservation_number": "Rezervasyon No",
+      "type": "Tip",
+      "product": "Ürün",
+      "destination": "Destinasyon",
+      "start_date": "Başlangıç",
+      "end_date": "Bitiş",
+      "passenger": "Yolcu",
+      "total": "Toplam",
+      "action": "İşlem"
+    }
+  },
+  "sidebar_chat": "Sohbet",
+  "sidebar_documents": "Doküman Yönetimi",
+  "sidebar_history": "Geçmiş İşlemler",
+  "users_page": {
+    "title": "Kullanıcılar",
+    "description": "Sisteme kayıtlı kullanıcıları görüntüleyin ve yönetin.",
+    "search_placeholder": "Kullanıcı adı veya e-posta ara...",
+    "role_label": "Rol",
+    "reservation_label": "Rezervasyon",
+    "make_inactive": "Kullanıcıyı Pasif Yap",
+    "make_active": "Kullanıcıyı Aktif Yap",
+    "not_found": "Kullanıcı bulunamadı.",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Pasif"
+    },
+    "roles": {
+      "admin": "Admin",
+      "user": "Kullanıcı"
+    }
+  },
+  "chat_logs_page": {
+    "title": "Sohbet Kayıtları",
+    "description": "Kullanıcı ve chatbot konuşmalarını görüntüleyin.",
+    "search_placeholder": "Kullanıcı ara...",
+    "view_only": "Bu alan yalnızca görüntüleme amaçlıdır.",
+    "sample_chats": {
+      "chat_1": {
+        "question": "Kapadokya turu hakkında bilgi almak istiyorum.",
+        "answer": "Kapadokya turumuz 3 gece 4 gün sürmektedir ve konaklama dahildir."
+      },
+      "chat_2": {
+        "question": "Rezervasyon tarihimi değiştirebilir miyim?",
+        "answer": "Rezervasyon tarih değişikliği uygunluk durumuna göre yapılabilir."
+      },
+      "chat_3": {
+        "question": "Antalya turunda otel transferi var mı?",
+        "answer": "Evet, Antalya turumuzda havaalanı ve otel transferi bulunmaktadır."
+      }
+    }
+  },
+  "tours_page": {
+    "title": "Turlar",
+    "description": "Tur paketlerini görüntüleyin ve yönetin.",
+    "add_new": "Yeni Tur Ekle",
+    "date": "Tarih",
+    "capacity": "Kapasite",
+    "person_count": "{{count}} kişi",
+    "per_person": "Kişi başı",
+    "edit": "Turu düzenle",
+    "delete": "Turu sil",
+    "delete_confirmation": "Bu turu silmek istediğinize emin misiniz?",
+    "not_found": "Tur bulunamadı.",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Pasif"
+    },
+    "names": {
+      "cappadocia": "Kapadokya Turu",
+      "antalya": "Antalya Tatili",
+      "blacksea": "Karadeniz Turu",
+      "istanbul": "İstanbul Kültür Turu"
+    },
+    "form": {
+      "title": "Yeni Tur Ekle",
+      "description": "Yeni tur paketinin bilgilerini girin.",
+      "name": "Tur Adı",
+      "name_placeholder": "Örneğin: İzmir Kültür Turu",
+      "location": "Konum",
+      "location_placeholder": "Örneğin: İzmir",
+      "date": "Tur Tarihi",
+      "price": "Kişi Başı Fiyat",
+      "price_placeholder": "Örneğin: 6500",
+      "capacity": "Kapasite",
+      "capacity_placeholder": "Örneğin: 30",
+      "status": "Tur Durumu",
+      "save": "Turu Kaydet",
+      "cancel": "İptal",
+      "close": "Formu kapat",
+      "required_error": "Lütfen tüm alanları doldurun.",
+      "positive_number_error": "Fiyat ve kapasite sıfırdan büyük olmalıdır.",
+      "edit_title": "Turu Düzenle",
+      "edit_description": "Seçilen turun bilgilerini güncelleyin.",
+      "update": "Değişiklikleri Kaydet"
+  }
 }

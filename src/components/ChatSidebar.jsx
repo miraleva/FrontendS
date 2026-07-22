@@ -44,7 +44,7 @@ export default function ChatSidebar({
   const [sessions, setSessions] = useState([]);
 
   const fetchSessions = async () => {
-    const isGuestSession = localStorage.getItem('isGuest') === 'true';
+    const isGuestSession = localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true';
     if (isGuestSession) {
       setSessions([]);
       return;
@@ -104,7 +104,7 @@ export default function ChatSidebar({
   const filteredSessions = sessions
     .filter(session => {
       const title = session.title || 'Chat Session';
-      return title.toLowerCase().includes(searchQuery.toLowerCase());
+      return title.toLocaleLowerCase('tr-TR').includes(searchQuery.toLocaleLowerCase('tr-TR'));
     })
     .sort((a, b) => {
       const tA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : 0;
@@ -112,7 +112,7 @@ export default function ChatSidebar({
       return tB - tA;
     });
 
-  const username = user?.email || localStorage.getItem('userId') || 'User';
+  const username = user?.email || localStorage.getItem('userId') || sessionStorage.getItem('userId') || 'User';
   const profileFullName = user && (user.firstName || user.lastName)
     ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
     : null;

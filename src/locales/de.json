@@ -406,5 +406,117 @@
   "res_form_confirm_update": "Aktualisierung Bestätigen",
   "res_form_confirm_reservation": "Reservierung Bestätigen",
   "res_form_invalid_name": "Vorname ist ungültig",
-  "res_form_invalid_surname": "Nachname ist ungültig"
+  "res_form_invalid_surname": "Nachname ist ungültig",
+  "sidebar_chat": "Chat",
+  "sidebar_documents": "Dokumentenverwaltung",
+  "sidebar_history": "Frühere Vorgänge",
+  "users_title": "Benutzer",
+  "chat_logs_title": "Chat-Protokolle",
+  "tours_title": "Touren",
+  "operations_assistant": "Operationsassistent",
+  "services_active": "Dienste aktiv",
+  "reservations": {
+    "title": "Reservierungen",
+    "description": "Zeigen Sie die tatsächlichen Reservierungsdatensätze aus der Datenbank an.",
+    "loading": "Reservierungen werden geladen...",
+    "load_error": "Reservierungen konnten nicht geladen werden. Überprüfen Sie die Backend-Verbindung.",
+    "reservation_count": "{{count}} Reservierungen",
+    "search_placeholder": "Nach Reservierungsnummer, Produkt oder Reiseziel suchen...",
+    "view_details": "Reservierungsdetails anzeigen",
+    "not_found": "Keine Reservierungen gefunden.",
+    "table": {
+      "reservation_number": "Reservierungsnummer",
+      "type": "Typ",
+      "product": "Produkt",
+      "destination": "Reiseziel",
+      "start_date": "Startdatum",
+      "end_date": "Enddatum",
+      "passenger": "Passagier",
+      "total": "Gesamt",
+      "action": "Aktion"
+    }
+  },
+  "users_page": {
+    "title": "Benutzer",
+    "description": "Zeigen und verwalten Sie die im System registrierten Benutzer.",
+    "search_placeholder": "Nach Benutzername oder E-Mail suchen...",
+    "role_label": "Rolle",
+    "reservation_label": "Reservierungen",
+    "make_inactive": "Benutzer deaktivieren",
+    "make_active": "Benutzer aktivieren",
+    "not_found": "Keine Benutzer gefunden.",
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "roles": {
+      "admin": "Admin",
+      "user": "Benutzer"
+    }
+  },
+  "chat_logs_page": {
+    "title": "Chat-Protokolle",
+    "description": "Zeigen Sie Unterhaltungen zwischen Benutzern und dem Chatbot an.",
+    "search_placeholder": "Benutzer suchen...",
+    "view_only": "Dieser Bereich dient nur zur Ansicht.",
+    "sample_chats": {
+      "chat_1": {
+        "question": "Ich möchte Informationen über die Kappadokien-Tour erhalten.",
+        "answer": "Unsere Kappadokien-Tour dauert 3 Nächte und 4 Tage, die Unterkunft ist inklusive."
+      },
+      "chat_2": {
+        "question": "Kann ich mein Reservierungsdatum ändern?",
+        "answer": "Eine Änderung des Reservierungsdatums ist je nach Verfügbarkeit möglich."
+      },
+      "chat_3": {
+        "question": "Ist bei der Antalya-Tour ein Hoteltransfer enthalten?",
+        "answer": "Ja, bei unserer Antalya-Tour sind Flughafen- und Hoteltransfers enthalten."
+      }
+    }
+  },
+  "tours_page": {
+    "title": "Touren",
+    "description": "Zeigen und verwalten Sie Tourpakete.",
+    "add_new": "Neue Tour hinzufügen",
+    "date": "Datum",
+    "capacity": "Kapazität",
+    "person_count": "{{count}} Personen",
+    "per_person": "Pro Person",
+    "edit": "Tour bearbeiten",
+    "delete": "Tour löschen",
+    "delete_confirmation": "Möchten Sie diese Tour wirklich löschen?",
+    "not_found": "Keine Touren gefunden.",
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "names": {
+      "cappadocia": "Kappadokien-Tour",
+      "antalya": "Antalya-Urlaub",
+      "blacksea": "Schwarzmeer-Tour",
+      "istanbul": "Istanbul-Kulturtour"
+    },
+    "form": {
+      "title": "Neue Tour hinzufügen",
+      "description": "Geben Sie die Informationen für das neue Tourpaket ein.",
+      "name": "Name der Tour",
+      "name_placeholder": "Zum Beispiel: Izmir-Kulturtour",
+      "location": "Ort",
+      "location_placeholder": "Zum Beispiel: Izmir",
+      "date": "Tourdatum",
+      "price": "Preis pro Person",
+      "price_placeholder": "Zum Beispiel: 6500",
+      "capacity": "Kapazität",
+      "capacity_placeholder": "Zum Beispiel: 30",
+      "status": "Tourstatus",
+      "save": "Tour speichern",
+      "cancel": "Abbrechen",
+      "close": "Formular schließen",
+      "required_error": "Bitte füllen Sie alle Felder aus.",
+      "positive_number_error": "Preis und Kapazität müssen größer als null sein.",
+      "edit_title": "Tour bearbeiten",
+      "edit_description": "Aktualisieren Sie die Angaben der ausgewählten Tour.",
+      "update": "Änderungen speichern"
+    }
+  }
 }

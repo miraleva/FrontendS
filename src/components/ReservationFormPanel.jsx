@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import PhoneInput, {
   isValidPhoneNumber,
 } from "react-phone-number-input";
+import { validatePhoneNumberLength } from "libphonenumber-js/max";
 import "react-phone-number-input/style.css";
 import api from "../services/api";
 
@@ -105,7 +106,7 @@ export default function ReservationFormPanel({
   termsAccepted = false,
   setTermsAccepted,
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const safeHotel = hotel || {};
 
@@ -154,10 +155,9 @@ export default function ReservationFormPanel({
               "",
             birthDate: passenger.birthDate || "",
             gender:
-              passenger.gender ||
-              (passenger.type === "CHILD"
-                ? "CHD"
-                : "MR"),
+              passenger.gender === "CHD"
+                ? "MR"
+                : (passenger.gender || "MR"),
             nationality:
               passenger.nationality || "TR",
             age:
@@ -208,7 +208,7 @@ export default function ReservationFormPanel({
             email: "",
             phone: "",
             birthDate: "",
-            gender: "CHD",
+            gender: "MR",
             nationality: "TR",
             age:
               childAges[index] !== undefined
@@ -235,7 +235,7 @@ export default function ReservationFormPanel({
             email: "",
             phone: "",
             birthDate: "",
-            gender: "CHD",
+            gender: "MR",
             nationality: "TR",
             age:
               infantAges[index] !== undefined
@@ -421,18 +421,32 @@ export default function ReservationFormPanel({
       endDate: toDateOnly(bookingDetails?.checkOut),
       totalPrice: Number(safeHotel?.price) || 0,
       currency: safeHotel?.currency || "TRY",
-      passengers: (guests || []).map((guest) => ({
-        firstName: guest.firstName || "",
-        lastName: guest.lastName || "",
-        email: guest.email || "",
-        phoneNumber: guest.phone || "",
-        identityNumber: guest.identityNumber || "",
-        birthDate: guest.birthDate || null,
-        gender:
-          guest.gender ||
-          (guest.type === "CHILD" ? "CHD" : "MR"),
-        nationality: guest.nationality || "TR",
-      })),
+      passengers: (guests || []).map((guest) => {
+        const today = new Date();
+        const birthDate = guest.birthDate ? new Date(guest.birthDate) : null;
+        let age = null;
+        if (birthDate) {
+          age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+        }
+
+        const isChildOrInfant = guest.type === "CHILD" || guest.type === "INFANT" || (age !== null && age < 18);
+        const finalGender = isChildOrInfant ? "CHD" : (guest.gender || "MR");
+
+        return {
+          firstName: guest.firstName || "",
+          lastName: guest.lastName || "",
+          email: guest.email || "",
+          phoneNumber: guest.phone || "",
+          identityNumber: guest.identityNumber || "",
+          birthDate: guest.birthDate || null,
+          gender: finalGender,
+          nationality: guest.nationality || "TR",
+        };
+      }),
     };
 
     setSubmitError("");
@@ -705,97 +719,89 @@ export default function ReservationFormPanel({
                               </div>
                             </div>
 
-                            {index === 0 && (
-                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                    {t("reservation_gender", "Cinsiyet")}
-                                  </label>
-                                  <select
-                                    required
-                                    value={guest.gender || "MR"}
-                                    onChange={(event) =>
-                                      handleGuestChange(
-                                        index,
-                                        "gender",
-                                        event.target.value
-                                      )
-                                    }
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                  >
-                                    <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                      {t("reservation_male", "Erkek")}
-                                    </option>
-                                    <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                      {t("reservation_female", "Kız")}
-                                    </option>
-                                  </select>
-                                </div>
-
-                                <div>
-                                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                    Doğum Tarihi
-                                  </label>
-                                  <input
-                                    required
-                                    type="date"
-                                    max={new Date().toISOString().split("T")[0]}
-                                    value={guest.birthDate || ""}
-                                    onChange={(event) =>
-                                      handleGuestChange(
-                                        index,
-                                        "birthDate",
-                                        event.target.value
-                                      )
-                                    }
-                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
-                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                        : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                      }`}
-                                  />
-                                  {errors.birthDate && (
-                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                      {errors.birthDate}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {index !== 0 && (
-                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                    Doğum Tarihi
-                                  </label>
-                                  <input
-                                    required
-                                    type="date"
-                                    max={new Date().toISOString().split("T")[0]}
-                                    value={guest.birthDate || ""}
-                                    onChange={(event) =>
-                                      handleGuestChange(
-                                        index,
-                                        "birthDate",
-                                        event.target.value
-                                      )
-                                    }
-                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
-                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                        : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                      }`}
-                                  />
-                                  {errors.birthDate && (
-                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                      {errors.birthDate}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div className="md:col-span-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                  {t("reservation_gender", "Cinsiyet / Unvan")}
+                                </label>
+                                <select
+                                  required
+                                  value={guest.gender || "MR"}
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "gender",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                >
+                                  <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                    {i18n.language?.startsWith("tr") ? "Erkek" : "Mr"}
+                                  </option>
+                                  <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                    {i18n.language?.startsWith("tr") ? "Kadın" : "Mrs"}
+                                  </option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                  Doğum Tarihi
+                                </label>
+                                <input
+                                  required
+                                  type="date"
+                                  max={new Date().toISOString().split("T")[0]}
+                                  value={guest.birthDate || ""}
+                                  onChange={(event) =>
+                                    handleGuestChange(
+                                      index,
+                                      "birthDate",
+                                      event.target.value
+                                    )
+                                  }
+                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
+                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    }`}
+                                />
+                                {errors.birthDate && (
+                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                    {errors.birthDate}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                  Uyruk
+                                </label>
+                                <select
+                                  required
+                                  value={guest.nationality || "TR"}
+                                  onChange={(event) => {
+                                    const newNat = event.target.value;
+                                    handleGuestChange(index, "nationality", newNat);
+                                    handleGuestChange(index, "identityNumber", "");
+                                  }}
+                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                >
+                                  <option value="TR">Türkiye (TR)</option>
+                                  <option value="DE">Almanya (DE)</option>
+                                  <option value="RU">Rusya (RU)</option>
+                                  <option value="US">ABD (US)</option>
+                                  <option value="GB">İngiltere (GB)</option>
+                                  <option value="FR">Fransa (FR)</option>
+                                  <option value="AZ">Azerbaycan (AZ)</option>
+                                  <option value="OTHER">Diğer (OTHER)</option>
+                                </select>
+                              </div>
+
+                              <div>
                                 <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   <ShieldCheck size={12} />
                                   {guest.nationality === "TR" ? "T.C. Kimlik Numarası" : "Pasaport Numarası"}
@@ -807,14 +813,12 @@ export default function ReservationFormPanel({
                                   value={guest.identityNumber || ""}
                                   onChange={(event) => {
                                     const rawValue = event.target.value;
-                                    const hasLetters = /[A-Za-z]/.test(rawValue);
-                                    const cleanValue = hasLetters
-                                      ? rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20)
-                                      : rawValue.replace(/\D/g, "").slice(0, 11);
+                                    const cleanValue = guest.nationality === "TR"
+                                      ? rawValue.replace(/\D/g, "").slice(0, 11)
+                                      : rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
                                     handleGuestChange(index, "identityNumber", cleanValue);
-                                    handleGuestChange(index, "nationality", hasLetters ? "OTHER" : "TR");
                                   }}
-                                  placeholder="T.C. kimlik no veya pasaport no"
+                                  placeholder={guest.nationality === "TR" ? "11 haneli T.C. kimlik numarası" : "Pasaport numarası"}
                                   className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.identityNumber
                                       ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
                                       : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
@@ -827,7 +831,7 @@ export default function ReservationFormPanel({
                                 )}
                               </div>
                             </div>
-
+                            
                             {index === 0 && (
                               <div className="grid grid-cols-1 gap-4 border-t border-slate-200/60 pt-4 dark:border-slate-700 md:grid-cols-2">
                                 <div>
@@ -865,15 +869,25 @@ export default function ReservationFormPanel({
                                   </label>
                                   <PhoneInput
                                     international
+                                    limitMaxLength
                                     defaultCountry="TR"
                                     value={guest.phone || ""}
-                                    onChange={(value) =>
-                                      handleGuestChange(
-                                        index,
-                                        "phone",
-                                        value || ""
-                                      )
-                                    }
+                                    onChange={(value) => {
+                                      const nextPhone = value || "";
+
+                                      if (!nextPhone) {
+                                        handleGuestChange(index, "phone", "");
+                                        return;
+                                      }
+
+                                      const lengthError = validatePhoneNumberLength(nextPhone);
+
+                                      // Eksik numara yazılabilir; yalnızca ülkenin izin verdiği
+                                      // haneden fazlası engellenir.
+                                      if (lengthError !== "TOO_LONG") {
+                                        handleGuestChange(index, "phone", nextPhone);
+                                      }
+                                    }}
                                     className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
                                         ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
                                         : "border-slate-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"

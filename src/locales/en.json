@@ -265,7 +265,6 @@
   "total_reservations": "Total Reservations",
   "total_users": "Total Users",
   "chat_conversations": "Chat Conversations",
-  "active_tours": "Active Tours",
   "admin_dashboard_title": "Admin Dashboard",
   "admin_dashboard_subtitle": "Manage reservation, chatbot, users and tour data from here.",
   "recent_reservations_title": "Recent Reservations",
@@ -284,7 +283,6 @@
   "reservations_menu": "Reservations",
   "users_menu": "Users",
   "chat_logs_menu": "Chat Logs",
-  "tours_menu": "Tours",
   "operations_assistant": "Operations Assistant",
   "services_active": "Services active",
   "dashboard_title": "Dashboard",
@@ -294,9 +292,6 @@
   "table_col_client": "CLIENT",
   "table_col_tour": "TOUR",
   "table_col_date": "DATE",
-  "tour_cappadocia": "Cappadocia Tour",
-  "tour_antalya": "Antalya Holiday",
-  "tour_blacksea": "Black Sea Tour",
   "past_appointments_title": "Past Appointments",
   "past_appointments_desc": "View status and history of your past flight, hotel, and transfer reservations.",
   "past_appointments_expand_sidebar": "Expand Sidebar",
@@ -407,5 +402,66 @@
   "res_form_confirm_update": "Confirm Update",
   "res_form_confirm_reservation": "Confirm Reservation",
   "res_form_invalid_name": "Name must contain valid characters",
-  "res_form_invalid_surname": "Surname must contain valid characters"
+  "res_form_invalid_surname": "Surname must contain valid characters",
+  "users_title": "Users",
+  "chat_logs_title": "Chat Logs",
+  "reservations": {
+    "title": "Reservations",
+    "description": "View real reservation records from your database.",
+    "loading": "Loading reservations...",
+    "load_error": "Reservations could not be loaded. Check the backend connection.",
+    "reservation_count": "{{count}} reservations",
+    "search_placeholder": "Search reservation number, product or destination...",
+    "view_details": "View reservation details",
+    "not_found": "No reservations found.",
+    "table": {
+      "reservation_number": "Reservation No",
+      "type": "Type",
+      "product": "Product",
+      "destination": "Destination",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "passenger": "Passenger",
+      "total": "Total",
+      "action": "Action"
+    }
+  },
+  "users_page": {
+    "title": "Users",
+    "description": "View and manage users registered in the system.",
+    "search_placeholder": "Search by user name or email...",
+    "role_label": "Role",
+    "reservation_label": "Reservations",
+    "make_inactive": "Deactivate User",
+    "make_active": "Activate User",
+    "not_found": "No users found.",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "roles": {
+      "admin": "Admin",
+      "user": "User"
+    }
+  },
+  "chat_logs_page": {
+    "title": "Chat Logs",
+    "description": "View conversations between users and the chatbot.",
+    "search_placeholder": "Search users...",
+    "view_only": "This area is for viewing only.",
+    "sample_chats": {
+      "chat_1": {
+        "question": "I would like information about the Cappadocia tour.",
+        "answer": "Our Cappadocia tour lasts 3 nights and 4 days, and accommodation is included."
+      },
+      "chat_2": {
+        "question": "Can I change my reservation date?",
+        "answer": "Reservation dates can be changed depending on availability."
+      },
+      "chat_3": {
+        "question": "Is hotel transfer included in the Antalya tour?",
+        "answer": "Yes, airport and hotel transfers are included in our Antalya tour."
+      }
+    }
+  }
 }

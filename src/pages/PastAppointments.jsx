@@ -192,7 +192,7 @@ export default function PastAppointments() {
   }, [theme]);
 
   const fetchReservations = async () => {
-    if (localStorage.getItem('isGuest') === 'true') {
+    if (localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true') {
       setAppointments([]);
       return;
     }
@@ -300,7 +300,7 @@ export default function PastAppointments() {
     if (!selectedAppt) return;
 
     const confirmCancel = window.confirm(
-      `${selectedAppt.title} rezervasyonunu iptal etmek istediğinize emin misiniz?`
+      t('reservation.cancelConfirmation', { title: selectedAppt.title })
     );
 
     if (!confirmCancel) return;
