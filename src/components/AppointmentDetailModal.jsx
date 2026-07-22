@@ -152,7 +152,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               <span className="text-sm font-bold text-[#0F172A] dark:text-slate-200 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{appointment.resNumber}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-700/50">
-              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tutar</span>
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('appointment_modal_amount')}</span>
               <span className="text-base font-black text-[#0B5FFF] dark:text-blue-400">{appointment.price}</span>
             </div>
           </div>
@@ -190,13 +190,13 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                 </div>
                 {appointment.roomName && (
                   <div className="flex flex-col">
-                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">Oda Tipi</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('appointment_modal_room_type')}</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.roomName}</span>
                   </div>
                 )}
                 {appointment.boardType && (
                   <div className="flex flex-col">
-                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">Pansiyon Tipi</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('appointment_modal_board_type')}</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.boardType}</span>
                   </div>
                 )}
@@ -259,7 +259,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
             {appointment.passengers && appointment.passengers.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-sm font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
-                  Misafir Bilgileri
+                  {t('appointment_modal_guest_info')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
                   {appointment.passengers.map((passenger, index) => {
@@ -283,13 +283,13 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                         <div className="space-y-1.5">
                           {maskedId && (
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">Kimlik No</span>
+                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">{t('appointment_modal_id_no')}</span>
                               <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{maskedId}</span>
                             </div>
                           )}
                           {formattedDate && (
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">Doğum T.</span>
+                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">{t('appointment_modal_birth_date')}</span>
                               <span className="font-bold text-slate-700 dark:text-slate-300">{formattedDate}</span>
                             </div>
                           )}
@@ -327,7 +327,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               className="py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-800 transition-all flex items-center justify-center gap-2 text-sm group cursor-pointer"
             >
               <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
-              İptal Et
+              {t('appointment_modal_cancel_btn')}
             </button>
           </div>
           
@@ -340,9 +340,9 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               <div className="w-14 h-14 bg-rose-50 dark:bg-rose-950/50 rounded-full flex items-center justify-center mb-4 border-4 border-white dark:border-slate-800 shadow-sm">
                 <AlertCircle size={28} className="text-rose-600 dark:text-rose-400" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Rezervasyonu İptal Et</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
-                <strong className="text-slate-800 dark:text-slate-200">{appointment.resNumber}</strong> numaralı rezervasyonu iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t('appointment_modal_cancel_title')}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {t('appointment_modal_cancel_confirm', { number: appointment.resNumber })}
               </p>
               <div className="flex gap-3 w-full">
                 <button 
@@ -355,7 +355,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                   onClick={confirmCancel}
                   className="flex-1 py-2.5 rounded-xl font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-all text-sm cursor-pointer"
                 >
-                  İptal Et
+                  {t('appointment_modal_cancel_btn')}
                 </button>
               </div>
             </div>
