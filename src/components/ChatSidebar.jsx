@@ -31,7 +31,7 @@ export default function ChatSidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
 
   const isChatActive = location.pathname.startsWith('/chat');
   const isAppointmentsActive = location.pathname === '/appointments';
@@ -112,15 +112,9 @@ export default function ChatSidebar({
       return tB - tA;
     });
 
-  const username = localStorage.getItem('userId') || 'User';
-  let storedUser = null;
-  try {
-    storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-  } catch (e) {
-    storedUser = null;
-  }
-  const profileFullName = storedUser && (storedUser.firstName || storedUser.lastName)
-    ? `${storedUser.firstName || ''} ${storedUser.lastName || ''}`.trim()
+  const username = user?.email || localStorage.getItem('userId') || 'User';
+  const profileFullName = user && (user.firstName || user.lastName)
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
     : null;
   const displayUsername = profileFullName || (username.includes('@') ? username.split('@')[0] : username);
 

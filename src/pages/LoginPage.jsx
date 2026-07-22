@@ -35,7 +35,10 @@ export default function LoginPage() {
             setSocialLoading(true);
             setSocialError('');
             console.log("Google ID Token Başarıyla Alındı, backend'e gönderiliyor...");
-            await handleOAuthLogin('google', credential);
+            const data = await handleOAuthLogin('google', credential);
+            if (data && data.token) {
+              login(data.user, data.token);
+            }
             navigate('/chat');
           } catch (err) {
             console.error('Google backend login error:', err);
@@ -168,7 +171,10 @@ export default function LoginPage() {
       }
 
       console.log('[OAuth] ID token successfully retrieved on frontend. Calling backend OAuth endpoint...');
-      await handleOAuthLogin('google', idToken);
+      const data = await handleOAuthLogin('google', idToken);
+      if (data && data.token) {
+        login(data.user, data.token);
+      }
       navigate('/chat');
     } catch (err) {
       if (err.message === 'cancelled') {

@@ -12,12 +12,40 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
-  const [isGuest, setIsGuest] = useState(() => localStorage.getItem('isGuest') === 'true');
+  const [isGuest, setIsGuest] = useState(() => {
+    const tokenVal = localStorage.getItem('token');
+    const hasToken = !!tokenVal && tokenVal !== 'null' && tokenVal !== 'undefined';
+    if (hasToken) {
+      localStorage.removeItem('isGuest');
+      return false;
+    }
+    return localStorage.getItem('isGuest') === 'true';
+  });
 
   const isAuthenticated = !!token && token !== 'null' && token !== 'undefined';
-  const userType = isAuthenticated ? 'authenticated' : isGuest ? 'guest' : null;
+  const resolvedIsGuest = isGuest && !isAuthenticated;
+  const userType = isAuthenticated ? 'authenticated' : resolvedIsGuest ? 'guest' : null;
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      localStorage.removeItem('isGuest');
+      sessionStorage.removeItem('isGuest');
+      localStorage.removeItem('guestToken');
+      sessionStorage.removeItem('guestToken');
+      localStorage.removeItem('temporaryGuestSession');
+      sessionStorage.removeItem('temporaryGuestSession');
+      setIsGuest(false);
+    }
+  }, [isAuthenticated]);
 
   const login = (userData, tokenValue) => {
+    localStorage.removeItem('isGuest');
+    sessionStorage.removeItem('isGuest');
+    localStorage.removeItem('guestToken');
+    sessionStorage.removeItem('guestToken');
+    localStorage.removeItem('temporaryGuestSession');
+    sessionStorage.removeItem('temporaryGuestSession');
+
     if (tokenValue) {
       localStorage.setItem('token', tokenValue);
       setToken(tokenValue);
@@ -29,7 +57,6 @@ export function AuthProvider({ children }) {
       }
       setUser(userData);
     }
-    localStorage.removeItem('isGuest');
     setIsGuest(false);
   };
 
@@ -48,6 +75,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user');
     localStorage.removeItem('userId');
     localStorage.removeItem('isGuest');
+    sessionStorage.removeItem('isGuest');
+    localStorage.removeItem('guestToken');
+    sessionStorage.removeItem('guestToken');
+    localStorage.removeItem('temporaryGuestSession');
+    sessionStorage.removeItem('temporaryGuestSession');
     setToken(null);
     setUser(null);
     setIsGuest(false);
@@ -58,7 +90,7 @@ export function AuthProvider({ children }) {
       value={{
         token,
         user,
-        isGuest,
+        isGuest: resolvedIsGuest,
         isAuthenticated,
         userType,
         login,
