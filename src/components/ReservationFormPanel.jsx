@@ -520,8 +520,8 @@ export default function ReservationFormPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
-      <div className="relative flex h-full w-full max-w-2xl flex-col overflow-hidden bg-slate-50 font-sans shadow-2xl dark:bg-slate-900">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 font-sans w-full relative">
+      <div className="relative flex h-full w-full flex-col overflow-hidden">
         <div className="relative h-48 flex-shrink-0 bg-slate-800 md:h-64">
           {safeHotel?.thumbnailFull ||
             safeHotel?.thumbnail ? (

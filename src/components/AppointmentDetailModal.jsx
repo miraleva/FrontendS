@@ -88,25 +88,26 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 bg-slate-50/80 dark:bg-slate-800/50 relative">
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-t-2xl">
           <button 
             onClick={(e) => {
               e.stopPropagation();
               onClose();
             }}
-            className="absolute top-5 right-5 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-[#EA580C] hover:text-white hover:border-[#EA580C] text-slate-500 dark:text-slate-400 rounded-full transition-all duration-200 z-10 cursor-pointer shadow-sm"
+            className="absolute top-5 right-5 p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200 dark:border-slate-700 hover:bg-[#f07c24] hover:text-white hover:border-[#f07c24] text-slate-500 dark:text-slate-400 rounded-full transition-all duration-200 z-30 cursor-pointer shadow-sm"
             title="Kapat"
           >
             <X size={18} />
           </button>
           
-          <div className="flex items-start gap-5 pr-10 mt-2">
-            {/* Thumbnail for Hotel, Icon for others/fallback */}
+          {/* Banner Container */}
+          <div className="relative h-48 w-full bg-slate-200 dark:bg-slate-800">
             {appointment.type === "Hotel" && (appointment.thumbnailFull || appointment.thumbnail) ? (
               <img 
                 src={appointment.thumbnailFull || appointment.thumbnail} 
                 alt="Thumbnail" 
-                className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-md border border-slate-200 dark:border-slate-700"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   if (e.currentTarget.nextElementSibling) {
@@ -115,18 +116,21 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                 }}
               />
             ) : null}
-            
-            <div className={`w-20 h-20 rounded-xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm ${appointment.type === "Hotel" && (appointment.thumbnailFull || appointment.thumbnail) ? 'hidden' : ''}`}>
-               <span className="text-4xl drop-shadow-sm">
-                 {appointment.type === "Hotel" ? "🏨" : appointment.type === "Flight" ? "✈" : "🚗"}
-               </span>
+            <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 ${appointment.type === "Hotel" && (appointment.thumbnailFull || appointment.thumbnail) ? 'hidden' : ''}`}>
+              <span className="text-7xl opacity-40 drop-shadow-sm">
+                {appointment.type === "Hotel" ? "🏨" : appointment.type === "Flight" ? "✈" : "🚗"}
+              </span>
             </div>
-
-            <div className="flex flex-col gap-2.5 justify-center py-1">
-              <div className="flex items-center gap-2">
+            
+            {/* Overlay Gradient for Text */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
+            
+            {/* Text Overlay */}
+            <div className="absolute bottom-0 left-0 w-full p-6 flex flex-col justify-end z-10">
+              <div className="flex items-center gap-2 mb-2">
                 {getCategoryBadge(appointment.type)}
               </div>
-              <h2 className="text-xl font-extrabold text-[#0F172A] dark:text-white leading-tight font-display tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight font-display tracking-tight drop-shadow-md">
                 {appointment.title}
               </h2>
             </div>
@@ -184,6 +188,18 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                   <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide flex items-center gap-1"><Users size={12}/> {t('past_appointments_drawer_guest_count')}</span>
                   <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.guests} Kişi</span>
                 </div>
+                {appointment.roomName && (
+                  <div className="flex flex-col">
+                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">Oda Tipi</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.roomName}</span>
+                  </div>
+                )}
+                {appointment.boardType && (
+                  <div className="flex flex-col">
+                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">Pansiyon Tipi</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.boardType}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -238,6 +254,52 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                 )}
               </div>
             )}
+
+            {/* Passengers Section */}
+            {appointment.passengers && appointment.passengers.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
+                  Misafir Bilgileri
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  {appointment.passengers.map((passenger, index) => {
+                    const fullName = `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim();
+                    const maskedId = passenger.identityNumber 
+                      ? `***${passenger.identityNumber.slice(-4)}` 
+                      : null;
+                    const formattedDate = passenger.birthDate 
+                      ? passenger.birthDate.split('-').reverse().join('.') 
+                      : null;
+                      
+                    return (
+                      <div key={index} className="flex flex-col p-3.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center gap-2.5 mb-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-700/50">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                            <User size={13} className="text-slate-500 dark:text-slate-400" />
+                          </div>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{fullName}</span>
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          {maskedId && (
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">Kimlik No</span>
+                              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{maskedId}</span>
+                            </div>
+                          )}
+                          {formattedDate && (
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">Doğum T.</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">{formattedDate}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -246,7 +308,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
           
           <button 
             onClick={() => {}}
-            className="w-full py-3 rounded-xl font-bold bg-[#0B5FFF] text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+            className="w-full py-3 rounded-xl font-bold bg-[#f07c24] text-white hover:bg-[#d96a1a] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
           >
             <MessageSquare size={18} />
             İlgili Sohbeti Görüntüle
