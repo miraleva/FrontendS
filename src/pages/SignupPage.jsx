@@ -80,7 +80,7 @@ export default function SignupPage() {
         if (trimmedVal.length > 25) {
           err = t('name_max_error');
         } else {
-          const nameRegex = /^[A-Za-zÀ-ÿ\s]+$/;
+          const nameRegex = /^[a-zA-ZğĞıİöÖşŞüÜçÇ\s]+$/;
           if (!nameRegex.test(trimmedVal)) {
             err = t('letters_error');
           }

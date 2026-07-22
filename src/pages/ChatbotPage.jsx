@@ -424,7 +424,7 @@ export default function Index() {
 
       // 2. Kullanıcının Kendi Yazdığı Mesajdan (Sorgudan) Tarih ve Konuk Bilgilerini Ayıkla (Yedek Plan)
       let extractedFromQuery = {};
-      const lowerQuery = query.toLowerCase();
+      const lowerQuery = query.toLocaleLowerCase('tr-TR');
 
       // Konuk Sayısı Ayıklama
       const guestMatch = lowerQuery.match(/(\d+)\s*(kişi|kisi|yetişkin|yetiskin|guest|adult)/i);
