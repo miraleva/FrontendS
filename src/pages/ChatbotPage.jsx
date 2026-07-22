@@ -239,7 +239,7 @@ export default function Index() {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const email = user?.email || localStorage.getItem('userId') || "";
+  const email = user?.email || localStorage.getItem('userId') || sessionStorage.getItem('userId') || "";
   const profileFullNameForGreeting = user && (user.firstName || user.lastName)
     ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
     : null;
@@ -381,7 +381,7 @@ export default function Index() {
 
     let userCountry = "Turkey";
     try {
-      const storedUser = localStorage.getItem('user');
+      const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
       if (storedUser) {
         const user = JSON.parse(storedUser);
         if (user.country) userCountry = user.country;

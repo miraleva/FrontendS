@@ -17,14 +17,40 @@ export default function LoginPage() {
 
   const videoRef = useRef(null);
 
+  // Genel Form State'leri
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '', admin: '' });
+
+  // Giriş Modları: Kullanıcı Girişi mi, Admin Girişi mi?
+  const [isAdminMode, setIsAdminMode] = useState(false);
+
+  // Admin Özel Şifre State'i
+  const [adminPassword, setAdminPassword] = useState('');
+
+  // Social login state
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [socialError, setSocialError] = useState('');
+
+  const rememberMeRef = useRef(rememberMe);
+
+  useEffect(() => {
+    rememberMeRef.current = rememberMe;
+  }, [rememberMe]);
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
     }
+    const remembered = localStorage.getItem('rememberedEmail');
+    if (remembered) {
+      setEmail(remembered);
+      setRememberMe(true);
+    }
   }, []);
-
-  // Giriş Modları: Kullanıcı Girişi mi, Admin Girişi mi?
-  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Google SDK Init (Isolation Test)
   useEffect(() => {
@@ -35,9 +61,9 @@ export default function LoginPage() {
             setSocialLoading(true);
             setSocialError('');
             console.log("Google ID Token Başarıyla Alındı, backend'e gönderiliyor...");
-            const data = await handleOAuthLogin('google', credential);
+            const data = await handleOAuthLogin('google', credential, rememberMeRef.current);
             if (data && data.token) {
-              login(data.user, data.token);
+              login(data.user, data.token, rememberMeRef.current);
             }
             navigate('/chat');
           } catch (err) {
@@ -54,21 +80,6 @@ export default function LoginPage() {
       }, { locale: i18n.language });
     }
   }, [isAdminMode, navigate, t, i18n.language]);
-
-  // Genel Form State'leri
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '', admin: '' });
-
-  // Admin Özel Şifre State'i
-  const [adminPassword, setAdminPassword] = useState('');
-
-  // Social login state
-  const [socialLoading, setSocialLoading] = useState(false);
-  const [socialError, setSocialError] = useState('');
 
   // Validasyonlar
   const validateEmail = (val) => {
@@ -110,7 +121,14 @@ export default function LoginPage() {
     try {
       const response = await api.post('/api/auth/login', { email, password });
       const data = response.data;
-      login(data.user, data.token);
+
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+
+      login(data.user, data.token, rememberMe);
       navigate('/chat');
     } catch (err) {
       if (err.response && err.response.status === 401) {
@@ -171,9 +189,9 @@ export default function LoginPage() {
       }
 
       console.log('[OAuth] ID token successfully retrieved on frontend. Calling backend OAuth endpoint...');
-      const data = await handleOAuthLogin('google', idToken);
+      const data = await handleOAuthLogin('google', idToken, rememberMe);
       if (data && data.token) {
-        login(data.user, data.token);
+        login(data.user, data.token, rememberMe);
       }
       navigate('/chat');
     } catch (err) {

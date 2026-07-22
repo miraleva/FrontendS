@@ -169,12 +169,17 @@ export function signInWithGoogle(options = {}) {
  *
  * Supports both handleOAuthLogin(credential) and handleOAuthLogin('google', credential)
  */
-export async function handleOAuthLogin(providerOrToken, tokenIfTwoArgs) {
+export async function handleOAuthLogin(providerOrToken, tokenIfTwoArgs, rememberMe = false) {
   let provider = 'google';
   let idToken = providerOrToken;
-  if (tokenIfTwoArgs) {
+  let remember = false;
+  if (tokenIfTwoArgs && typeof tokenIfTwoArgs === 'string') {
     provider = providerOrToken;
     idToken = tokenIfTwoArgs;
+    remember = rememberMe;
+  } else if (tokenIfTwoArgs && typeof tokenIfTwoArgs === 'boolean') {
+    idToken = providerOrToken;
+    remember = tokenIfTwoArgs;
   }
 
   // Prevent backend call if token is missing or invalid
@@ -201,12 +206,22 @@ export async function handleOAuthLogin(providerOrToken, tokenIfTwoArgs) {
   const data = response.data;
 
   // 3. DÖNEN TOKEN'I SAKLAMA:
-  // Store JWT token & user object in localStorage / auth state
+  // Store JWT token & user object in localStorage/sessionStorage / auth state
   if (data && data.token) {
-    localStorage.setItem('token', data.token);
+    const storage = remember ? localStorage : sessionStorage;
+
+    // Clean up both stores first
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('userId');
+    sessionStorage.removeItem('userId');
+
+    storage.setItem('token', data.token);
     if (data.user) {
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('userId', data.user.email || '');
+      storage.setItem('user', JSON.stringify(data.user));
+      storage.setItem('userId', data.user.email || '');
     }
   }
 
