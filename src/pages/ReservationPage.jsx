@@ -150,7 +150,7 @@ function getPassengerErrors(passenger, index = 0) {
 }
 
 export default function ReservationPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { theme } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
@@ -1044,7 +1044,6 @@ export default function ReservationPage() {
                                                                 </div>
                                                             </div>
 
-                                                                {index === 0 && (
                                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                                     <div>
                                                                         <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
@@ -1068,10 +1067,10 @@ export default function ReservationPage() {
                                                                             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
                                                                         >
                                                                             <option value="MR">
-                                                                                {t("reservation_male", "Erkek")}
+                                                                                {i18n.language?.startsWith("tr") ? "Erkek" : "Mr"}
                                                                             </option>
                                                                             <option value="MRS">
-                                                                                {t("reservation_female", "Kız")}
+                                                                                {i18n.language?.startsWith("tr") ? "Kadın" : "Mrs"}
                                                                             </option>
                                                                         </select>
                                                                     </div>
@@ -1114,52 +1113,34 @@ export default function ReservationPage() {
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                                )}
 
-                                                                {index !== 0 && (
                                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                                     <div>
                                                                         <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                            Doğum Tarihi
+                                                                            Uyruk
                                                                         </label>
-                                                                        <input
+                                                                        <select
                                                                             required
-                                                                            type="date"
-                                                                            max={new Date()
-                                                                                .toISOString()
-                                                                                .split("T")[0]}
-                                                                            value={
-                                                                                passenger.birthDate ||
-                                                                                ""
-                                                                            }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
-                                                                                handlePassengerChange(
-                                                                                    index,
-                                                                                    "birthDate",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
-                                                                            }
-                                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
-                                                                                ? "border-red-500 ring-1 ring-red-500"
-                                                                                : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
-                                                                                }`}
-                                                                        />
-                                                                        {errors.birthDate && (
-                                                                            <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                                                                {
-                                                                                    errors.birthDate
-                                                                                }
-                                                                            </span>
-                                                                        )}
+                                                                            value={passenger.nationality || "TR"}
+                                                                            onChange={(event) => {
+                                                                                const newNat = event.target.value;
+                                                                                handlePassengerChange(index, "nationality", newNat);
+                                                                                handlePassengerChange(index, "identityNumber", "");
+                                                                            }}
+                                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                                                                        >
+                                                                            <option value="TR">Türkiye (TR)</option>
+                                                                            <option value="DE">Almanya (DE)</option>
+                                                                            <option value="RU">Rusya (RU)</option>
+                                                                            <option value="US">ABD (US)</option>
+                                                                            <option value="GB">İngiltere (GB)</option>
+                                                                            <option value="FR">Fransa (FR)</option>
+                                                                            <option value="AZ">Azerbaycan (AZ)</option>
+                                                                            <option value="OTHER">Diğer (OTHER)</option>
+                                                                        </select>
                                                                     </div>
-                                                                </div>
-                                                                )}
 
-                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                    <div className="md:col-span-2">
+                                                                    <div>
                                                                         <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
                                                                             <ShieldCheck
                                                                                 size={12}
@@ -1183,23 +1164,17 @@ export default function ReservationPage() {
                                                                             onChange={(event) => {
                                                                                 const rawValue =
                                                                                     event.target.value;
-                                                                                const hasLetters = /[A-Za-z]/.test(rawValue);
-                                                                                const cleanValue = hasLetters
-                                                                                    ? rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
-                                                                                    : rawValue.replace(/\D/g, "").slice(0, 11);
+                                                                                const cleanValue = passenger.nationality === "TR"
+                                                                                    ? rawValue.replace(/\D/g, "").slice(0, 11)
+                                                                                    : rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
 
                                                                                 handlePassengerChange(index, "identityNumber", cleanValue);
-                                                                                handlePassengerChange(index, "nationality", hasLetters ? "OTHER" : "TR");
                                                                             }}
-                                                                            onInput={(event) => {
-                                                                                const currentValue =
-                                                                                    event.currentTarget.value;
-                                                                                const hasLetters = /[A-Za-z]/.test(currentValue);
-                                                                                event.currentTarget.value = hasLetters
-                                                                                    ? currentValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9)
-                                                                                    : currentValue.replace(/\D/g, "").slice(0, 11);
-                                                                            }}
-                                                                            placeholder="T.C. kimlik no veya pasaport no"
+                                                                            placeholder={
+                                                                                passenger.nationality === "TR"
+                                                                                    ? "11 haneli T.C. kimlik numarası"
+                                                                                    : "Pasaport numarası"
+                                                                            }
                                                                             className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
                                                                                 ? "border-red-500 ring-1 ring-red-500"
                                                                                 : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
@@ -1263,6 +1238,7 @@ export default function ReservationPage() {
 
                                                                         <PhoneInput
                                                                             international
+                                                                            limitMaxLength
                                                                             defaultCountry="TR"
                                                                             onCountryChange={(country) => {
                                                                                 handlePassengerChange(

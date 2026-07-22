@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import PhoneInput, {
   isValidPhoneNumber,
 } from "react-phone-number-input";
+import { validatePhoneNumberLength } from "libphonenumber-js/max";
 import "react-phone-number-input/style.css";
 import api from "../services/api";
 
@@ -868,15 +869,25 @@ export default function ReservationFormPanel({
                                   </label>
                                   <PhoneInput
                                     international
+                                    limitMaxLength
                                     defaultCountry="TR"
                                     value={guest.phone || ""}
-                                    onChange={(value) =>
-                                      handleGuestChange(
-                                        index,
-                                        "phone",
-                                        value || ""
-                                      )
-                                    }
+                                    onChange={(value) => {
+                                      const nextPhone = value || "";
+
+                                      if (!nextPhone) {
+                                        handleGuestChange(index, "phone", "");
+                                        return;
+                                      }
+
+                                      const lengthError = validatePhoneNumberLength(nextPhone);
+
+                                      // Eksik numara yazılabilir; yalnızca ülkenin izin verdiği
+                                      // haneden fazlası engellenir.
+                                      if (lengthError !== "TOO_LONG") {
+                                        handleGuestChange(index, "phone", nextPhone);
+                                      }
+                                    }}
                                     className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
                                         ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
                                         : "border-slate-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"
