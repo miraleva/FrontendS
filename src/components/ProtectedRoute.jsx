@@ -13,10 +13,10 @@ export default function ProtectedRoute({
   const { isGuest, isAuthenticated, token } = useAuth();
 
   const hasGuestSession = localStorage.getItem('isGuest') === 'true';
-  const hasToken = !!(token || (localStorage.getItem('token') && localStorage.getItem('token') !== 'null'));
+  const hasToken = !!(token || (localStorage.getItem('token') && localStorage.getItem('token') !== 'null' && localStorage.getItem('token') !== 'undefined'));
 
-  const effectiveIsGuest = isGuest || hasGuestSession;
   const effectiveIsAuth  = isAuthenticated || hasToken;
+  const effectiveIsGuest = (isGuest || hasGuestSession) && !effectiveIsAuth;
 
   // Misafir bu rotaya giremez → özel yönlendirme
   if (effectiveIsGuest && !allowedTypes.includes('guest')) {
