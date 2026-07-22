@@ -36,6 +36,45 @@ function formatPrice(price) {
   return Math.round(num).toLocaleString("tr-TR");
 }
 
+function getFlightDurationMs(result) {
+  if (!result?.departureTime || !result?.arrivalTime) return Number.POSITIVE_INFINITY;
+  const dep = new Date(result.departureTime).getTime();
+  const arr = new Date(result.arrivalTime).getTime();
+  if (Number.isNaN(dep) || Number.isNaN(arr)) return Number.POSITIVE_INFINITY;
+  return arr - dep;
+}
+
+// Varsayılan sıralama ucuzdan pahalıya (kullanıcı isteği); uçakta süreye, otelde
+// yıldıza göre de sıralanabilsin diye seçenekler eklendi.
+function sortResults(results, sortKey) {
+  if (!Array.isArray(results)) return results;
+  const sorted = [...results];
+
+  switch (sortKey) {
+    case "price_desc":
+      sorted.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+      break;
+    case "stars_desc":
+      sorted.sort((a, b) => (Number(b.stars) || 0) - (Number(a.stars) || 0));
+      break;
+    case "stars_asc":
+      sorted.sort((a, b) => (Number(a.stars) || 0) - (Number(b.stars) || 0));
+      break;
+    case "duration_asc":
+      sorted.sort((a, b) => getFlightDurationMs(a) - getFlightDurationMs(b));
+      break;
+    case "duration_desc":
+      sorted.sort((a, b) => getFlightDurationMs(b) - getFlightDurationMs(a));
+      break;
+    case "price_asc":
+    default:
+      sorted.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+      break;
+  }
+
+  return sorted;
+}
+
 // TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
 // ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
 // gösterilir.
@@ -152,6 +191,8 @@ export default function Index() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
+  // Mesaj başına (msg.id ile) sonuç sıralama tercihi; varsayılan ucuzdan pahalıya.
+  const [resultSortOptions, setResultSortOptions] = useState({});
 
   // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
@@ -826,8 +867,41 @@ export default function Index() {
                           )}
 
                           {msg.results && msg.results.length > 0 && (
-                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                              {msg.results.map((result, idx) => {
+                            <div className="mt-3 w-full">
+                              {msg.results.length > 1 && (
+                                <div className="mb-2 flex items-center justify-end gap-2">
+                                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                    {t("sort_by_label", "Sırala")}
+                                  </span>
+                                  <select
+                                    value={resultSortOptions[msg.id] || "price_asc"}
+                                    onChange={(event) =>
+                                      setResultSortOptions((prev) => ({
+                                        ...prev,
+                                        [msg.id]: event.target.value,
+                                      }))
+                                    }
+                                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                                  >
+                                    <option value="price_asc">{t("sort_price_asc", "Fiyat: Ucuzdan Pahalıya")}</option>
+                                    <option value="price_desc">{t("sort_price_desc", "Fiyat: Pahalıdan Ucuza")}</option>
+                                    {msg.results[0]?.airline !== undefined ? (
+                                      <>
+                                        <option value="duration_asc">{t("sort_duration_asc", "Süre: En Kısa")}</option>
+                                        <option value="duration_desc">{t("sort_duration_desc", "Süre: En Uzun")}</option>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <option value="stars_desc">{t("sort_stars_desc", "Yıldız: Yüksekten Düşüğe")}</option>
+                                        <option value="stars_asc">{t("sort_stars_asc", "Yıldız: Düşükten Yükseğe")}</option>
+                                      </>
+                                    )}
+                                  </select>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                              {sortResults(msg.results, resultSortOptions[msg.id] || "price_asc").map((result, idx) => {
                                 const isFlight = result.airline !== undefined;
                                 if (isFlight) {
                                   const isCurrentlySelected = selectedFlight
@@ -974,6 +1048,7 @@ export default function Index() {
                                   );
                                 }
                               })}
+                              </div>
                             </div>
                           )}
                         </div>
