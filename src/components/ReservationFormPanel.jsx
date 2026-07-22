@@ -705,91 +705,97 @@ export default function ReservationFormPanel({
                               </div>
                             </div>
 
+                            {index === 0 && (
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                    {t("reservation_gender", "Cinsiyet")}
+                                  </label>
+                                  <select
+                                    required
+                                    value={guest.gender || "MR"}
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "gender",
+                                        event.target.value
+                                      )
+                                    }
+                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  >
+                                    <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                      {t("reservation_male", "Erkek")}
+                                    </option>
+                                    <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                      {t("reservation_female", "Kız")}
+                                    </option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                    Doğum Tarihi
+                                  </label>
+                                  <input
+                                    required
+                                    type="date"
+                                    max={new Date().toISOString().split("T")[0]}
+                                    value={guest.birthDate || ""}
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "birthDate",
+                                        event.target.value
+                                      )
+                                    }
+                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
+                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                        : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                      }`}
+                                  />
+                                  {errors.birthDate && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                      {errors.birthDate}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {index !== 0 && (
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                    Doğum Tarihi
+                                  </label>
+                                  <input
+                                    required
+                                    type="date"
+                                    max={new Date().toISOString().split("T")[0]}
+                                    value={guest.birthDate || ""}
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "birthDate",
+                                        event.target.value
+                                      )
+                                    }
+                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
+                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
+                                        : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                      }`}
+                                  />
+                                  {errors.birthDate && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
+                                      {errors.birthDate}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  {t("reservation_gender", "Cinsiyet / Unvan")}
-                                </label>
-                                <select
-                                  required
-                                  value={guest.gender || (guest.type === "CHILD" || guest.type === "INFANT" ? "CHD" : "MR")}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "gender",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                >
-                                  <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    Bay (MR)
-                                  </option>
-                                  <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    Bayan (MRS)
-                                  </option>
-                                  <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    Çocuk / Bebek (CHD)
-                                  </option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Doğum Tarihi
-                                </label>
-                                <input
-                                  required
-                                  type="date"
-                                  max={new Date().toISOString().split("T")[0]}
-                                  value={guest.birthDate || ""}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "birthDate",
-                                      event.target.value
-                                    )
-                                  }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
-                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                    }`}
-                                />
-                                {errors.birthDate && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                    {errors.birthDate}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Uyruk
-                                </label>
-                                <select
-                                  required
-                                  value={guest.nationality || "TR"}
-                                  onChange={(event) => {
-                                    const newNat = event.target.value;
-                                    handleGuestChange(index, "nationality", newNat);
-                                    handleGuestChange(index, "identityNumber", "");
-                                  }}
-                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                >
-                                  <option value="TR">Türkiye (TR)</option>
-                                  <option value="DE">Almanya (DE)</option>
-                                  <option value="RU">Rusya (RU)</option>
-                                  <option value="US">ABD (US)</option>
-                                  <option value="GB">İngiltere (GB)</option>
-                                  <option value="FR">Fransa (FR)</option>
-                                  <option value="AZ">Azerbaycan (AZ)</option>
-                                  <option value="OTHER">Diğer (OTHER)</option>
-                                </select>
-                              </div>
-
-                              <div>
+                              <div className="md:col-span-2">
                                 <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
                                   <ShieldCheck size={12} />
                                   {guest.nationality === "TR" ? "T.C. Kimlik Numarası" : "Pasaport Numarası"}
@@ -801,12 +807,14 @@ export default function ReservationFormPanel({
                                   value={guest.identityNumber || ""}
                                   onChange={(event) => {
                                     const rawValue = event.target.value;
-                                    const cleanValue = guest.nationality === "TR"
-                                      ? rawValue.replace(/\D/g, "").slice(0, 11)
-                                      : rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
+                                    const hasLetters = /[A-Za-z]/.test(rawValue);
+                                    const cleanValue = hasLetters
+                                      ? rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20)
+                                      : rawValue.replace(/\D/g, "").slice(0, 11);
                                     handleGuestChange(index, "identityNumber", cleanValue);
+                                    handleGuestChange(index, "nationality", hasLetters ? "OTHER" : "TR");
                                   }}
-                                  placeholder={guest.nationality === "TR" ? "11 haneli T.C. kimlik numarası" : "Pasaport numarası"}
+                                  placeholder="T.C. kimlik no veya pasaport no"
                                   className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.identityNumber
                                       ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
                                       : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
