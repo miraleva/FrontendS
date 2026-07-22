@@ -297,7 +297,7 @@ export default function PastAppointments() {
     if (!selectedAppt) return;
 
     const confirmCancel = window.confirm(
-      `${selectedAppt.title} rezervasyonunu iptal etmek istediğinize emin misiniz?`
+      t('reservation.cancelConfirmation', { title: selectedAppt.title })
     );
 
     if (!confirmCancel) return;
@@ -695,7 +695,7 @@ export default function PastAppointments() {
               <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Mevcut Durum
+                    {t('reservation.currentStatus')}
                   </span>
                   {getStatusBadge(
                     selectedAppt.status
@@ -704,7 +704,7 @@ export default function PastAppointments() {
 
                 <div className="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-700">
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Rezervasyon Numarası
+                    {t('reservation.number')}
                   </span>
                   <span className="rounded bg-slate-200 px-2 py-0.5 font-mono text-xs font-bold dark:bg-slate-700">
                     {selectedAppt.resNumber}
@@ -713,7 +713,7 @@ export default function PastAppointments() {
 
                 <div className="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-700">
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Tutar
+                    {t('reservation.amount')}
                   </span>
                   <span className="text-lg font-bold text-blue-500 dark:text-blue-400">
                     {selectedAppt.price}
@@ -724,7 +724,7 @@ export default function PastAppointments() {
               <div className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                 <div className="flex justify-between gap-4 text-sm">
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Ürün:
+                    {t('reservation.product')}
                   </span>
                   <span className="text-right text-xs font-semibold">
                     {selectedAppt.itemName ||
@@ -734,10 +734,10 @@ export default function PastAppointments() {
 
                 <div className="flex justify-between gap-4 text-sm">
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Ödeme Durumu:
+                    {t('reservation.paymentStatus')}
                   </span>
                   <span className="text-xs font-bold text-emerald-500">
-                    {selectedAppt.paymentStatus}
+                    {t('status.' + selectedAppt.paymentStatus.toLowerCase(), selectedAppt.paymentStatus)}
                   </span>
                 </div>
               </div>
@@ -750,7 +750,7 @@ export default function PastAppointments() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-3 text-sm font-bold text-white transition-all hover:bg-[#1D4ED8]"
               >
                 <MessageSquare size={16} />
-                İlgili Sohbeti Görüntüle
+                {t('reservation.viewRelatedChat')}
               </button>
 
               <div className="grid grid-cols-2 gap-3">
@@ -760,7 +760,7 @@ export default function PastAppointments() {
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-2.5 text-xs font-semibold text-slate-800 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-[#1E293B] dark:text-white dark:hover:bg-slate-700"
                 >
                   <Edit3 size={15} />
-                  Düzenle
+                  {t('common.edit')}
                 </button>
 
                 <button
@@ -771,8 +771,8 @@ export default function PastAppointments() {
                 >
                   <Trash2 size={15} />
                   {loading
-                    ? "İptal Ediliyor..."
-                    : "İptal Et"}
+                    ? t('common.cancelling')
+                    : t('common.cancel')}
                 </button>
               </div>
             </div>
