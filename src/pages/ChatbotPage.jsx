@@ -145,7 +145,7 @@ function formatBaggage(baggage, t) {
 export default function Index() {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatActive, setIsChatActive] = useState(false);
@@ -198,15 +198,9 @@ export default function Index() {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const email = localStorage.getItem('userId') || "";
-  let storedUserForGreeting = null;
-  try {
-    storedUserForGreeting = JSON.parse(localStorage.getItem('user') || 'null');
-  } catch (e) {
-    storedUserForGreeting = null;
-  }
-  const profileFullNameForGreeting = storedUserForGreeting && (storedUserForGreeting.firstName || storedUserForGreeting.lastName)
-    ? `${storedUserForGreeting.firstName || ''} ${storedUserForGreeting.lastName || ''}`.trim()
+  const email = user?.email || localStorage.getItem('userId') || "";
+  const profileFullNameForGreeting = user && (user.firstName || user.lastName)
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
     : null;
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
