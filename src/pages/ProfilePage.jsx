@@ -31,6 +31,87 @@ const toDisplayDate = (isoDate) => {
     return "";
 };
 
+// Custom Country Select Component to replace react-phone-number-input's default CountrySelectWithIcon
+const CustomCountrySelect = ({
+    value,
+    onChange,
+    options,
+    iconComponent: Icon,
+    disabled,
+    className,
+    onFocus,
+    onBlur,
+    ...rest
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find((opt) => opt.value === value);
+
+    return (
+        <div ref={dropdownRef} className="PhoneInputCountry relative flex items-center">
+            {/* The trigger button showing the flag and the arrow */}
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setIsOpen(!isOpen)}
+                onFocus={onFocus}
+                onBlur={onBlur}
+                className="flex items-center gap-1 cursor-pointer focus:outline-none"
+            >
+                {/* Render the flag icon */}
+                {selectedOption && Icon && (
+                    <Icon
+                        aria-hidden
+                        country={value}
+                        label={selectedOption.label}
+                    />
+                )}
+                {/* Render the default arrow */}
+                <div className="PhoneInputCountrySelectArrow" />
+            </button>
+
+            {isOpen && (
+                <div
+                    className="absolute left-0 mt-[10px] min-w-[220px] bg-white dark:bg-[#182232] border border-slate-200 dark:border-slate-700 rounded-[12px] shadow-xl py-1.5 z-[100] max-h-[250px] overflow-y-auto"
+                    style={{ top: '100%' }}
+                >
+                    {options.map(({ value: countryCode, label }) => {
+                        const isSelected = countryCode === value;
+                        return (
+                            <button
+                                key={countryCode || 'ZZ'}
+                                type="button"
+                                onClick={() => {
+                                    onChange(countryCode);
+                                    setIsOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 cursor-pointer ${
+                                    isSelected
+                                        ? 'bg-blue-600 text-white dark:bg-blue-600 dark:text-white font-semibold'
+                                        : 'text-gray-900 dark:text-white hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function Profile() {
     const { t } = useTranslation();
     const { theme } = useTheme();
@@ -47,6 +128,19 @@ export default function Profile() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const [isGenderOpen, setIsGenderOpen] = useState(false);
+    const genderRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (genderRef.current && !genderRef.current.contains(event.target)) {
+                setIsGenderOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Modal görünürlükleri için state'ler
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -554,6 +648,7 @@ export default function Profile() {
                                                 onChange={handlePhoneChange}
                                                 onBlur={() => handleBlur("phone")}
                                                 smartCaret={false}
+                                                countrySelectComponent={CustomCountrySelect}
                                                 className="flex items-center w-full bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 rounded-[12px] px-[16px] py-[12px] text-slate-900 dark:text-white text-[15px] focus-within:ring-2 focus-within:ring-[#219ebc]/40 focus-within:bg-white/70 dark:focus-within:bg-slate-800 transition-all duration-200"
                                                 numberInputProps={{
                                                     className:
@@ -602,29 +697,48 @@ export default function Profile() {
                                         {t("profile_gender")}
                                     </span>
                                     {isEditing ? (
-                                        <select
-                                            name="gender"
-                                            value={formData.gender}
-                                            onChange={handleInputChange}
-                                            onBlur={() => handleBlur("gender")}
-                                            className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200 cursor-pointer"
-                                        >
-                                            <option value="" disabled className="text-slate-400 bg-slate-800 text-white">
-                                                {t("profile_gender")}
-                                            </option>
-                                            <option value="Male" className="bg-slate-800 text-white">
-                                                {t("profile_gender_male")}
-                                            </option>
-                                            <option value="Female" className="bg-slate-800 text-white">
-                                                {t("profile_gender_female")}
-                                            </option>
-                                            <option value="Other" className="bg-slate-800 text-white">
-                                                {t("profile_gender_other")}
-                                            </option>
-                                            <option value="Private" className="bg-slate-800 text-white">
-                                                {t("profile_gender_private")}
-                                            </option>
-                                        </select>
+                                        <div className="relative w-full" ref={genderRef}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsGenderOpen(!isGenderOpen)}
+                                                className="w-full px-[16px] py-[12px] rounded-[12px] bg-white/50 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700 text-slate-900 dark:text-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#0B5FFF]/40 focus:bg-white/70 dark:focus:bg-slate-800 transition-all duration-200 cursor-pointer flex justify-between items-center"
+                                            >
+                                                <span>
+                                                    {formData.gender
+                                                        ? t(`profile_gender_${formData.gender.toLowerCase()}`)
+                                                        : t("profile_gender")}
+                                                </span>
+                                                <svg
+                                                    className={`w-4 h-4 transition-transform duration-200 ${isGenderOpen ? "rotate-180" : ""}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                            {isGenderOpen && (
+                                                <div className="absolute left-0 mt-[6px] w-full bg-white dark:bg-[#182232] border border-slate-200 dark:border-slate-700 rounded-[12px] shadow-lg py-1.5 z-50 animate-fade-in">
+                                                    {["Male", "Female", "Other", "Private"].map((genderVal) => (
+                                                        <button
+                                                            key={genderVal}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setFormData((prev) => ({ ...prev, gender: genderVal }));
+                                                                setIsGenderOpen(false);
+                                                            }}
+                                                            className={`w-full text-left px-[16px] py-[10px] text-[15px] font-medium transition-colors duration-150 cursor-pointer ${
+                                                                formData.gender === genderVal
+                                                                    ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white font-semibold"
+                                                                    : "text-gray-900 dark:text-white hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white"
+                                                            }`}
+                                                        >
+                                                            {t(`profile_gender_${genderVal.toLowerCase()}`)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     ) : (
                                         <span className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                                             {formData.gender ? t(`profile_gender_${formData.gender.toLowerCase()}`) : "—"}
