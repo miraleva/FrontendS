@@ -265,7 +265,6 @@
   "total_reservations": "Total Reservations",
   "total_users": "Total Users",
   "chat_conversations": "Chat Conversations",
-  "active_tours": "Active Tours",
   "admin_dashboard_title": "Admin Dashboard",
   "admin_dashboard_subtitle": "Manage reservation, chatbot, users and tour data from here.",
   "recent_reservations_title": "Recent Reservations",
@@ -284,7 +283,6 @@
   "reservations_menu": "Reservations",
   "users_menu": "Users",
   "chat_logs_menu": "Chat Logs",
-  "tours_menu": "Tours",
   "operations_assistant": "Operations Assistant",
   "services_active": "Services active",
   "dashboard_title": "Dashboard",
@@ -294,9 +292,6 @@
   "table_col_client": "CLIENT",
   "table_col_tour": "TOUR",
   "table_col_date": "DATE",
-  "tour_cappadocia": "Cappadocia Tour",
-  "tour_antalya": "Antalya Holiday",
-  "tour_blacksea": "Black Sea Tour",
   "past_appointments_title": "Past Appointments",
   "past_appointments_desc": "View status and history of your past flight, hotel, and transfer reservations.",
   "past_appointments_expand_sidebar": "Expand Sidebar",
@@ -358,7 +353,6 @@
   "social_login_cancelled": "Login cancelled",
   "users_title": "Users",
   "chat_logs_title": "Chat Logs",
-  "tours_title": "Tours",
   "reservations": {
     "title": "Reservations",
     "description": "View real reservation records from your database.",
@@ -416,51 +410,6 @@
         "question": "Is hotel transfer included in the Antalya tour?",
         "answer": "Yes, airport and hotel transfers are included in our Antalya tour."
       }
-    }
-  },
-  "tours_page": {
-    "title": "Tours",
-    "description": "View and manage tour packages.",
-    "add_new": "Add New Tour",
-    "date": "Date",
-    "capacity": "Capacity",
-    "person_count": "{{count}} people",
-    "per_person": "Per person",
-    "edit": "Edit tour",
-    "delete": "Delete tour",
-    "delete_confirmation": "Are you sure you want to delete this tour?",
-    "not_found": "No tours found.",
-    "status": {
-      "active": "Active",
-      "inactive": "Inactive"
-    },
-    "names": {
-      "cappadocia": "Cappadocia Tour",
-      "antalya": "Antalya Holiday",
-      "blacksea": "Black Sea Tour",
-      "istanbul": "Istanbul Culture Tour"
-    },
-    "form": {
-      "title": "Add New Tour",
-      "description": "Enter the details of the new tour package.",
-      "edit_title": "Edit Tour",
-      "edit_description": "Update the details of the selected tour.",
-      "name": "Tour Name",
-      "name_placeholder": "For example: Izmir Culture Tour",
-      "location": "Location",
-      "location_placeholder": "For example: Izmir",
-      "date": "Tour Date",
-      "price": "Price Per Person",
-      "price_placeholder": "For example: 6500",
-      "capacity": "Capacity",
-      "capacity_placeholder": "For example: 30",
-      "status": "Tour Status",
-      "save": "Save Tour",
-      "update": "Save Changes",
-      "cancel": "Cancel",
-      "close": "Close form",
-      "required_error": "Please complete all fields.",
-      "positive_number_error": "Price and capacity must be greater than zero."
     }
   }
 }

@@ -1,46 +1,63 @@
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
     CalendarCheck,
     Users,
     MessageSquare,
-    Map,
     ArrowUpRight,
 } from "lucide-react";
+import api from "../../services/api.js";
 
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const recentReservations = [
-        {
-            id: "RSV-1001",
-            client: "Ayşe Yılmaz",
-            tourKey: "tour_cappadocia",
-            defaultTour: "Cappadocia Tour",
-            date: "18.07.2026",
-        },
-        {
-            id: "RSV-1002",
-            client: "Mehmet Demir",
-            tourKey: "tour_antalya",
-            defaultTour: "Antalya Holiday",
-            date: "21.07.2026",
-        },
-        {
-            id: "RSV-1003",
-            client: "Zeynep Kaya",
-            tourKey: "tour_blacksea",
-            defaultTour: "Black Sea Tour",
-            date: "23.07.2026",
-        },
-    ];
+    const [stats, setStats] = useState({
+        totalReservations: 0,
+        totalUsers: 0,
+        totalChatMessages: 0,
+        recentReservations: []
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        setLoading(true);
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('adminToken') || "";
+        api.get('/api/admin/dashboard/stats', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(res => {
+                if (res.data) {
+                    setStats({
+                        totalReservations: res.data.totalReservations ?? 0,
+                        totalUsers: res.data.totalUsers ?? 0,
+                        totalChatMessages: res.data.totalChatMessages ?? 0,
+                        recentReservations: Array.isArray(res.data.recentReservations) ? res.data.recentReservations : []
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("Dashboard stats error:", err);
+                setStats({
+                    totalReservations: 0,
+                    totalUsers: 0,
+                    totalChatMessages: 0,
+                    recentReservations: []
+                });
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
 
     const cards = [
         {
             key: "total_reservations",
             defaultLabel: "Total Reservations",
-            value: "248",
+            value: stats.totalReservations,
             badge: "+12%",
             badgeColor: "bg-emerald-50 text-emerald-600",
             icon: CalendarCheck,
@@ -48,23 +65,15 @@ export default function Dashboard() {
         {
             key: "total_users",
             defaultLabel: "Total Users",
-            value: "1.284",
+            value: stats.totalUsers,
             badge: "+8%",
             badgeColor: "bg-emerald-50 text-emerald-600",
             icon: Users,
         },
         {
-            key: "active_tours",
-            defaultLabel: "Active Tours",
-            value: "24",
-            badge: "+3",
-            badgeColor: "bg-emerald-50 text-emerald-600",
-            icon: Map,
-        },
-        {
             key: "chat_messages",
             defaultLabel: "Chat Messages",
-            value: "3.642",
+            value: stats.totalChatMessages,
             badge: "+18%",
             badgeColor: "bg-emerald-50 text-emerald-600",
             icon: MessageSquare,
@@ -85,7 +94,7 @@ export default function Dashboard() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {cards.map((card) => {
                     const Icon = card.icon;
                     return (
@@ -105,8 +114,12 @@ export default function Dashboard() {
                             <p className="text-sm font-medium text-gray-400 dark:text-slate-400">
                                 {t(card.key, card.defaultLabel)}
                             </p>
-                            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                                {card.value}
+                            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+                                {loading ? (
+                                    <span className="h-8 w-16 inline-block animate-pulse rounded bg-gray-200 dark:bg-slate-800" />
+                                ) : (
+                                    card.value
+                                )}
                             </p>
                         </div>
                     );
@@ -148,25 +161,41 @@ export default function Dashboard() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-sm text-gray-700 dark:divide-slate-800 dark:text-slate-300">
-                            {recentReservations.map((reservation) => (
-                                <tr
-                                    key={reservation.id}
-                                    className="transition-colors hover:bg-gray-50/40 dark:hover:bg-slate-800/40"
-                                >
-                                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
-                                        {reservation.id}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-gray-600 dark:text-slate-300">
-                                        {reservation.client}
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
-                                        {t(reservation.tourKey, reservation.defaultTour)}
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
-                                        {reservation.date}
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-10 text-center text-gray-400">
+                                        <span className="inline-block animate-pulse">{t("common.loading", "Loading...")}</span>
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                stats.recentReservations && stats.recentReservations.length > 0 ? (
+                                    stats.recentReservations.map((res) => (
+                                        <tr
+                                            key={res.id}
+                                            className="transition-colors hover:bg-gray-50/40 dark:hover:bg-slate-800/40"
+                                        >
+                                            <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
+                                                {res.reservationNumber || res.id}
+                                            </td>
+                                            <td className="px-6 py-4 font-medium text-gray-600 dark:text-slate-300">
+                                                {res.clientName || res.userFullName || res.customer || "Guest"}
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
+                                                {res.tourName || res.tour || "-"}
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
+                                                {res.date}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-10 text-center text-gray-500 dark:text-slate-400">
+                                            {t("no_reservations", "Henüz rezervasyon bulunmuyor.")}
+                                        </td>
+                                    </tr>
+                                )
+                            )}
                         </tbody>
                     </table>
                 </div>

@@ -12,8 +12,12 @@ export default function ProtectedRoute({
 }) {
   const { isGuest, isAuthenticated, token } = useAuth();
 
-  const hasGuestSession = localStorage.getItem('isGuest') === 'true';
-  const hasToken = !!(token || (localStorage.getItem('token') && localStorage.getItem('token') !== 'null' && localStorage.getItem('token') !== 'undefined'));
+  const hasGuestSession = localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true';
+  const hasToken = !!(
+    token ||
+    (localStorage.getItem('token') && localStorage.getItem('token') !== 'null' && localStorage.getItem('token') !== 'undefined') ||
+    (sessionStorage.getItem('token') && sessionStorage.getItem('token') !== 'null' && sessionStorage.getItem('token') !== 'undefined')
+  );
 
   const effectiveIsAuth  = isAuthenticated || hasToken;
   const effectiveIsGuest = (isGuest || hasGuestSession) && !effectiveIsAuth;

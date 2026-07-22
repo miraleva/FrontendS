@@ -191,7 +191,7 @@ export default function PastAppointments() {
   }, [theme]);
 
   const fetchReservations = async () => {
-    if (localStorage.getItem('isGuest') === 'true') {
+    if (localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true') {
       setAppointments([]);
       return;
     }
