@@ -19,7 +19,6 @@ import Dashboard from "./admin/pages/Dashboard.jsx";
 import Reservations from "./pages/admin/Reservations.jsx";
 import Users from "./pages/admin/Users.jsx";
 import ChatLogs from "./pages/admin/ChatLogs.jsx";
-import Tours from "./pages/admin/Tours.jsx";
 
 import { ThemeProvider } from "./components/ThemeContext.jsx";
 import { AuthProvider } from "./components/AuthContext.jsx";
@@ -82,7 +81,6 @@ export default function App() {
                 />
                 <Route path="users" element={<Users />} />
                 <Route path="chats" element={<ChatLogs />} />
-                <Route path="tours" element={<Tours />} />
               </Route>
 
               {/* KULLANICI & GUEST ROTALARI (ProtectedRoute) */}

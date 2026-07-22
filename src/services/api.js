@@ -31,7 +31,7 @@ api.interceptors.request.use(
         }
       }
     } else {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || localStorage.getItem('adminToken');
       if (token && token !== 'null' && token !== 'undefined' && token.trim() !== '') {
         config.headers.Authorization = `Bearer ${token.trim()}`;
       } else {
@@ -58,10 +58,11 @@ api.interceptors.response.use(
       const url = error.config?.url || '';
       const isGuestSession = localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true';
 
-      // Avoid redirecting when public auth endpoints fail OR when user is in a guest session
-      if (!url.includes('/api/auth') && !isGuestSession) {
+      // Avoid redirecting when public auth endpoints fail OR when user is in a guest session OR on admin routes
+      if (!url.includes('/api/auth') && !isGuestSession && !window.location.pathname.startsWith('/admin')) {
         localStorage.removeItem('token');
         sessionStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
         localStorage.removeItem('user');
         sessionStorage.removeItem('user');
         localStorage.removeItem('userId');

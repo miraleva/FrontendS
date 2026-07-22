@@ -6,7 +6,6 @@ import {
     CalendarCheck,
     Users,
     MessageSquare,
-    Map,
     Globe,
     ChevronDown
 } from "lucide-react";
@@ -54,12 +53,6 @@ export default function AdminLayout() {
             defaultLabel: 'Chat Logs',
             path: "/admin/chats",
             icon: MessageSquare,
-        },
-        {
-            key: 'tours_menu',
-            defaultLabel: 'Tours',
-            path: "/admin/tours",
-            icon: Map,
         },
     ];
 
