@@ -105,7 +105,7 @@ export default function ReservationFormPanel({
   termsAccepted = false,
   setTermsAccepted,
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const safeHotel = hotel || {};
 
