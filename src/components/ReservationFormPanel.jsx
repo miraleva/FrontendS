@@ -154,10 +154,9 @@ export default function ReservationFormPanel({
               "",
             birthDate: passenger.birthDate || "",
             gender:
-              passenger.gender ||
-              (passenger.type === "CHILD"
-                ? "CHD"
-                : "MR"),
+              passenger.gender === "CHD"
+                ? "MR"
+                : (passenger.gender || "MR"),
             nationality:
               passenger.nationality || "TR",
             age:
@@ -208,7 +207,7 @@ export default function ReservationFormPanel({
             email: "",
             phone: "",
             birthDate: "",
-            gender: "CHD",
+            gender: "MR",
             nationality: "TR",
             age:
               childAges[index] !== undefined
@@ -235,7 +234,7 @@ export default function ReservationFormPanel({
             email: "",
             phone: "",
             birthDate: "",
-            gender: "CHD",
+            gender: "MR",
             nationality: "TR",
             age:
               infantAges[index] !== undefined
@@ -421,18 +420,32 @@ export default function ReservationFormPanel({
       endDate: toDateOnly(bookingDetails?.checkOut),
       totalPrice: Number(safeHotel?.price) || 0,
       currency: safeHotel?.currency || "TRY",
-      passengers: (guests || []).map((guest) => ({
-        firstName: guest.firstName || "",
-        lastName: guest.lastName || "",
-        email: guest.email || "",
-        phoneNumber: guest.phone || "",
-        identityNumber: guest.identityNumber || "",
-        birthDate: guest.birthDate || null,
-        gender:
-          guest.gender ||
-          (guest.type === "CHILD" ? "CHD" : "MR"),
-        nationality: guest.nationality || "TR",
-      })),
+      passengers: (guests || []).map((guest) => {
+        const today = new Date();
+        const birthDate = guest.birthDate ? new Date(guest.birthDate) : null;
+        let age = null;
+        if (birthDate) {
+          age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+        }
+
+        const isChildOrInfant = guest.type === "CHILD" || guest.type === "INFANT" || (age !== null && age < 18);
+        const finalGender = isChildOrInfant ? "CHD" : (guest.gender || "MR");
+
+        return {
+          firstName: guest.firstName || "",
+          lastName: guest.lastName || "",
+          email: guest.email || "",
+          phoneNumber: guest.phone || "",
+          identityNumber: guest.identityNumber || "",
+          birthDate: guest.birthDate || null,
+          gender: finalGender,
+          nationality: guest.nationality || "TR",
+        };
+      }),
     };
 
     setSubmitError("");
@@ -713,7 +726,7 @@ export default function ReservationFormPanel({
                                 </label>
                                 <select
                                   required
-                                  value={guest.gender || (guest.type === "CHILD" || guest.type === "INFANT" ? "CHD" : "MR")}
+                                  value={guest.gender || "MR"}
                                   onChange={(event) =>
                                     handleGuestChange(
                                       index,
@@ -728,9 +741,6 @@ export default function ReservationFormPanel({
                                   </option>
                                   <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                                     {i18n.language?.startsWith("tr") ? "Kadın" : "Mrs"}
-                                  </option>
-                                  <option value="CHD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    {i18n.language?.startsWith("tr") ? "Çocuk" : "Child"}
                                   </option>
                                 </select>
                               </div>
