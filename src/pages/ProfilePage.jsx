@@ -146,11 +146,11 @@ export default function Profile() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false); // Yeni eklenen state
 
-    // Load initial user details from localStorage 'user' object or defaults
+    // Load initial user details from localStorage or sessionStorage 'user' object or defaults
     const [formData, setFormData] = useState(() => {
-        const email = localStorage.getItem('userId') || '';
+        const email = localStorage.getItem('userId') || sessionStorage.getItem('userId') || '';
         try {
-            const storedUserStr = localStorage.getItem('user');
+            const storedUserStr = localStorage.getItem('user') || sessionStorage.getItem('user');
             if (storedUserStr) {
                 const user = JSON.parse(storedUserStr);
                 return {
@@ -194,7 +194,7 @@ export default function Profile() {
     useEffect(() => {
         let isMounted = true;
         const fetchProfile = async () => {
-            if (localStorage.getItem('isGuest') === 'true') return;
+            if (localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true') return;
             try {
                 const response = await api.get('/api/profile');
                 if (isMounted) {
@@ -210,9 +210,10 @@ export default function Profile() {
                         createdAt: data.createdAt || null,
                     };
                     setFormData(updatedUser);
-                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                    const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+                    storage.setItem('user', JSON.stringify(updatedUser));
                     if (data.email) {
-                        localStorage.setItem('userId', data.email);
+                        storage.setItem('userId', data.email);
                     }
                 }
             } catch (err) {
@@ -225,7 +226,7 @@ export default function Profile() {
         };
     }, []);
 
-    const userId = localStorage.getItem('userId') || 'user';
+    const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId') || 'user';
     const displayHandle = userId.includes('@') ? userId.split('@')[0] : userId;
 
     const avatarLetter = formData.firstName
@@ -436,9 +437,10 @@ export default function Profile() {
                 createdAt: data.createdAt || formData.createdAt || null,
             };
             setFormData(updatedUser);
-            localStorage.setItem("user", JSON.stringify(updatedUser));
+            const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+            storage.setItem("user", JSON.stringify(updatedUser));
             if (updatedUser.email) {
-                localStorage.setItem('userId', updatedUser.email);
+                storage.setItem('userId', updatedUser.email);
             }
             setIsEditing(false);
             console.log("Veriler başarıyla kaydedildi:", updatedUser);
@@ -455,8 +457,11 @@ export default function Profile() {
     const handleConfirmLogOut = () => {
         console.log("Logging out permanently...");
         localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
         localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
         localStorage.removeItem("userId");
+        sessionStorage.removeItem("userId");
         setShowLogoutModal(false);
         navigate("/login");
     };
@@ -467,6 +472,7 @@ export default function Profile() {
             console.log("Deleting account permanently...");
             await api.delete('/api/profile');
             localStorage.clear();
+            sessionStorage.clear();
             setShowDeleteModal(false);
             navigate("/login");
         } catch (err) {
@@ -534,7 +540,7 @@ export default function Profile() {
                                                 {formData.createdAt ? (
                                                     `${t("profile_member_since")}: ${formatMembershipDate()}`
                                                 ) : (
-                                                    localStorage.getItem('isGuest') === 'true' ? null : (
+                                                    (localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true') ? null : (
                                                         <span className="inline-block w-24 h-3 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></span>
                                                     )
                                                 )}

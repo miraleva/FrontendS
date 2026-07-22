@@ -31,7 +31,7 @@ api.interceptors.request.use(
         }
       }
     } else {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (token && token !== 'null' && token !== 'undefined' && token.trim() !== '') {
         config.headers.Authorization = `Bearer ${token.trim()}`;
       } else {
@@ -56,13 +56,16 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const url = error.config?.url || '';
-      const isGuestSession = localStorage.getItem('isGuest') === 'true';
+      const isGuestSession = localStorage.getItem('isGuest') === 'true' || sessionStorage.getItem('isGuest') === 'true';
 
       // Avoid redirecting when public auth endpoints fail OR when user is in a guest session
       if (!url.includes('/api/auth') && !isGuestSession) {
         localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
         localStorage.removeItem('userId');
+        sessionStorage.removeItem('userId');
         window.location.href = '/login';
       }
     }
