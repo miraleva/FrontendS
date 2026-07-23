@@ -13,6 +13,8 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
 
   if (!appointment) return null;
 
+  const isCancelled = ["CANCELLED", "Cancelled", "İptal Edildi"].includes(appointment.status);
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "Completed":
@@ -306,41 +308,43 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
         </div>
 
         {/* Footer / Actions */}
-        <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 relative z-20">
-          
-          <button 
-            onClick={() => {
-              if (appointment.chatSessionId) {
-                navigate(`/chat?sessionId=${appointment.chatSessionId}`);
-              } else {
-                navigate('/chat');
-              }
-              onClose();
-            }}
-            className="w-full py-3 rounded-xl font-bold bg-[#f07c24] text-white hover:bg-[#d96a1a] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
-          >
-            <MessageSquare size={18} />
-            {t('reservation.viewRelatedChat')}
-          </button>
-          
-          <div className="grid grid-cols-2 gap-3 mt-3">
+        {!isCancelled && (
+          <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 relative z-20">
+            
             <button 
-              onClick={() => onEdit && onEdit(appointment)}
-              className="py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+              onClick={() => {
+                if (appointment.chatSessionId) {
+                  navigate(`/chat?sessionId=${appointment.chatSessionId}`);
+                } else {
+                  navigate('/chat');
+                }
+                onClose();
+              }}
+              className="w-full py-3 rounded-xl font-bold bg-[#f07c24] text-white hover:bg-[#d96a1a] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
-              <Edit size={16} />
-              {t('common.edit')}
+              <MessageSquare size={18} />
+              {t('reservation.viewRelatedChat')}
             </button>
-            <button 
-              onClick={handleCancelClick}
-              className="py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-800 transition-all flex items-center justify-center gap-2 text-sm group cursor-pointer"
-            >
-              <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
-              {t('common.cancel')}
-            </button>
+            
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <button 
+                onClick={() => onEdit && onEdit(appointment)}
+                className="py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+              >
+                <Edit size={16} />
+                {t('common.edit')}
+              </button>
+              <button 
+                onClick={handleCancelClick}
+                className="py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-800 transition-all flex items-center justify-center gap-2 text-sm group cursor-pointer"
+              >
+                <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
+                {t('common.cancel')}
+              </button>
+            </div>
+            
           </div>
-          
-        </div>
+        )}
 
         {/* Confirmation Overlay */}
         {showCancelConfirm && (
