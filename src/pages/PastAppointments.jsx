@@ -18,6 +18,8 @@ import {
   Moon,
   Users,
   Car,
+  Filter,
+  Search,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -84,6 +86,9 @@ export default function PastAppointments() {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState("All"); 
+  const [sortType, setSortType] = useState("Newest"); 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const videoRef = useRef(null);
 
@@ -164,6 +169,8 @@ export default function PastAppointments() {
           transferType: reservation.transferType,
           pickupLocation: reservation.pickupLocation,
           imageUrl: reservation.imageUrl,
+          createdAt: reservation.createdAt,
+          updatedAt: reservation.updatedAt,
         })
       );
 
@@ -180,6 +187,30 @@ export default function PastAppointments() {
   useEffect(() => {
     fetchReservations();
   }, []);
+
+  const getFilteredAndSortedAppointments = () => {
+    let result = [...appointments];
+    
+    if (filterType === "Hotel") {
+      result = result.filter(a => a.type === "Hotel");
+    } else if (filterType === "Flight") {
+      result = result.filter(a => a.type === "Flight");
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.updatedAt || a.createdAt || a.startDate || 0);
+      const dateB = new Date(b.updatedAt || b.createdAt || b.startDate || 0);
+      if (sortType === "Newest") {
+        return dateB - dateA;
+      } else {
+        return dateA - dateB;
+      }
+    });
+
+    return result;
+  };
+
+  const displayAppointments = getFilteredAndSortedAppointments();
 
   const handleOpenModal = (appointment) => {
     setSelectedAppt(appointment);
@@ -414,7 +445,34 @@ export default function PastAppointments() {
           </div>
 
           <div className="relative ml-6 space-y-6 border-l-2 border-slate-200 py-2 pl-8 dark:border-slate-800">
-            {appointments.length === 0 ? (
+            {/* Filter Dropdown */}
+            <div className="absolute -left-[20px] top-0 z-30">
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/50 transition-all hover:scale-105 hover:bg-orange-600 hover:shadow-orange-500/70 border-none dark:bg-orange-500 dark:text-white"
+                title="Filtrele ve Sırala"
+              >
+                <Search size={18} />
+              </button>
+
+              {isFilterOpen && (
+                <div className="absolute left-12 top-0 mt-0 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                  <div className="mb-2">
+                    <div className="px-2 py-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Filtrele</div>
+                    <button onClick={() => { setFilterType('All'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterType === 'All' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('filter_all', 'Tümü')}</button>
+                    <button onClick={() => { setFilterType('Hotel'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterType === 'Hotel' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('filter_hotel', 'Sadece Otel')}</button>
+                    <button onClick={() => { setFilterType('Flight'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterType === 'Flight' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('filter_flight', 'Sadece Uçuş')}</button>
+                  </div>
+                  <div className="border-t border-slate-100 dark:border-slate-700 pt-2">
+                    <div className="px-2 py-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Sırala</div>
+                    <button onClick={() => { setSortType('Newest'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${sortType === 'Newest' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('sort_newest', 'En Yeni')}</button>
+                    <button onClick={() => { setSortType('Oldest'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${sortType === 'Oldest' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('sort_oldest', 'En Eski')}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {displayAppointments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <Calendar className="mb-4 text-slate-300 dark:text-slate-600" size={48} />
                 <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1">
@@ -425,7 +483,7 @@ export default function PastAppointments() {
                 </p>
               </div>
             ) : (
-              appointments.map((appointment) => (
+              displayAppointments.map((appointment) => (
               <div
                 key={appointment.id}
                 className="group relative"
