@@ -21,6 +21,7 @@ import PhoneInput, {
 import { validatePhoneNumberLength } from "libphonenumber-js/max";
 import "react-phone-number-input/style.css";
 import api from "../services/api";
+import ReservationPreviewModal from "./ReservationPreviewModal";
 
 function toDateOnly(value) {
   if (!value) return null;
@@ -59,18 +60,22 @@ const getPassengerErrors = (passenger, index = 0) => {
       "Geçersiz Pasaport No (en az 5 karakter).";
   }
 
-  // Doğum tarihi tüm yolcular için zorunludur.
   if (!passenger.birthDate) {
     errors.birthDate = "Doğum tarihi gereklidir.";
   } else {
     const birthDate = new Date(passenger.birthDate);
+
     if (birthDate >= new Date()) {
       errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
     } else if (isPrimaryContact) {
       const eighteenYearsAgo = new Date();
-      eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+      eighteenYearsAgo.setFullYear(
+        eighteenYearsAgo.getFullYear() - 18
+      );
+
       if (birthDate > eighteenYearsAgo) {
-        errors.birthDate = "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
+        errors.birthDate =
+          "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
       }
     }
   }
@@ -105,7 +110,6 @@ export default function ReservationFormPanel({
   setGuests,
   termsAccepted = false,
   setTermsAccepted,
-  onReservationComplete,
   chatSessionId,
 }) {
   const { t, i18n } = useTranslation();
@@ -118,6 +122,7 @@ export default function ReservationFormPanel({
   const [submitError, setSubmitError] = useState("");
   const [reservationResult, setReservationResult] =
     useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -220,9 +225,6 @@ export default function ReservationFormPanel({
           });
         }
 
-        // Bebekler de yolcu formuna dahil edilmeli — aksi hâlde "2 yetişkin 1 bebek"
-        // ile arama yapılıp bu modaldan rezervasyona geçildiğinde bebek sessizce
-        // yolcu listesinden düşüyordu.
         const infantCount =
           parseInt(bookingDetails?.infantCount, 10) || 0;
         const infantAges =
@@ -344,8 +346,8 @@ export default function ReservationFormPanel({
       ? new Intl.NumberFormat("tr-TR", {
         style: "currency",
         currency: safeHotel.currency || "TRY",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       }).format(Number(safeHotel.price))
       : `${safeHotel?.price || 0} ${safeHotel?.currency || "TRY"
       }`;
@@ -368,20 +370,23 @@ export default function ReservationFormPanel({
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
       currency: safeHotel?.currency || "TRY",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
   const adultCount =
     parseInt(bookingDetails?.adultCount, 10) || 1;
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
+  const validateReservationForm = () => {
     if (!termsAccepted) {
-      alert(t("acceptTermsWarning", "Lütfen şartlar ve koşulları kabul ediniz."));
-      return;
+      alert(
+        t(
+          "acceptTermsWarning",
+          "Lütfen şartlar ve koşulları kabul ediniz."
+        )
+      );
+      return false;
     }
 
     for (
@@ -403,9 +408,30 @@ export default function ReservationFormPanel({
           `${guestName} bilgilerinde hata var: ${errors[errorKeys[0]]
           }`
         );
-        return;
+        return false;
       }
     }
+
+    return true;
+  };
+
+  const handleOpenPreview = (event) => {
+    event?.preventDefault();
+
+    if (isSubmitting || !validateReservationForm()) {
+      return;
+    }
+
+    setSubmitError("");
+    setShowPreview(true);
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting || !validateReservationForm()) {
+      return;
+    }
+
+    const primaryGuest = guests?.[0] || {};
 
     const payload = {
       type: "HOTEL",
@@ -423,29 +449,51 @@ export default function ReservationFormPanel({
       totalPrice: Number(safeHotel?.price) || 0,
       currency: safeHotel?.currency || "TRY",
       chatSessionId: chatSessionId || null,
-      passengers: (guests || []).map((guest) => {
+      passengers: (guests || []).map((guest, index) => {
         const today = new Date();
-        const birthDate = guest.birthDate ? new Date(guest.birthDate) : null;
+        const birthDate = guest.birthDate
+          ? new Date(guest.birthDate)
+          : null;
+
         let age = null;
+
         if (birthDate) {
-          age = today.getFullYear() - birthDate.getFullYear();
-          const m = today.getMonth() - birthDate.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age =
+            today.getFullYear() - birthDate.getFullYear();
+
+          const monthDifference =
+            today.getMonth() - birthDate.getMonth();
+
+          if (
+            monthDifference < 0 ||
+            (monthDifference === 0 &&
+              today.getDate() < birthDate.getDate())
+          ) {
             age--;
           }
         }
 
-        const isChildOrInfant = guest.type === "CHILD" || guest.type === "INFANT" || (age !== null && age < 18);
-        const finalGender = isChildOrInfant ? "CHD" : (guest.gender || "MR");
+        const isChildOrInfant =
+          guest.type === "CHILD" ||
+          guest.type === "INFANT" ||
+          (age !== null && age < 18);
 
         return {
           firstName: guest.firstName || "",
           lastName: guest.lastName || "",
-          email: guest.email || "",
-          phoneNumber: guest.phone || "",
+          email:
+            guest.email ||
+            (index > 0 ? primaryGuest.email : "") ||
+            "",
+          phoneNumber:
+            guest.phone ||
+            (index > 0 ? primaryGuest.phone : "") ||
+            "",
           identityNumber: guest.identityNumber || "",
           birthDate: guest.birthDate || null,
-          gender: finalGender,
+          gender: isChildOrInfant
+            ? "CHD"
+            : (guest.gender || "MR"),
           nationality: guest.nationality || "TR",
         };
       }),
@@ -473,10 +521,7 @@ export default function ReservationFormPanel({
       }
 
       setReservationResult(response.data);
-      // Notify parent (ChatbotPage) to lock the chat session
-      if (typeof onReservationComplete === 'function') {
-        onReservationComplete();
-      }
+      setShowPreview(false);
     } catch (error) {
       console.error(
         "Reservation process failed",
@@ -509,7 +554,7 @@ export default function ReservationFormPanel({
             className="mb-4 text-emerald-500"
           />
 
-          <p className="mb-4 max-w-sm font-medium text-slate-800 dark:text-slate-200">
+          <p className="mb-6 max-w-sm font-medium text-slate-800 dark:text-slate-200">
             {bookingDetails?.editMode
               ? "Rezervasyon başarıyla güncellendi."
               : t("reservation_confirm_success", {
@@ -517,14 +562,6 @@ export default function ReservationFormPanel({
                   reservationResult.reservationNumber ||
                   reservationResult.id,
               })}
-          </p>
-
-          <p className="mb-6 max-w-md rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-xs md:text-sm font-medium text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
-            Rezervasyon detaylarınız ve biletiniz{" "}
-            <strong className="font-bold text-blue-600 dark:text-blue-400">
-              {guests[0]?.email || reservationResult?.passengers?.[0]?.email || "e-posta"}
-            </strong>{" "}
-            adresine e-posta olarak gönderilmiştir.
           </p>
 
           <button
@@ -541,463 +578,660 @@ export default function ReservationFormPanel({
 
   return (
     <>
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 font-sans w-full relative">
-      <div className="relative flex h-full w-full flex-col overflow-hidden">
-        <div className="relative h-48 flex-shrink-0 bg-slate-800 md:h-64">
-          {safeHotel?.thumbnailFull ||
-            safeHotel?.thumbnail ? (
-            <img
-              src={
-                safeHotel.thumbnailFull ||
-                safeHotel.thumbnail
-              }
-              alt={
-                safeHotel.name ||
-                safeHotel.hotelId ||
-                "Hotel"
-              }
-              className="h-full w-full object-cover"
-              onError={(event) => {
-                event.currentTarget.style.display =
-                  "none";
-              }}
-            />
-          ) : null}
+      <div className="fixed inset-0 z-50 flex justify-end bg-black/55 backdrop-blur-sm">
+        <div className="relative flex h-full w-full max-w-[760px] flex-col overflow-hidden border-l border-white/20 bg-slate-50 font-sans shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="relative h-52 flex-shrink-0 overflow-hidden bg-slate-800 md:h-64">
+            {safeHotel?.thumbnailFull ||
+              safeHotel?.thumbnail ? (
+              <img
+                src={
+                  safeHotel.thumbnailFull ||
+                  safeHotel.thumbnail
+                }
+                alt={
+                  safeHotel.name ||
+                  safeHotel.hotelId ||
+                  "Hotel"
+                }
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.style.display =
+                    "none";
+                }}
+              />
+            ) : null}
 
-          {onBack && (
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-black/60 p-2 pr-4 text-sm font-semibold text-white transition-colors hover:bg-black/80"
+              >
+                <ArrowLeft size={18} />
+                Geri
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={onBack}
-              className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-black/60 p-2 pr-4 text-sm font-semibold text-white transition-colors hover:bg-black/80"
+              onClick={onClose}
+              className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80"
             >
-              <ArrowLeft size={18} />
-              Geri
+              <X size={20} />
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80"
-          >
-            <X size={20} />
-          </button>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
+              <div className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400 drop-shadow-md">
+                {bookingDetails?.editMode
+                  ? "Rezervasyon Düzenleme"
+                  : "Rezervasyon Detayları"}
+              </div>
 
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
-            <div className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400 drop-shadow-md">
-              {bookingDetails?.editMode
-                ? "Rezervasyon Düzenleme"
-                : "Rezervasyon Detayları"}
-            </div>
+              <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md md:text-3xl">
+                {safeHotel?.name ||
+                  safeHotel?.hotelId ||
+                  "Otel Rezervasyonu"}
+              </h2>
 
-            <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md md:text-3xl">
-              {safeHotel?.name ||
-                safeHotel?.hotelId ||
-                "Otel Rezervasyonu"}
-            </h2>
-
-            <div className="mt-2 flex items-center gap-2">
-              {safeHotel?.stars && (
-                <span className="flex flex-shrink-0 items-center text-sm text-amber-400">
-                  {safeHotel.stars}
-                  <Star
-                    size={14}
-                    className="ml-1 fill-amber-400"
-                  />
-                </span>
-              )}
-
-              {locationText && (
-                <span className="flex items-center gap-1 text-sm text-white/90">
-                  <span className="text-white/40">
-                    •
+              <div className="mt-2 flex items-center gap-2">
+                {safeHotel?.stars && (
+                  <span className="flex flex-shrink-0 items-center text-sm text-amber-400">
+                    {safeHotel.stars}
+                    <Star
+                      size={14}
+                      className="ml-1 fill-amber-400"
+                    />
                   </span>
-                  <MapPin
-                    size={14}
-                    className="ml-1 opacity-80"
-                  />
-                  {locationText}
-                </span>
-              )}
+                )}
+
+                {locationText && (
+                  <span className="flex items-center gap-1 text-sm text-white/90">
+                    <span className="text-white/40">
+                      •
+                    </span>
+                    <MapPin
+                      size={14}
+                      className="ml-1 opacity-80"
+                    />
+                    {locationText}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl space-y-6 p-6">
-            <form
-              id="reservation-form"
-              onSubmit={handleSubmit}
-              className="space-y-6"
-            >
-              <div className="space-y-4">
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Konuk Bilgileri
-                </h3>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth">
+            <div className="mx-auto w-full max-w-3xl space-y-7 px-5 py-6 pb-10 sm:px-6 lg:px-8">
+              <form
+                id="reservation-form"
+                onSubmit={handleOpenPreview}
+                className="space-y-7"
+              >
+                <div className="space-y-5">
+                  <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.14em] text-slate-800 dark:text-slate-200">
+                    Konuk Bilgileri
+                  </h3>
 
-                {(guests || []).map(
-                  (guest, index) => {
-                    const isExpanded =
-                      expandedGuestId === guest.id;
+                  {(guests || []).map(
+                    (guest, index) => {
+                      const isExpanded =
+                        expandedGuestId === guest.id;
 
-                    const guestTitle = `${index + 1}. ${t("reservation_person", "Kişi")}`;
+                      const guestTitle =
+                        guest.type === "ADULT"
+                          ? `${index + 1}. ${t(
+                            "unit_adult",
+                            "Yetişkin"
+                          )}`
+                          : guest.type === "INFANT"
+                            ? `${index - adultCount + 1}. ${t(
+                              "unit_infant",
+                              "Bebek"
+                            )}`
+                            : `${index - adultCount + 1}. ${t(
+                              "unit_child",
+                              "Çocuk"
+                            )}`;
 
-                    const errors =
-                      getPassengerErrors(guest, index);
+                      const errors =
+                        getPassengerErrors(guest, index);
 
-                    return (
-                      <div key={guest.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden transition-all duration-200">
-                        <button
-                          type="button"
-                          onClick={() => setExpandedGuestId(isExpanded ? null : guest.id)}
-                          className="w-full px-5 py-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors rounded-t-xl"
+                      return (
+                        <div
+                          key={guest.id || index}
+                          className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-200 dark:border-slate-700 dark:bg-slate-800"
                         >
-                          <div className="flex items-center gap-3">
-                            {guest.type === 'ADULT' ? <User size={18} className="text-blue-500 dark:text-slate-200" /> : <Baby size={18} className="text-amber-500 dark:text-amber-300" />}
-                            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{guestTitle}</span>
-                            {index === 0 && <span className="ml-2 text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full uppercase tracking-wider">İletişim</span>}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedGuestId(
+                                isExpanded
+                                  ? null
+                                  : guest.id
+                              )
+                            }
+                            className="flex w-full items-center justify-between bg-white px-5 py-4.5 text-left transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+                          >
+                            <div className="flex items-center gap-3">
+                              {guest.type ===
+                                "ADULT" ? (
+                                <User
+                                  size={18}
+                                  className="text-blue-500"
+                                />
+                              ) : (
+                                <Baby
+                                  size={18}
+                                  className="text-amber-500"
+                                />
+                              )}
 
-                            {/* Summary when collapsed */}
-                            {!isExpanded && (guest.firstName || guest.lastName) && (
-                              <span className="text-sm text-slate-500 dark:text-slate-400 ml-2 border-l border-slate-200 dark:border-slate-700 pl-4">
-                                {guest.firstName} {guest.lastName}
+                              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                {guestTitle}
                               </span>
-                            )}
-                          </div>
-                          <div className="text-slate-400 dark:text-slate-400">
-                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                          </div>
-                        </button>
-                        {isExpanded && (
-                          <div className="space-y-4 border-t border-slate-200/80 bg-slate-50/70 p-5 dark:border-slate-700/60 dark:bg-slate-900/60">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Ad
-                                </label>
-                                <input
-                                  required
-                                  type="text"
-                                  value={guest.firstName || ""}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "firstName",
-                                      event.target.value
-                                    )
-                                  }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.firstName
-                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                    }`}
-                                />
-                                {errors.firstName && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                    {errors.firstName}
-                                  </span>
-                                )}
-                              </div>
 
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Soyad
-                                </label>
-                                <input
-                                  required
-                                  type="text"
-                                  value={guest.lastName || ""}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "lastName",
-                                      event.target.value
-                                    )
-                                  }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.lastName
-                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                    }`}
-                                />
-                                {errors.lastName && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                    {errors.lastName}
+                              {index === 0 && (
+                                <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                  İletişim
+                                </span>
+                              )}
+
+                              {!isExpanded &&
+                                (guest.firstName ||
+                                  guest.lastName) && (
+                                  <span className="ml-2 border-l border-slate-200 pl-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                    {guest.firstName}{" "}
+                                    {guest.lastName}
                                   </span>
                                 )}
-                              </div>
                             </div>
 
-
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  {t("reservation_gender", "Cinsiyet / Unvan")}
-                                </label>
-                                <select
-                                  required
-                                  value={guest.gender || "MR"}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "gender",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                >
-                                  <option value="MR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    {i18n.language?.startsWith("tr") ? "Erkek" : "Mr"}
-                                  </option>
-                                  <option value="MRS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                    {i18n.language?.startsWith("tr") ? "Kadın" : "Mrs"}
-                                  </option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Doğum Tarihi
-                                </label>
-                                <input
-                                  required
-                                  type="date"
-                                  max={new Date().toISOString().split("T")[0]}
-                                  value={guest.birthDate || ""}
-                                  onChange={(event) =>
-                                    handleGuestChange(
-                                      index,
-                                      "birthDate",
-                                      event.target.value
-                                    )
-                                  }
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.birthDate
-                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                    }`}
+                            <div className="text-slate-400 dark:text-slate-500">
+                              {isExpanded ? (
+                                <ChevronUp size={20} />
+                              ) : (
+                                <ChevronDown
+                                  size={20}
                                 />
-                                {errors.birthDate && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                    {errors.birthDate}
-                                  </span>
-                                )}
-                              </div>
+                              )}
                             </div>
+                          </button>
 
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Uyruk
-                                </label>
-                                <select
-                                  required
-                                  value={guest.nationality || "TR"}
-                                  onChange={(event) => {
-                                    const newNat = event.target.value;
-                                    handleGuestChange(index, "nationality", newNat);
-                                    handleGuestChange(index, "identityNumber", "");
-                                  }}
-                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                >
-                                  <option value="TR">Türkiye (TR)</option>
-                                  <option value="DE">Almanya (DE)</option>
-                                  <option value="RU">Rusya (RU)</option>
-                                  <option value="US">ABD (US)</option>
-                                  <option value="GB">İngiltere (GB)</option>
-                                  <option value="FR">Fransa (FR)</option>
-                                  <option value="AZ">Azerbaycan (AZ)</option>
-                                  <option value="OTHER">Diğer (OTHER)</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  <ShieldCheck size={12} />
-                                  {guest.nationality === "TR" ? "T.C. Kimlik Numarası" : "Pasaport Numarası"}
-                                </label>
-                                <input
-                                  required
-                                  type="text"
-                                  inputMode={guest.nationality === "TR" ? "numeric" : "text"}
-                                  value={guest.identityNumber || ""}
-                                  onChange={(event) => {
-                                    const rawValue = event.target.value;
-                                    const cleanValue = guest.nationality === "TR"
-                                      ? rawValue.replace(/\D/g, "").slice(0, 11)
-                                      : rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
-                                    handleGuestChange(index, "identityNumber", cleanValue);
-                                  }}
-                                  placeholder={guest.nationality === "TR" ? "11 haneli T.C. kimlik numarası" : "Pasaport numarası"}
-                                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.identityNumber
-                                      ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                      : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
-                                    }`}
-                                />
-                                {errors.identityNumber && (
-                                  <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                    {errors.identityNumber}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {index === 0 && (
-                              <div className="grid grid-cols-1 gap-4 border-t border-slate-200/60 pt-4 dark:border-slate-700 md:grid-cols-2">
+                          {isExpanded && (
+                            <div className="space-y-5 border-t border-slate-100 bg-slate-50/70 p-5 sm:p-6 dark:border-slate-700 dark:bg-slate-800/40">
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
-                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                    <Mail size={12} />
-                                    E-posta
+                                  <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    Ad
                                   </label>
                                   <input
                                     required
-                                    type="email"
-                                    value={guest.email || ""}
+                                    type="text"
+                                    value={
+                                      guest.firstName ||
+                                      ""
+                                    }
                                     onChange={(event) =>
                                       handleGuestChange(
                                         index,
-                                        "email",
+                                        "firstName",
                                         event.target.value
                                       )
                                     }
-                                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 ${errors.email
-                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                        : "border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                    className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.firstName
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                       }`}
                                   />
-                                  {errors.email && (
-                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                      {errors.email}
+                                  {errors.firstName && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                      {
+                                        errors.firstName
+                                      }
                                     </span>
                                   )}
                                 </div>
 
                                 <div>
-                                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                    <Phone size={12} />
-                                    Telefon
+                                  <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    Soyad
                                   </label>
-                                  <PhoneInput
-                                    international
-                                    limitMaxLength
-                                    defaultCountry="TR"
-                                    value={guest.phone || ""}
-                                    onChange={(value) => {
-                                      const nextPhone = value || "";
-
-                                      if (!nextPhone) {
-                                        handleGuestChange(index, "phone", "");
-                                        return;
-                                      }
-
-                                      const lengthError = validatePhoneNumberLength(nextPhone);
-
-                                      // Eksik numara yazılabilir; yalnızca ülkenin izin verdiği
-                                      // haneden fazlası engellenir.
-                                      if (lengthError !== "TOO_LONG") {
-                                        handleGuestChange(index, "phone", nextPhone);
-                                      }
-                                    }}
-                                    className={`flex w-full items-center rounded-lg border bg-white px-3 py-1.5 text-sm transition-colors dark:bg-slate-900 ${errors.phone
-                                        ? "border-red-500 ring-1 ring-red-500 dark:border-red-500 dark:ring-red-400/50"
-                                        : "border-slate-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"
+                                  <input
+                                    required
+                                    type="text"
+                                    value={
+                                      guest.lastName || ""
+                                    }
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "lastName",
+                                        event.target.value
+                                      )
+                                    }
+                                    className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.lastName
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
                                       }`}
-                                    numberInputProps={{
-                                      required: true,
-                                      className:
-                                        "ml-2 w-full border-0 bg-transparent py-1 text-slate-900 outline-none focus:ring-0 dark:text-white placeholder-slate-400 dark:placeholder-slate-400",
-                                    }}
                                   />
-                                  {errors.phone && (
-                                    <span className="mt-1 block text-[10px] font-medium text-red-600 dark:text-red-400">
-                                      {errors.phone}
+                                  {errors.lastName && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                      {
+                                        errors.lastName
+                                      }
                                     </span>
                                   )}
                                 </div>
                               </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                )}
-                            <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">{t("cancellationPolicyTitle", "İptal Politikası")}</h4>
-                              <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
-                                {hotel.isRefundable === true
-                                  ? t("res_form_cancel_free", "Bu rezervasyon ücretsiz iptal edilebilir.")
-                                  : hotel.isRefundable === false
-                                    ? t("res_form_cancel_nonref", "Bu rezervasyon iade edilemez.")
-                                    : t("cancellationPolicyText", "İptal koşulları rezervasyon onayı sonrası bildirilecektir.")}
-                              </p>
+
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    Cinsiyet
+                                  </label>
+                                  <select
+                                    required
+                                    value={guest.gender || "MR"}
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "gender",
+                                        event.target.value
+                                      )
+                                    }
+                                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  >
+                                    <option value="MR">
+                                      {i18n.language?.startsWith("tr")
+                                        ? "Erkek"
+                                        : "Mr"}
+                                    </option>
+                                    <option value="MRS">
+                                      {i18n.language?.startsWith("tr")
+                                        ? "Kadın"
+                                        : "Mrs"}
+                                    </option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    Doğum Tarihi
+                                  </label>
+                                  <input
+                                    required
+                                    type="date"
+                                    max={new Date()
+                                      .toISOString()
+                                      .split("T")[0]}
+                                    value={
+                                      guest.birthDate ||
+                                      ""
+                                    }
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "birthDate",
+                                        event.target.value
+                                      )
+                                    }
+                                    className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                      }`}
+                                  />
+                                  {errors.birthDate && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                      {
+                                        errors.birthDate
+                                      }
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    Uyruk
+                                  </label>
+
+                                  <select
+                                    required
+                                    value={guest.nationality || "TR"}
+                                    onChange={(event) => {
+                                      handleGuestChange(
+                                        index,
+                                        "nationality",
+                                        event.target.value
+                                      );
+
+                                      handleGuestChange(
+                                        index,
+                                        "identityNumber",
+                                        ""
+                                      );
+                                    }}
+                                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  >
+                                    <option value="TR">Türkiye (TR)</option>
+                                    <option value="DE">Almanya (DE)</option>
+                                    <option value="GB">Birleşik Krallık (GB)</option>
+                                    <option value="US">Amerika Birleşik Devletleri (US)</option>
+                                    <option value="FR">Fransa (FR)</option>
+                                    <option value="NL">Hollanda (NL)</option>
+                                    <option value="IT">İtalya (IT)</option>
+                                    <option value="ES">İspanya (ES)</option>
+                                    <option value="AU">Avustralya (AU)</option>
+                                    <option value="CA">Kanada (CA)</option>
+                                    <option value="OTHER">Diğer</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    <ShieldCheck
+                                      size={12}
+                                    />
+                                    {guest.nationality === "TR"
+                                      ? "T.C. Kimlik Numarası"
+                                      : "Pasaport Numarası"}
+                                  </label>
+                                  <input
+                                    required
+                                    type="text"
+                                    inputMode={
+                                      guest.nationality === "TR"
+                                        ? "numeric"
+                                        : "text"
+                                    }
+                                    maxLength={
+                                      guest.nationality === "TR"
+                                        ? 11
+                                        : 15
+                                    }
+                                    value={
+                                      guest.identityNumber ||
+                                      ""
+                                    }
+                                    onChange={(event) => {
+                                      const rawValue =
+                                        event.target.value;
+
+                                      const cleanValue =
+                                        guest.nationality === "TR"
+                                          ? rawValue
+                                            .replace(/\D/g, "")
+                                            .slice(0, 11)
+                                          : rawValue
+                                            .replace(/[^A-Za-z0-9]/g, "")
+                                            .toUpperCase()
+                                            .slice(0, 15);
+
+                                      handleGuestChange(
+                                        index,
+                                        "identityNumber",
+                                        cleanValue
+                                      );
+                                    }}
+                                    placeholder={
+                                      guest.nationality === "TR"
+                                        ? "11 haneli T.C. kimlik numarası"
+                                        : "En fazla 15 harf veya rakam"
+                                    }
+                                    className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                      }`}
+                                  />
+                                  {errors.identityNumber && (
+                                    <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                      {
+                                        errors.identityNumber
+                                      }
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {guest.type === "CHILD" && (
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
+                                    Yaş
+                                  </label>
+                                  <input
+                                    required
+                                    type="number"
+                                    min="0"
+                                    max="17"
+                                    value={guest.age || ""}
+                                    onChange={(event) =>
+                                      handleGuestChange(
+                                        index,
+                                        "age",
+                                        event.target.value
+                                      )
+                                    }
+                                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                  />
+                                </div>
+                              )}
+
+                              {index === 0 && (
+                                <div className="grid grid-cols-1 gap-4 border-t border-slate-200/60 pt-4 dark:border-slate-700 md:grid-cols-2">
+                                  <div>
+                                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                                      <Mail size={12} />
+                                      E-posta
+                                    </label>
+                                    <input
+                                      required
+                                      type="email"
+                                      value={
+                                        guest.email || ""
+                                      }
+                                      onChange={(
+                                        event
+                                      ) =>
+                                        handleGuestChange(
+                                          index,
+                                          "email",
+                                          event.target
+                                            .value
+                                        )
+                                      }
+                                      className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.email
+                                        ? "border-red-500 ring-1 ring-red-500"
+                                        : "border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/50 dark:border-slate-700"
+                                        }`}
+                                    />
+                                    {errors.email && (
+                                      <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                        {errors.email}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                                      <Phone size={12} />
+                                      Telefon
+                                    </label>
+                                    <PhoneInput
+                                      international
+                                      limitMaxLength
+                                      defaultCountry="TR"
+                                      value={
+                                        guest.phone || ""
+                                      }
+                                      onChange={(value) => {
+                                        const nextPhone =
+                                          value || "";
+
+                                        if (!nextPhone) {
+                                          handleGuestChange(
+                                            index,
+                                            "phone",
+                                            ""
+                                          );
+                                          return;
+                                        }
+
+                                        const lengthError =
+                                          validatePhoneNumberLength(
+                                            nextPhone
+                                          );
+
+                                        if (
+                                          lengthError !== "TOO_LONG"
+                                        ) {
+                                          handleGuestChange(
+                                            index,
+                                            "phone",
+                                            nextPhone
+                                          );
+                                        }
+                                      }}
+                                      className={`flex min-h-11 w-full items-center rounded-xl border bg-white px-3.5 py-1.5 text-sm shadow-sm transition-colors dark:bg-slate-900 ${errors.phone
+                                        ? "border-red-500 ring-1 ring-red-500"
+                                        : "border-slate-200 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/50 dark:border-slate-700"
+                                        }`}
+                                      numberInputProps={{
+                                        required: true,
+                                        className:
+                                          "ml-2 w-full border-0 bg-transparent py-1 text-slate-800 outline-none focus:ring-0 dark:text-white",
+                                      }}
+                                    />
+                                    {errors.phone && (
+                                      <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                        {errors.phone}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
+                          )}
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
 
-                          {/* Price Breakdown */ }
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">{t("res_form_price_summary", "Fiyat Özeti")}</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>{t("res_form_room_price", { guests: bookingDetails?.guests || '1 Oda', defaultValue: `Oda Fiyatı (${bookingDetails?.guests || '1 Oda'})` })}</span>
-                  <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
+                <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-5 shadow-sm dark:border-blue-900/50 dark:bg-blue-950/30">
+                  <Info
+                    size={20}
+                    className="mt-0.5 flex-shrink-0 text-blue-500"
+                  />
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300">
+                      İptal Politikası
+                    </h4>
+                    <p className="mt-1 text-xs leading-relaxed text-blue-700 dark:text-slate-300">
+                      {safeHotel?.isRefundable === true
+                        ? "Bu rezervasyon ücretsiz iptal edilebilir."
+                        : safeHotel?.isRefundable ===
+                          false
+                          ? "Bu rezervasyon iade edilemez."
+                          : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>{t("res_form_taxes", "Vergiler ve Harçlar")}</span>
-                  <span className="font-medium">{formatSubPrice(taxValue)}</span>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)] dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+                  <h3 className="mb-4 border-b border-slate-100 pb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:border-slate-700 dark:text-slate-200">
+                    Fiyat Özeti
+                  </h3>
+
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                      <span>
+                        Oda Fiyatı (
+                        {bookingDetails?.guests ||
+                          "1 Oda"}
+                        )
+                      </span>
+                      <span className="font-medium">
+                        {formatSubPrice(
+                          roomPriceValue
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                      <span>Vergiler ve Harçlar</span>
+                      <span className="font-medium">
+                        {formatSubPrice(taxValue)}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        Toplam
+                      </span>
+                      <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">
+                        {formattedPrice}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{t("res_form_total", "Toplam")}</span>
-                  <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
+
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    required
+                    checked={Boolean(termsAccepted)}
+                    onChange={(event) =>
+                      setTermsAccepted?.(
+                        event.target.checked
+                      )
+                    }
+                    className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 bg-slate-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
+                  />
+
+                  <label
+                    htmlFor="terms"
+                    className="select-none text-xs leading-relaxed text-slate-600 dark:text-slate-400"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setTermsModalOpen(true)}
+                      className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {t(
+                        "res_form_sales_contract",
+                        "Satış Sözleşmesini"
+                      )}
+                    </button>{" "}
+                    {t("res_form_terms_read_part1", "ve")}{" "}
+                    <button
+                      type="button"
+                      onClick={() => setTermsModalOpen(true)}
+                      className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {t(
+                        "res_form_cancel_terms",
+                        "İptal/İade Koşullarını"
+                      )}
+                    </button>{" "}
+                    {t(
+                      "res_form_terms_read_part2",
+                      "okudum, anladım ve kabul ediyorum."
+                    )}
+                  </label>
                 </div>
-              </div>
+              </form>
             </div>
-
-              <div className="flex items-start gap-3 p-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  required
-                  checked={Boolean(termsAccepted)}
-                  onChange={(event) =>
-                    setTermsAccepted?.(
-                      event.target.checked
-                    )
-                  }
-                  className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 bg-slate-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
-                />
-
-                <label
-                  htmlFor="terms"
-                  className="cursor-pointer select-none text-xs leading-relaxed text-slate-600 dark:text-slate-400"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setTermsModalOpen(true)}
-                    className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
-                  >
-                    {t("res_form_sales_contract", "Satış Sözleşmesini")}
-                  </button>{" "}
-                  {t("res_form_terms_read_part1", "ve")}{" "}
-                  <button
-                    type="button"
-                    onClick={() => setTermsModalOpen(true)}
-                    className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
-                  >
-                    {t("res_form_cancel_terms", "İptal/İade Koşullarını")}
-                  </button>{" "}
-                  {t("res_form_terms_read_part2", "okudum, anladım ve kabul ediyorum.")}
-                </label>
-              </div>
-            </form>
-          </div>
           </div>
 
-          <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:border-slate-800 dark:bg-slate-900 md:flex-row md:p-6">
-            <div className="flex w-full flex-col text-center md:w-auto md:text-left">
+          <div className="sticky bottom-0 z-20 flex flex-col items-stretch justify-between gap-4 border-t border-slate-200 bg-white/95 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 sm:px-6 md:flex-row md:items-center">
+            <div className="flex w-full flex-col text-left md:w-auto">
               <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                {t("res_form_total_amount", "Toplam Tutar")}
+                Toplam Tutar
               </span>
 
-              <span className="text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
+              <span className="mt-1 text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
                 {formattedPrice}
               </span>
 
@@ -1012,34 +1246,35 @@ export default function ReservationFormPanel({
               type="submit"
               form="reservation-form"
               disabled={!termsAccepted || isSubmitting}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 md:w-auto md:min-w-[240px]"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3.5 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-600 hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:disabled:bg-slate-700 md:w-auto md:min-w-[250px]"
             >
               <ShieldCheck size={18} />
-              {isSubmitting
-                ? t("reservation_submitting")
-                : bookingDetails?.editMode
-                  ? t("res_form_confirm_update", "Güncellemeyi Onayla")
-                  : t("res_form_confirm_reservation", "Rezervasyonu Onayla")}
+              {bookingDetails?.editMode
+                ? "Güncellemeyi Önizle"
+                : "Rezervasyonu Önizle"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Terms & Sales Contract Modal ── */}
+
       {termsModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={() => setTermsModalOpen(false)}
         >
           <div
             className="relative max-h-[80vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 dark:border-slate-700">
               <h2 className="pr-4 text-sm font-bold leading-snug text-white">
-                {t("termsModalTitle", "Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi")}
+                {t(
+                  "termsModalTitle",
+                  "Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi"
+                )}
               </h2>
+
               <button
                 type="button"
                 onClick={() => setTermsModalOpen(false)}
@@ -1050,14 +1285,15 @@ export default function ReservationFormPanel({
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(80vh - 130px)' }}>
+            <div
+              className="overflow-y-auto p-6"
+              style={{ maxHeight: "calc(80vh - 130px)" }}
+            >
               <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-slate-700 dark:text-slate-300">
                 {t("termsModalContent", "")}
               </pre>
             </div>
 
-            {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800">
               <button
                 type="button"
@@ -1067,8 +1303,12 @@ export default function ReservationFormPanel({
                 }}
                 className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 active:scale-[0.98]"
               >
-                {t("res_form_terms_read_part2", "okudum, anladım ve kabul ediyorum.")}
+                {t(
+                  "res_form_terms_read_part2",
+                  "Okudum, anladım ve kabul ediyorum."
+                )}
               </button>
+
               <button
                 type="button"
                 onClick={() => setTermsModalOpen(false)}
@@ -1080,6 +1320,19 @@ export default function ReservationFormPanel({
           </div>
         </div>
       )}
+
+      <ReservationPreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={handleSubmit}
+        passengers={guests}
+        selectedItem={safeHotel}
+        bookingDetails={bookingDetails}
+        editData={bookingDetails?.editData}
+        isEditMode={Boolean(bookingDetails?.editMode)}
+        isFlight={false}
+        isSubmitting={isSubmitting}
+      />
     </>
   );
 }
