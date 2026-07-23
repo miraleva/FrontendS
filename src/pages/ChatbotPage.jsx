@@ -258,11 +258,22 @@ export default function Index() {
 
   // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
   useEffect(() => {
+    setIsChatCompleted(false);
     if (sessionId) {
       const loadHistory = async () => {
         try {
           setIsThinking(true);
           setThinkingStep("Loading history...");
+
+          try {
+            const sessionResponse = await api.get(`/api/chat/sessions/${sessionId}`);
+            if (sessionResponse.data?.chatStatus === 'COMPLETED') {
+              setIsChatCompleted(true);
+            }
+          } catch (sessionErr) {
+            console.error("Failed to load session details", sessionId, sessionErr);
+          }
+
           const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
 
           const history = response.data.map((msg, idx) => ({
