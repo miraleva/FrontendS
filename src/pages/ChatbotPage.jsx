@@ -577,7 +577,18 @@ export default function Index() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const sessionId = searchParams.get('sessionId') || '';
+
+  // Guest users get or reuse a guestSessionId stored in sessionStorage
+  const getGuestSessionId = () => {
+    let id = sessionStorage.getItem('guestSessionId');
+    if (!id) {
+      id = 'guest-' + (window.crypto?.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
+      sessionStorage.setItem('guestSessionId', id);
+    }
+    return id;
+  };
+
+  const sessionId = searchParams.get('sessionId') || (isGuest ? getGuestSessionId() : '');
   const [isListening, setIsListening] = useState(false);
 
   const videoRef = useRef(null);
@@ -797,6 +808,10 @@ export default function Index() {
         bookingMeta: data.bookingMeta || null,
         animate: true // yeni gelen cevap yazıla yazıla görünsün; geçmiş mesajlar animasyonsuz yüklenir
       };
+
+      if (data.sessionId && !searchParams.get('sessionId')) {
+        setSearchParams({ sessionId: data.sessionId }, { replace: true });
+      }
 
       setMessages(prev => [...prev, botMsg]);
 
