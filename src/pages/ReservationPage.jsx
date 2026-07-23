@@ -473,7 +473,7 @@ export default function ReservationPage() {
 
     const handleBack = () => {
         if (isEditMode) {
-            navigate("/appointments");
+            navigate("/past-reservations");
             return;
         }
 

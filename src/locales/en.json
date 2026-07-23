@@ -248,7 +248,7 @@
   "sidebar_search": "Search chats...",
   "sidebar_main_navigation": "MAIN NAVIGATION",
   "sidebar_chats": "Chats",
-  "sidebar_appointments": "Past Appointments",
+  "sidebar_appointments": "Past Reservations",
   "sidebar_recent_chats": "RECENT CHATS",
   "sidebar_no_matches": "No recent chats match",
   "profile_logout_title": "Log Out?",
@@ -304,7 +304,7 @@
   "table_col_client": "CLIENT",
   "table_col_tour": "TOUR",
   "table_col_date": "DATE",
-  "past_appointments_title": "Past Appointments",
+  "past_appointments_title": "Past Reservations",
   "past_appointments_desc": "View status and history of your past flight, hotel, and transfer reservations.",
   "past_appointments_expand_sidebar": "Expand Sidebar",
   "past_appointments_video_unsupported": "Your browser does not support the video tag.",
@@ -475,5 +475,12 @@
         "answer": "Yes, airport and hotel transfers are included in our Antalya tour."
       }
     }
-  }
+  },
+  "cancellationPolicyTitle": "Cancellation Policy",
+  "cancellationPolicyText": "Cancellations made up to 24 hours before the reservation check-in date are fully refunded. Cancellations made less than 24 hours before check-in are subject to a one-night accommodation fee deduction.",
+  "termsCheckboxText": "I have read, understood, and accepted the Sales Agreement and Cancellation/Refund Terms.",
+  "termsModalTitle": "Pre-Information Form and Distance Sales Agreement",
+  "termsModalContent": "This agreement covers test/demo reservation transactions made through the TourVisio / Sanny platform.\n\n1. PARTIES AND SUBJECT: This document contains information and reservation terms related to the hotel/tour service selected by the user.\n2. RESERVATION AND CANCELLATION: The user has the right to cancel their reservation up to 24 hours before the reservation date without any penalty.\n3. PRIVACY AND DATA PROTECTION: User data is processed solely for simulation purposes in accordance with KVKK and GDPR standards.\n4. PAYMENT SECURITY: All transactions made in the test environment are simulations; no real bank/credit card charges are made.",
+  "close": "Close",
+  "acceptTermsWarning": "Please accept the agreement to proceed."
 }

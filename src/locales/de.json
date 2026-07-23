@@ -245,7 +245,7 @@
   "sidebar_search": "Chats durchsuchen...",
   "sidebar_main_navigation": "HAUPTNAVIGATION",
   "sidebar_chats": "Chats",
-  "sidebar_appointments": "Vergangene Termine",
+  "sidebar_appointments": "Vergangene Reservierungen",
   "sidebar_recent_chats": "AKTUELLE CHATS",
   "sidebar_no_matches": "Keine aktuellen Chats gefunden",
   "profile_logout_title": "Abmelden?",
@@ -304,7 +304,7 @@
   "tour_cappadocia": "Kappadokien-Tour",
   "tour_antalya": "Antalya-Urlaub",
   "tour_blacksea": "Schwarzmeer-Tour",
-  "past_appointments_title": "Vergangene Termine",
+  "past_appointments_title": "Vergangene Reservierungen",
   "past_appointments_desc": "Sehen Sie sich den Status und Verlauf Ihrer vergangenen Flug-, Hotel- und Transferreservierungen an.",
   "past_appointments_expand_sidebar": "Seitenleiste erweitern",
   "past_appointments_video_unsupported": "Ihr Browser unterstützt das Video-Tag nicht.",
@@ -530,5 +530,12 @@
       "edit_description": "Aktualisieren Sie die Angaben der ausgewählten Tour.",
       "update": "Änderungen speichern"
     }
-  }
+  },
+  "cancellationPolicyTitle": "Stornierungsbedingungen",
+  "cancellationPolicyText": "Stornierungen, die bis zu 24 Stunden vor dem Check-in-Datum der Reservierung vorgenommen werden, werden vollständig erstattet. Bei Stornierungen weniger als 24 Stunden vor dem Check-in wird eine Gebühr in Höhe einer Übernachtung erhoben.",
+  "termsCheckboxText": "Ich habe den Kaufvertrag und die Stornobedingungen gelesen, verstanden und akzeptiert.",
+  "termsModalTitle": "Vorabinformationsformular und Fernabsatzvertrag",
+  "termsModalContent": "Diese Vereinbarung gilt für Test-/Demo-Reservierungstransaktionen, die über die TourVisio / Sanny-Plattform durchgeführt werden.\n\n1. PARTEIEN UND GEGENSTAND: Dieses Dokument enthält Informationen und Reservierungsbedingungen für das vom Nutzer ausgewählte Hotel/Tour.\n2. RESERVIERUNG UND STORNIERUNG: Der Nutzer hat das Recht, seine Reservierung bis zu 24 Stunden vor dem Reservierungsdatum ohne Strafzahlung zu stornieren.\n3. DATENSCHUTZ: Nutzerdaten werden ausschließlich zu Simulationszwecken gemäß KVKK- und DSGVO-Standards verarbeitet.\n4. ZAHLUNGSSICHERHEIT: Alle im Testumfeld durchgeführten Transaktionen sind Simulationen; es werden keine echten Bank-/Kreditkartenabbuchungen vorgenommen.",
+  "close": "Schließen",
+  "acceptTermsWarning": "Bitte akzeptieren Sie den Vertrag, um fortzufahren."
 }

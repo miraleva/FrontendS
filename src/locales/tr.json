@@ -245,7 +245,7 @@
   "sidebar_search": "Sohbetlerde ara...",
   "sidebar_main_navigation": "ANA MENÜ",
   "sidebar_chats": "Sohbetler",
-  "sidebar_appointments": "Geçmiş Randevular",
+  "sidebar_appointments": "Geçmiş Rezervasyonlar",
   "sidebar_recent_chats": "SON SOHBETLER",
   "sidebar_no_matches": "Eşleşen son sohbet bulunamadı",
   "profile_logout_title": "Çıkış Yapılsın mı?",
@@ -309,7 +309,7 @@
   "users_title": "Kullanıcılar",
   "chat_logs_title": "Sohbet Kayıtları",
   "tours_title": "Turlar",
-  "past_appointments_title": "Geçmiş Randevular",
+  "past_appointments_title": "Geçmiş Rezervasyonlar",
   "past_appointments_desc": "Geçmiş uçuş, otel ve transfer rezervasyonlarınızın durumunu ve geçmişini görüntüleyin.",
   "past_appointments_expand_sidebar": "Yan Menüyü Genişlet",
   "past_appointments_video_unsupported": "Tarayıcınız video etiketini desteklemiyor.",
@@ -526,5 +526,12 @@
       "edit_description": "Seçilen turun bilgilerini güncelleyin.",
       "update": "Değişiklikleri Kaydet"
     }
-  }
+  },
+  "cancellationPolicyTitle": "İptal Politikası",
+  "cancellationPolicyText": "Rezervasyon giriş tarihinden 24 saat öncesine kadar yapılan iptal işlemlerinde kesintisiz iade yapılmaktadır. 24 saatten az kalan iptallerde 1 gecelik konaklama ücreti kesintisi uygulanır.",
+  "termsCheckboxText": "Satış Sözleşmesini ve İptal/İade Koşullarını okudum, anladım ve kabul ediyorum.",
+  "termsModalTitle": "Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi",
+  "termsModalContent": "İşbu sözleşme, TourVisio / Sanny platformu üzerinden gerçekleştirilen test/demo rezervasyon işlemlerini kapsamaktadır.\n\n1. TARAFLAR VE KONU: İşbu belge, kullanıcının seçtiği otel/tur hizmetine ilişkin bilgilendirme ve rezervasyon şartlarını içerir.\n2. REZERVASYON VE İPTAL: Kullanıcı, rezervasyon tarihinden 24 saat öncesine kadar hiçbir cezai şart ödemeksizin rezervasyonunu iptal etme hakkına sahiptir.\n3. GİZLİLİK VE VERİ KORUMA: Kullanıcı verileri KVKK ve GDPR standartlarına uygun olarak sadece simülasyon amacıyla işlenmektedir.\n4. ÖDEME KORUMASI: Test ortamında yapılan tüm işlemler simülasyondur, gerçek bir banka/kredi kartı çekimi yapılmaz.",
+  "close": "Kapat",
+  "acceptTermsWarning": "Lütfen devam etmek için sözleşmeyi kabul edin."
 }
