@@ -110,7 +110,7 @@ export default function App() {
               <Route element={<ProtectedRoute allowedTypes={['authenticated']} redirectGuestTo="/chat" />}>
                 <Route element={<MainLayout />}>
                   <Route
-                    path="/appointments"
+                    path="/past-reservations"
                     element={<PastAppointments />}
                   />
                   <Route
