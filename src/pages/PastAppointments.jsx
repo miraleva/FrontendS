@@ -253,6 +253,7 @@ export default function PastAppointments() {
           flightClass: reservation.flightClass,
           transferType: reservation.transferType,
           pickupLocation: reservation.pickupLocation,
+          chatSessionId: reservation.chatSessionId,
         })
       );
 

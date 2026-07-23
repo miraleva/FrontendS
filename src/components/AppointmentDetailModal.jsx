@@ -4,9 +4,11 @@ import {
   Ticket, User, Plane, Car, MapPin, CheckCircle2, XCircle, AlertCircle, Moon, Edit, Trash2, Info
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 export default function AppointmentDetailModal({ appointment, onClose, onEdit, onCancel }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   if (!appointment) return null;
@@ -307,7 +309,14 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
         <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 relative z-20">
           
           <button 
-            onClick={() => {}}
+            onClick={() => {
+              if (appointment.chatSessionId) {
+                navigate(`/chat?sessionId=${appointment.chatSessionId}`);
+              } else {
+                navigate('/chat');
+              }
+              onClose();
+            }}
             className="w-full py-3 rounded-xl font-bold bg-[#f07c24] text-white hover:bg-[#d96a1a] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
           >
             <MessageSquare size={18} />
