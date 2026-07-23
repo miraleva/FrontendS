@@ -180,6 +180,333 @@ function TypewriterText({ text, animate }) {
   return text ? text.slice(0, visibleChars) : text;
 }
 
+function HotelSearchResults({
+  msg,
+  isLatestResultMsg,
+  selectedFlight,
+  setSelectedFlight,
+  selectedHotel,
+  setSelectedHotel,
+  setActivePanel,
+  bookingDetails,
+  setBookingDetails,
+  hotelDetailLoading,
+  setHotelDetailLoading,
+  updateBackendCriteria,
+  sessionId,
+  onUpdateMessagePayload,
+  sessionCriteria,
+  t
+}) {
+  const navigate = useNavigate();
+  const [sortOrder, setSortOrder] = useState("price_asc");
+  const [selectedStar, setSelectedStar] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+
+  const handleFilterChange = (newStar, newMaxPrice) => {
+    setSelectedStar(newStar);
+    setMaxPrice(newMaxPrice);
+    
+    const raw = msg.originalHotels || msg.results || [];
+    const filtered = raw.filter(item => {
+      if (item.airline !== undefined) return true;
+      if (newMaxPrice !== "" && item.price !== undefined && item.price > parseFloat(newMaxPrice)) {
+        return false;
+      }
+      if (newStar !== "") {
+        const minStarsVal = parseInt(newStar);
+        if (item.stars !== undefined && item.stars < minStarsVal) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    onUpdateMessagePayload(msg.id, filtered);
+  };
+
+  useEffect(() => {
+    if (isLatestResultMsg) {
+      const criteriaMaxPrice = sessionCriteria.maxPrice === 0 || !sessionCriteria.maxPrice ? "" : sessionCriteria.maxPrice.toString();
+      const criteriaMinStars = sessionCriteria.minStars === 0 || !sessionCriteria.minStars ? "" : sessionCriteria.minStars.toString();
+      
+      setSelectedStar(criteriaMinStars);
+      setMaxPrice(criteriaMaxPrice);
+      
+      const raw = msg.originalHotels || msg.results || [];
+      const filtered = raw.filter(item => {
+        if (item.airline !== undefined) return true;
+        if (criteriaMaxPrice !== "" && item.price !== undefined && item.price > parseFloat(criteriaMaxPrice)) {
+          return false;
+        }
+        if (criteriaMinStars !== "") {
+          const minStarsVal = parseInt(criteriaMinStars);
+          if (item.stars !== undefined && item.stars < minStarsVal) {
+            return false;
+          }
+        }
+        return true;
+      });
+      onUpdateMessagePayload(msg.id, filtered);
+    }
+  }, [sessionCriteria, isLatestResultMsg]);
+
+  const handleStarChange = (e) => {
+    const val = e.target.value;
+    handleFilterChange(val, maxPrice);
+    if (isLatestResultMsg) {
+      updateBackendCriteria({ minStars: val === "" ? null : parseInt(val) });
+    }
+  };
+
+  const handleMaxPriceChange = (val) => {
+    handleFilterChange(selectedStar, val);
+    if (isLatestResultMsg) {
+      updateBackendCriteria({ maxPrice: val === "" ? null : parseFloat(val) });
+    }
+  };
+
+  const handleReset = () => {
+    setSelectedStar("");
+    setMaxPrice("");
+    handleFilterChange("", "");
+    if (isLatestResultMsg) {
+      updateBackendCriteria({ maxPrice: null, minPrice: null, minStars: null });
+    }
+  };
+
+  const filteredList = msg.filteredHotels || msg.originalHotels || msg.results || [];
+  const sortedList = sortResults(filteredList, sortOrder);
+
+  return (
+    <div className="mt-3 w-full">
+      {isLatestResultMsg && msg.results.length > 1 && (
+        <div className="mb-2 flex items-center justify-between gap-2 flex-wrap bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 w-full">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              {t("sort_by_label", "Sırala")}
+            </span>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+            >
+              <option value="price_asc">{t("sort_price_asc", "Fiyat: Ucuzdan Pahalıya")}</option>
+              <option value="price_desc">{t("sort_price_desc", "Fiyat: Pahalıdan Ucuza")}</option>
+              {msg.results[0]?.airline !== undefined ? (
+                <>
+                  <option value="duration_asc">{t("sort_duration_asc", "Süre: En Kısa")}</option>
+                  <option value="duration_desc">{t("sort_duration_desc", "Süre: En Uzun")}</option>
+                </>
+              ) : (
+                <>
+                  <option value="stars_desc">{t("sort_stars_desc", "Yıldız: Yüksekten Düşüğe")}</option>
+                  <option value="stars_asc">{t("sort_stars_asc", "Yıldız: Düşükten Yükseğe")}</option>
+                  <option value="name_asc">İsim: A'dan Z'ye</option>
+                  <option value="name_desc">İsim: Z'den A'ya</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {msg.results[0]?.airline === undefined && (
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Yıldız Filtresi */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Yıldız</span>
+                <select
+                  value={selectedStar}
+                  onChange={handleStarChange}
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                >
+                  <option value="">Tüm Yıldızlar</option>
+                  <option value="5">5 Yıldız</option>
+                  <option value="4">4 Yıldız ve Üzeri</option>
+                </select>
+              </div>
+
+              {/* Maks Fiyat Filtresi */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Maks Fiyat</span>
+                <input
+                  type="number"
+                  placeholder="Tutar"
+                  value={maxPrice}
+                  onChange={(e) => handleMaxPriceChange(e.target.value)}
+                  className="w-20 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="50000"
+                  step="500"
+                  value={maxPrice || 50000}
+                  onChange={(e) => {
+                    const val = e.target.value === "50000" ? "" : e.target.value;
+                    handleMaxPriceChange(val);
+                  }}
+                  className="w-16 accent-amber-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Sıfırla Butonu */}
+              <button
+                onClick={handleReset}
+                className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 transition-colors"
+              >
+                Sıfırla
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+        {sortedList.map((result, idx) => {
+          const isFlight = result.airline !== undefined;
+          if (isFlight) {
+            const isCurrentlySelected = selectedFlight
+              && selectedFlight.airline === result.airline
+              && selectedFlight.departureTime === result.departureTime;
+
+            return (
+              <button
+                key={idx}
+                onClick={() => {
+                  setSelectedFlight(result);
+                  setBookingDetails(prev => ({
+                    ...prev,
+                    airline: result.airline,
+                    checkIn: result.departureTime || prev.checkIn,
+                    returnDate: result.returnDepartureTime || "",
+                    price: `${formatPrice(result.price)} ${result.currency || 'TRY'}`
+                  }));
+                }}
+                className={cn(
+                  "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                  isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
+                )}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm">✈️ {result.airline}</span>
+                  <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-sm">{formatPrice(result.price)} {result.currency}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <div><strong>{t("reservation_departure")}:</strong> {formatFlightDateTime(result.departureTime)}</div>
+                  <div><strong>{t("reservation_arrival")}:</strong> {formatFlightDateTime(result.arrivalTime)}</div>
+                  <div><strong>{t("reservation_transfers")}:</strong> {result.transfers}</div>
+                  <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.baggage, t)}</div>
+                </div>
+                {result.returnDepartureTime && (
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 pt-2 mt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="col-span-2 font-bold text-[#1E232C] dark:text-slate-100">↩ {result.returnAirline || result.airline}</div>
+                    <div><strong>{t("reservation_return_departure_short")}:</strong> {formatFlightDateTime(result.returnDepartureTime)}</div>
+                    <div><strong>{t("reservation_return_arrival_short")}:</strong> {formatFlightDateTime(result.returnArrivalTime)}</div>
+                    <div><strong>{t("reservation_transfers")}:</strong> {result.returnTransfers}</div>
+                    <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.returnBaggage, t)}</div>
+                  </div>
+                )}
+              </button>
+            );
+
+          } else {
+            const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
+            const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
+
+            const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
+            const uniqueLocationParts = [...new Set(locationParts)];
+            const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
+
+            return (
+              <button
+                key={idx}
+                onClick={async () => {
+                  setSelectedHotel(result);
+                  setActivePanel('hotelDetail');
+                  setBookingDetails(prev => ({
+                    ...prev,
+                    hotelName: result.name || result.hotelId,
+                    price: formattedPrice
+                  }));
+
+                  if (result.hotelId) {
+                    setHotelDetailLoading(true);
+                    try {
+                      const detailResponse = await api.post('/api/hotels/productinfo', {
+                        productType: 2,
+                        ownerProvider: result.provider || 2,
+                        product: result.hotelId,
+                        culture: 'tr-TR'
+                      });
+                      const mappedDetail = mapProductInfoToHotelDetail(detailResponse.data);
+                      setSelectedHotel(prev =>
+                        prev && prev.hotelId === result.hotelId ? { ...prev, ...mappedDetail } : prev
+                      );
+                    } catch (err) {
+                      console.log("Otel detayları yüklenemedi:", err);
+                    } finally {
+                      setHotelDetailLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
+                  isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
+                )}
+              >
+                <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
+                  {(result.thumbnailFull || result.thumbnail) ? (
+                    <img
+                      src={result.thumbnailFull || result.thumbnail}
+                      alt={result.name || "Hotel"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.classList.remove('hidden');
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div className={`absolute inset-0 flex items-center justify-center ${(result.thumbnailFull || result.thumbnail) ? 'hidden' : ''}`}>
+                    <span className="text-xl">🏨</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm leading-tight flex items-center gap-1 flex-wrap">
+                        {result.name || result.hotelId}
+                        {result.stars && (
+                          <span className="text-amber-400 text-xs flex items-center flex-shrink-0 bg-amber-50 dark:bg-amber-950/30 px-1 py-0.5 rounded">
+                            {result.stars}<Star size={10} className="ml-0.5 fill-amber-400" />
+                          </span>
+                        )}
+                      </span>
+                      {locationText && (
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
+                          <MapPin size={10} /> {locationText}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end items-end mt-1">
+                    <span className="text-[#3B82F6] dark:text-blue-400 font-extrabold text-sm flex-shrink-0">
+                      {formattedPrice}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          }
+        })}
+      </div>
+    </div>
+  );
+}
+
 function formatBaggage(baggage, t) {
   if (!baggage || baggage === "0kg" || baggage === "0 kg") {
     return t ? t("baggage_not_included") : "Baggage not included";
@@ -197,14 +524,11 @@ export default function Index() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("");
-  // Mesaj başına (msg.id ile) sonuç sıralama tercihi; varsayılan ucuzdan pahalıya.
-  const [resultSortOptions, setResultSortOptions] = useState({});
+  const [sessionCriteria, setSessionCriteria] = useState({ maxPrice: null, minStars: null });
   const isChatTerminated = messages.length > 0 && messages[messages.length - 1].chatStatus === 'TERMINATED';
   const [isChatCompleted, setIsChatCompleted] = useState(false);
   const isChatLocked = isChatTerminated || isChatCompleted;
-
-  const [maxPriceFilter, setMaxPriceFilter] = useState("");
-  const [minStarsFilter, setMinStarsFilter] = useState("");
+  const lastResultMsgId = [...messages].reverse().find(m => m.results && m.results.length > 0)?.id;
 
   const updateBackendCriteria = async (filters) => {
     if (!sessionId) return;
@@ -299,6 +623,8 @@ export default function Index() {
             text: msg.text,
             sender: msg.sender,
             results: msg.results || null,
+            originalHotels: msg.results || [],
+            filteredHotels: msg.results || [],
             chatStatus: msg.chatStatus || null,
             selectedItem: msg.selectedItem || null,
             bookingMeta: msg.bookingMeta || null
@@ -353,16 +679,10 @@ export default function Index() {
                   arrivalCity: c.arrivalLocation || "",
                   returnDate: c.returnDate || ""
                 }));
-                if (c.maxPrice !== undefined && c.maxPrice !== null) {
-                  setMaxPriceFilter(c.maxPrice === 0 ? "" : c.maxPrice);
-                } else {
-                  setMaxPriceFilter("");
-                }
-                if (c.minStars !== undefined && c.minStars !== null) {
-                  setMinStarsFilter(c.minStars === 0 ? "" : c.minStars.toString());
-                } else {
-                  setMinStarsFilter("");
-                }
+                setSessionCriteria({
+                  maxPrice: c.maxPrice || null,
+                  minStars: c.minStars || null
+                });
               }
             } catch (criteriaErr) {
             console.error("Failed to load session criteria", sessionId, criteriaErr);
@@ -460,8 +780,8 @@ export default function Index() {
         country: userCountry,
         currencySymbol: preferredCurrency.symbol,
         currencyName: preferredCurrency.name,
-        maxPrice: maxPriceFilter ? parseFloat(maxPriceFilter) : null,
-        minStars: minStarsFilter ? parseInt(minStarsFilter) : null
+        maxPrice: null,
+        minStars: null
       });
 
       const data = response.data;
@@ -470,6 +790,8 @@ export default function Index() {
         text: data.reply,
         sender: "bot",
         results: data.results,
+        originalHotels: data.results || [],
+        filteredHotels: data.results || [],
         chatStatus: data.chatStatus,
         selectedItem: data.selectedItem,
         bookingMeta: data.bookingMeta || null,
@@ -546,16 +868,10 @@ export default function Index() {
           arrivalCity: c.arrivalLocation || "",
           returnDate: c.returnDate || ""
         }));
-        if (c.maxPrice !== undefined && c.maxPrice !== null) {
-          setMaxPriceFilter(c.maxPrice === 0 ? "" : c.maxPrice);
-        } else {
-          setMaxPriceFilter("");
-        }
-        if (c.minStars !== undefined && c.minStars !== null) {
-          setMinStarsFilter(c.minStars === 0 ? "" : c.minStars.toString());
-        } else {
-          setMinStarsFilter("");
-        }
+        setSessionCriteria({
+          maxPrice: c.maxPrice || null,
+          minStars: c.minStars || null
+        });
       } else {
         // Backend kriteri dönmediyse (ör. kapsam dışı mesaj) en azından kullanıcının
         // sorgusundaki verileri güncelle
@@ -696,25 +1012,8 @@ export default function Index() {
       setIsListening(false);
     }
   };
-  const filterResults = (results) => {
-    if (!Array.isArray(results)) return [];
-    return results.filter(item => {
-      // Only apply filters to hotels
-      if (item.airline !== undefined) return true;
-
-      // Apply maxPriceFilter
-      if (maxPriceFilter !== "" && item.price !== undefined && item.price > parseFloat(maxPriceFilter)) {
-        return false;
-      }
-      // Apply minStarsFilter
-      if (minStarsFilter !== "") {
-        const minStarsVal = parseInt(minStarsFilter);
-        if (item.stars !== undefined && item.stars < minStarsVal) {
-          return false;
-        }
-      }
-      return true;
-    });
+  const handleUpdateMessagePayload = (msgId, filteredList) => {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, filteredHotels: filteredList } : m));
   };
 
   return (
@@ -956,256 +1255,24 @@ export default function Index() {
                           )}
 
                           {msg.results && msg.results.length > 0 && (
-                            <div className="mt-3 w-full">
-                              {msg.results.length > 1 && (
-                                <div className="mb-2 flex items-center justify-between gap-2 flex-wrap bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 w-full">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                      {t("sort_by_label", "Sırala")}
-                                    </span>
-                                    <select
-                                      value={resultSortOptions[msg.id] || "price_asc"}
-                                      onChange={(event) =>
-                                        setResultSortOptions((prev) => ({
-                                          ...prev,
-                                          [msg.id]: event.target.value,
-                                        }))
-                                      }
-                                      className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-                                    >
-                                      <option value="price_asc">{t("sort_price_asc", "Fiyat: Ucuzdan Pahalıya")}</option>
-                                      <option value="price_desc">{t("sort_price_desc", "Fiyat: Pahalıdan Ucuza")}</option>
-                                      {msg.results[0]?.airline !== undefined ? (
-                                        <>
-                                          <option value="duration_asc">{t("sort_duration_asc", "Süre: En Kısa")}</option>
-                                          <option value="duration_desc">{t("sort_duration_desc", "Süre: En Uzun")}</option>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <option value="stars_desc">{t("sort_stars_desc", "Yıldız: Yüksekten Düşüğe")}</option>
-                                          <option value="stars_asc">{t("sort_stars_asc", "Yıldız: Düşükten Yükseğe")}</option>
-                                          <option value="name_asc">İsim: A'dan Z'ye</option>
-                                          <option value="name_desc">İsim: Z'den A'ya</option>
-                                        </>
-                                      )}
-                                    </select>
-                                  </div>
-
-                                  {msg.results[0]?.airline === undefined && (
-                                    <div className="flex items-center gap-3 flex-wrap">
-                                      {/* Yıldız Filtresi */}
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Yıldız</span>
-                                        <select
-                                          value={minStarsFilter}
-                                          onChange={(e) => {
-                                            const val = e.target.value;
-                                            setMinStarsFilter(val);
-                                            updateBackendCriteria({ minStars: val === "" ? null : parseInt(val) });
-                                          }}
-                                          className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-                                        >
-                                          <option value="">Tüm Yıldızlar</option>
-                                          <option value="5">5 Yıldız</option>
-                                          <option value="4">4 Yıldız ve Üzeri</option>
-                                        </select>
-                                      </div>
-
-                                      {/* Maks Fiyat Filtresi */}
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Maks Fiyat</span>
-                                        <input
-                                          type="number"
-                                          placeholder="Tutar"
-                                          value={maxPriceFilter}
-                                          onChange={(e) => {
-                                            const val = e.target.value;
-                                            setMaxPriceFilter(val);
-                                            updateBackendCriteria({ maxPrice: val === "" ? null : parseFloat(val) });
-                                          }}
-                                          className="w-20 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-                                        />
-                                        <input
-                                          type="range"
-                                          min="0"
-                                          max="50000"
-                                          step="500"
-                                          value={maxPriceFilter || 50000}
-                                          onChange={(e) => {
-                                            const val = e.target.value === "50000" ? "" : e.target.value;
-                                            setMaxPriceFilter(val);
-                                            updateBackendCriteria({ maxPrice: val === "" ? null : parseFloat(val) });
-                                          }}
-                                          className="w-16 accent-amber-500 cursor-pointer"
-                                        />
-                                      </div>
-
-                                      {/* Sıfırla Butonu */}
-                                      <button
-                                        onClick={() => {
-                                          setMaxPriceFilter("");
-                                          setMinStarsFilter("");
-                                          updateBackendCriteria({ maxPrice: null, minPrice: null, minStars: null });
-                                        }}
-                                        className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 transition-colors"
-                                      >
-                                        Sıfırla
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                              {sortResults(filterResults(msg.results), resultSortOptions[msg.id] || "price_asc").map((result, idx) => {
-                                const isFlight = result.airline !== undefined;
-                                if (isFlight) {
-                                  const isCurrentlySelected = selectedFlight
-                                    && selectedFlight.airline === result.airline
-                                    && selectedFlight.departureTime === result.departureTime;
-
-                                  return (
-                                    <button
-                                      key={idx}
-                                      onClick={() => {
-                                        setSelectedFlight(result);
-                                        // Tıklanan uçuş bilgisini sağdaki bar state'ine anında aktarıyoruz
-                                        setBookingDetails(prev => ({
-                                          ...prev,
-                                          airline: result.airline,
-                                          checkIn: result.departureTime || prev.checkIn,
-                                          // returnDepartureTime sadece gidiş-dönüş uçuşlarında dolu gelir
-                                          returnDate: result.returnDepartureTime || "",
-                                          price: `${formatPrice(result.price)} ${result.currency || 'TRY'}`
-                                        }));
-                                      }}
-                                      className={cn(
-                                        "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
-                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
-                                      )}
-                                    >
-                                      <div className="flex justify-between items-center">
-                                        <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm">✈️ {result.airline}</span>
-                                        <span className="text-[#3B82F6] dark:text-blue-400 font-bold text-sm">{formatPrice(result.price)} {result.currency}</span>
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
-                                        <div><strong>{t("reservation_departure")}:</strong> {formatFlightDateTime(result.departureTime)}</div>
-                                        <div><strong>{t("reservation_arrival")}:</strong> {formatFlightDateTime(result.arrivalTime)}</div>
-                                        <div><strong>{t("reservation_transfers")}:</strong> {result.transfers}</div>
-                                        <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.baggage, t)}</div>
-                                      </div>
-                                      {result.returnDepartureTime && (
-                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 pt-2 mt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
-                                          <div className="col-span-2 font-bold text-[#1E232C] dark:text-slate-100">↩ {result.returnAirline || result.airline}</div>
-                                          <div><strong>{t("reservation_return_departure_short")}:</strong> {formatFlightDateTime(result.returnDepartureTime)}</div>
-                                          <div><strong>{t("reservation_return_arrival_short")}:</strong> {formatFlightDateTime(result.returnArrivalTime)}</div>
-                                          <div><strong>{t("reservation_transfers")}:</strong> {result.returnTransfers}</div>
-                                          <div><strong>{t("reservation_baggage")}:</strong> {formatBaggage(result.returnBaggage, t)}</div>
-                                        </div>
-                                      )}
-                                    </button>
-                                  );
-
-                                } else {
-                                  // Otel kartını tıklanabilir bir butona dönüştürüyoruz
-                                  const isCurrentlySelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
-
-                                  // Küsüratsız, yuvarlanmış fiyat (kullanıcı isteği: "13463.87" değil "13.463")
-                                  const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
-
-                                  const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
-                                  const uniqueLocationParts = [...new Set(locationParts)];
-                                  const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
-
-                                  return (
-                                    <button
-                                      key={idx}
-                                      onClick={async () => {
-                                        setSelectedHotel(result);
-                                        setActivePanel('hotelDetail');
-                                        setBookingDetails(prev => ({
-                                          ...prev,
-                                          hotelName: result.name || result.hotelId,
-                                          price: formattedPrice
-                                        }));
-
-                                        if (result.hotelId) {
-                                          setHotelDetailLoading(true);
-                                          try {
-                                            const detailResponse = await api.post('/api/hotels/productinfo', {
-                                              productType: 2,
-                                              ownerProvider: result.provider || 2,
-                                              product: result.hotelId,
-                                              culture: 'tr-TR'
-                                            });
-                                            const mappedDetail = mapProductInfoToHotelDetail(detailResponse.data);
-                                            setSelectedHotel(prev =>
-                                              prev && prev.hotelId === result.hotelId ? { ...prev, ...mappedDetail } : prev
-                                            );
-                                          } catch (err) {
-                                            console.log("Otel detayları yüklenemedi:", err);
-                                          } finally {
-                                            setHotelDetailLoading(false);
-                                          }
-                                        }
-                                      }}
-                                      className={cn(
-                                        "w-full text-left bg-white dark:bg-slate-900 border rounded-xl p-3 shadow-sm flex items-start gap-3 transition-all duration-200 cursor-pointer hover:border-amber-500 hover:shadow-md focus:outline-none",
-                                        isCurrentlySelected ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"
-                                      )}
-                                    >
-                                      {/* Thumbnail */}
-                                      <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
-                                        {(result.thumbnailFull || result.thumbnail) ? (
-                                          <img
-                                            src={result.thumbnailFull || result.thumbnail}
-                                            alt={result.name || "Hotel"}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                              e.currentTarget.style.display = 'none';
-                                              if (e.currentTarget.nextElementSibling) {
-                                                e.currentTarget.nextElementSibling.classList.remove('hidden');
-                                              }
-                                            }}
-                                          />
-                                        ) : null}
-                                        <div className={`absolute inset-0 flex items-center justify-center ${(result.thumbnailFull || result.thumbnail) ? 'hidden' : ''}`}>
-                                          <span className="text-xl">🏨</span>
-                                        </div>
-                                      </div>
-
-                                      {/* Content */}
-                                      <div className="flex-1 min-w-0 flex flex-col gap-1">
-                                        <div className="flex justify-between items-start">
-                                          <div className="flex flex-col min-w-0 pr-2">
-                                            <span className="font-bold text-[#1E232C] dark:text-slate-100 text-sm leading-tight flex items-center gap-1 flex-wrap">
-                                              {result.name || result.hotelId}
-                                              {result.stars && (
-                                                <span className="text-amber-400 text-xs flex items-center flex-shrink-0 bg-amber-50 dark:bg-amber-950/30 px-1 py-0.5 rounded">
-                                                  {result.stars}<Star size={10} className="ml-0.5 fill-amber-400" />
-                                                </span>
-                                              )}
-                                            </span>
-                                            {locationText && (
-                                              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
-                                                <MapPin size={10} /> {locationText}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-
-                                        <div className="flex justify-end items-end mt-1">
-                                          <span className="text-[#3B82F6] dark:text-blue-400 font-extrabold text-sm flex-shrink-0">
-                                            {formattedPrice}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </button>
-                                  );
-                                }
-                              })}
-                              </div>
-                            </div>
+                            <HotelSearchResults
+                              msg={msg}
+                              isLatestResultMsg={msg.id === lastResultMsgId}
+                              selectedFlight={selectedFlight}
+                              setSelectedFlight={setSelectedFlight}
+                              selectedHotel={selectedHotel}
+                              setSelectedHotel={setSelectedHotel}
+                              setActivePanel={setActivePanel}
+                              bookingDetails={bookingDetails}
+                              setBookingDetails={setBookingDetails}
+                              hotelDetailLoading={hotelDetailLoading}
+                              setHotelDetailLoading={setHotelDetailLoading}
+                              updateBackendCriteria={updateBackendCriteria}
+                              sessionId={sessionId}
+                              onUpdateMessagePayload={handleUpdateMessagePayload}
+                              sessionCriteria={sessionCriteria}
+                              t={t}
+                            />
                           )}
                         </div>
                       </div>
