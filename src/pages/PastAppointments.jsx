@@ -87,98 +87,7 @@ export default function PastAppointments() {
 
   const videoRef = useRef(null);
 
-  const mockAppointments = [
-    {
-      id: 1,
-      title: "Antalya Şehir Turu",
-      itemName: "Antalya Şehir Turu",
-      destination: "Antalya",
-      type: "Hotel",
-      date: "12.06.2026 - 19.06.2026",
-      startDate: "2026-06-12",
-      endDate: "2026-06-19",
-      status: "Completed",
-      hotelName: "Antalya Şehir Turu",
-      checkIn: "12.06.2026",
-      checkOut: "19.06.2026",
-      nights: 7,
-      guests: 1,
-      resNumber: "RES-163CF0BB",
-      reservationNumber: "RES-163CF0BB",
-      paymentStatus: "Paid",
-      totalPrice: 2400,
-      currency: "TRY",
-      price: formatPrice(2400, "TRY"),
-      passengers: [
-        {
-          firstName: "Ayşe",
-          lastName: "Yılmaz",
-          email: "ayse@example.com",
-          phoneNumber: "05551234567",
-          identityNumber: "12345678901",
-          birthDate: "1990-05-12",
-          gender: "MRS",
-          nationality: "TR",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "İstanbul (IST) - Münih (MUC)",
-      itemName: "İstanbul (IST) - Münih (MUC)",
-      destination: "Münih",
-      type: "Flight",
-      date: "08.05.2026 (Tek Yön)",
-      startDate: "2026-05-08",
-      endDate: "2026-05-08",
-      status: "Completed",
-      from: "İstanbul (IST)",
-      to: "Münih (MUC)",
-      flightNumber: "LH-1620",
-      seat: "14A",
-      flightClass: "Ekonomi",
-      guests: 1,
-      resNumber: "FLT-561029",
-      reservationNumber: "FLT-561029",
-      paymentStatus: "Paid",
-      totalPrice: 8500,
-      currency: "TRY",
-      price: formatPrice(8500, "TRY"),
-      passengers: [
-        {
-          firstName: "Mehmet",
-          lastName: "Yılmaz",
-          email: "mehmet@example.com",
-          phoneNumber: "05559876543",
-          identityNumber: "10987654321",
-          birthDate: "1988-03-08",
-          gender: "MR",
-          nationality: "TR",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Antalya Havalimanı Transferi",
-      itemName: "Antalya Havalimanı Transferi",
-      destination: "Antalya",
-      type: "Transfer",
-      date: "12.06.2026",
-      startDate: "2026-06-12",
-      endDate: "2026-06-12",
-      status: "Cancelled",
-      transferType: "Havalimanı Transferi",
-      driverStatus: "Operatör Tarafından İptal Edildi",
-      pickupLocation: "Antalya Havalimanı Terminal 2",
-      resNumber: "TRF-774021",
-      reservationNumber: "TRF-774021",
-      paymentStatus: "Refunded",
-      totalPrice: 45,
-      currency: "USD",
-      price: formatPrice(45, "USD"),
-      passengers: [],
-    },
-  ];
+
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -259,10 +168,10 @@ export default function PastAppointments() {
       setAppointments(mappedReservations);
     } catch (error) {
       console.error(
-        "Backend verisi yüklenemedi, mock veriler gösteriliyor:",
+        "Backend verisi yüklenemedi:",
         error
       );
-      setAppointments(mockAppointments);
+      setAppointments([]);
     }
   };
 
@@ -307,14 +216,15 @@ export default function PastAppointments() {
       );
 
       setAppointments((previous) =>
-        previous.filter(
-          (appointment) =>
-            appointment.id !== appointmentToCancel.id
+        previous.map((appointment) =>
+          appointment.id === appointmentToCancel.id
+            ? { ...appointment, status: "CANCELLED" }
+            : appointment
         )
       );
 
       if (selectedAppt && selectedAppt.id === appointmentToCancel.id) {
-        setSelectedAppt(null);
+        setSelectedAppt({ ...selectedAppt, status: "CANCELLED" });
       }
     } catch (error) {
       console.error(
@@ -340,14 +250,15 @@ export default function PastAppointments() {
           </span>
         );
 
+      case "CANCELLED":
       case "Cancelled":
       case "İptal Edildi":
         return (
-          <span className="flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300">
-            <XCircle size={12} />
+          <span className="flex items-center gap-1.5 rounded-full border-2 border-red-500 bg-red-100 px-3 py-1.5 text-xs font-black text-red-700 shadow-md uppercase tracking-wider dark:border-red-700 dark:bg-red-950/80 dark:text-red-400">
+            <XCircle size={14} className="stroke-[3px]" />
             {t(
               "past_appointments_status_Cancelled",
-              "İptal Edildi"
+              "İPTAL EDİLDİ"
             )}
           </span>
         );
@@ -445,11 +356,6 @@ export default function PastAppointments() {
     }
   };
 
-  const displayedAppointments =
-    appointments.length > 0
-      ? appointments
-      : mockAppointments;
-
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-transparent font-sans text-slate-900 dark:text-slate-100">
       <video
@@ -506,7 +412,18 @@ export default function PastAppointments() {
           </div>
 
           <div className="relative ml-6 space-y-6 border-l-2 border-slate-200 py-2 pl-8 dark:border-slate-800">
-            {displayedAppointments.map((appointment) => (
+            {appointments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <Calendar className="mb-4 text-slate-300 dark:text-slate-600" size={48} />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1">
+                  {t("past_appointments_empty_title", "Geçmiş Randevu Bulunamadı")}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+                  {t("past_appointments_empty_desc", "Henüz bir otel, uçuş veya transfer rezervasyonu yapmamışsınız.")}
+                </p>
+              </div>
+            ) : (
+              appointments.map((appointment) => (
               <div
                 key={appointment.id}
                 className="group relative"
@@ -653,7 +570,7 @@ export default function PastAppointments() {
                   </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       </div>
@@ -667,10 +584,5 @@ export default function PastAppointments() {
         />
       )}
     </div>
-  );
-} onCancel = { handleCancelReservation }
-  />
-      )}
-    </div >
   );
 }
