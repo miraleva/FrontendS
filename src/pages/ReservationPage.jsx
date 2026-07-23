@@ -749,13 +749,25 @@ export default function ReservationPage() {
                                     className="space-y-4"
                                 >
                                     {isFlight ? (
-                                        <div className="rounded-[16px] border border-slate-200 bg-white/50 p-6 dark:border-slate-800 dark:bg-slate-900/40">
-                                            <div className="mb-4 flex items-center justify-between gap-4">
-                                                <span className="text-xl font-bold text-[#1E232C] dark:text-white">
-                                                    ✈️{" "}
-                                                    {selectedItem?.airline ||
-                                                        editData?.itemName}
-                                                </span>
+                                        <div className="rounded-[16px] border border-slate-200 bg-white/50 p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900/40">
+                                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                                {(selectedItem?.imageUrl || selectedItem?.thumbnailFull || selectedItem?.thumbnail || editData?.imageUrl) && (
+                                                    <div className="w-full sm:w-40 shrink-0">
+                                                        <img
+                                                            src={selectedItem?.imageUrl || selectedItem?.thumbnailFull || selectedItem?.thumbnail || editData?.imageUrl}
+                                                            alt="Thumbnail"
+                                                            className="h-32 w-full object-cover rounded-xl shadow-sm"
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <div className="mb-4 flex items-center justify-between gap-4">
+                                                        <span className="text-xl font-bold text-[#1E232C] dark:text-white">
+                                                            ✈️{" "}
+                                                            {selectedItem?.airline ||
+                                                                editData?.itemName}
+                                                        </span>
 
                                                 <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
                                                     {formatPrice(
@@ -852,18 +864,32 @@ export default function ReservationPage() {
                                                     </div>
                                                 </div>
                                             )}
+                                                </div>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="rounded-[16px] border border-slate-200 bg-white/50 p-6 dark:border-slate-800 dark:bg-slate-900/40">
-                                            <div className="mb-4 flex items-start justify-between gap-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xl font-bold text-[#1E232C] dark:text-white">
-                                                        🏨{" "}
-                                                        {selectedItem?.name ||
-                                                            selectedItem?.hotelId ||
-                                                            editData?.itemName ||
-                                                            editData?.title}
-                                                    </span>
+                                        <div className="rounded-[16px] border border-slate-200 bg-white/50 p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900/40">
+                                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                                {(selectedItem?.imageUrl || selectedItem?.thumbnailFull || selectedItem?.thumbnail || editData?.imageUrl) && (
+                                                    <div className="w-full sm:w-40 shrink-0">
+                                                        <img
+                                                            src={selectedItem?.imageUrl || selectedItem?.thumbnailFull || selectedItem?.thumbnail || editData?.imageUrl}
+                                                            alt="Thumbnail"
+                                                            className="h-32 w-full object-cover rounded-xl shadow-sm"
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <div className="mb-4 flex items-start justify-between gap-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xl font-bold text-[#1E232C] dark:text-white">
+                                                                🏨{" "}
+                                                                {selectedItem?.name ||
+                                                                    selectedItem?.hotelId ||
+                                                                    editData?.itemName ||
+                                                                    editData?.title}
+                                                            </span>
 
                                                     <span className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                                                         {selectedItem?.region ||
@@ -898,6 +924,8 @@ export default function ReservationPage() {
                                                         t("reservation_na")}
                                                 </div>
                                             )}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
