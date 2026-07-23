@@ -105,6 +105,7 @@ export default function ReservationFormPanel({
   setGuests,
   termsAccepted = false,
   setTermsAccepted,
+  chatSessionId,
 }) {
   const { t, i18n } = useTranslation();
 
@@ -421,6 +422,7 @@ export default function ReservationFormPanel({
       endDate: toDateOnly(bookingDetails?.checkOut),
       totalPrice: Number(safeHotel?.price) || 0,
       currency: safeHotel?.currency || "TRY",
+      chatSessionId: chatSessionId || null,
       passengers: (guests || []).map((guest) => {
         const today = new Date();
         const birthDate = guest.birthDate ? new Date(guest.birthDate) : null;
