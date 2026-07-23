@@ -443,7 +443,6 @@ export default function Profile() {
                 storage.setItem('userId', updatedUser.email);
             }
             setIsEditing(false);
-            console.log("Veriler başarıyla kaydedildi:", updatedUser);
         } catch (err) {
             console.error("Profil güncellenemedi", err);
             setErrors((prev) => ({

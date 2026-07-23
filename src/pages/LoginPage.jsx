@@ -175,7 +175,6 @@ export default function LoginPage() {
   // ──────────────────────────────────────────────────────────────────
 
   async function handleGoogleLogin() {
-    console.log('[OAuth] Google login button clicked. Current origin (window.location.origin):', window.location.origin);
     setSocialError('');
     setSocialLoading(true);
     try {
@@ -183,12 +182,10 @@ export default function LoginPage() {
 
       // Hata Yönetimi: Token alımı başarısız ise backend'e istek atmayı engelle
       if (!idToken || typeof idToken !== 'string' || idToken.trim() === '') {
-        console.error('[OAuth] Token acquisition failed on frontend. Aborting backend request.');
         setSocialError(t('social_token_error', 'Google token alımı başarısız oldu.'));
         return;
       }
 
-      console.log('[OAuth] ID token successfully retrieved on frontend. Calling backend OAuth endpoint...');
       const data = await handleOAuthLogin('google', idToken, rememberMe);
       if (data && data.token) {
         login(data.user, data.token, rememberMe);
@@ -198,7 +195,6 @@ export default function LoginPage() {
       if (err.message === 'cancelled') {
         setSocialError(t('social_login_cancelled', 'Giriş iptal edildi'));
       } else {
-        console.error('Google login error:', err);
         setSocialError(t('social_login_error', 'Sosyal giriş sırasında bir hata oluştu'));
       }
     } finally {
