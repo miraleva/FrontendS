@@ -390,13 +390,34 @@ export default function Index() {
       console.error(e);
     }
 
+    // Ayarlar sayfasındaki "tercih edilen para birimi" seçimi — önceden burada
+    // hep sabit "TRY" gönderiliyordu, kullanıcının seçtiği tercih hiç dikkate
+    // alınmıyordu.
+    const CURRENCY_MAP = {
+      try: { symbol: "TRY", name: "Turkish Lira" },
+      usd: { symbol: "USD", name: "US Dollar" },
+      eur: { symbol: "EUR", name: "Euro" },
+      gbp: { symbol: "GBP", name: "British Pound" },
+    };
+    let preferredCurrency = CURRENCY_MAP.try;
+    try {
+      const storedLocalization = localStorage.getItem("localizationSettings");
+      const parsed = storedLocalization ? JSON.parse(storedLocalization) : null;
+      const key = parsed?.currency?.toLowerCase();
+      if (key && CURRENCY_MAP[key]) {
+        preferredCurrency = CURRENCY_MAP[key];
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     try {
       const response = await api.post('/api/chat/message', {
         message: query,
         sessionId: sessionId || null,
         country: userCountry,
-        currencySymbol: "TRY",
-        currencyName: "Turkish Lira"
+        currencySymbol: preferredCurrency.symbol,
+        currencyName: preferredCurrency.name
       });
 
       const data = response.data;
