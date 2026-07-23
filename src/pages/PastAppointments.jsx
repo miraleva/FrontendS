@@ -87,98 +87,7 @@ export default function PastAppointments() {
 
   const videoRef = useRef(null);
 
-  const mockAppointments = [
-    {
-      id: 1,
-      title: "Antalya Şehir Turu",
-      itemName: "Antalya Şehir Turu",
-      destination: "Antalya",
-      type: "Hotel",
-      date: "12.06.2026 - 19.06.2026",
-      startDate: "2026-06-12",
-      endDate: "2026-06-19",
-      status: "Completed",
-      hotelName: "Antalya Şehir Turu",
-      checkIn: "12.06.2026",
-      checkOut: "19.06.2026",
-      nights: 7,
-      guests: 1,
-      resNumber: "RES-163CF0BB",
-      reservationNumber: "RES-163CF0BB",
-      paymentStatus: "Paid",
-      totalPrice: 2400,
-      currency: "TRY",
-      price: formatPrice(2400, "TRY"),
-      passengers: [
-        {
-          firstName: "Ayşe",
-          lastName: "Yılmaz",
-          email: "ayse@example.com",
-          phoneNumber: "05551234567",
-          identityNumber: "12345678901",
-          birthDate: "1990-05-12",
-          gender: "MRS",
-          nationality: "TR",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "İstanbul (IST) - Münih (MUC)",
-      itemName: "İstanbul (IST) - Münih (MUC)",
-      destination: "Münih",
-      type: "Flight",
-      date: "08.05.2026 (Tek Yön)",
-      startDate: "2026-05-08",
-      endDate: "2026-05-08",
-      status: "Completed",
-      from: "İstanbul (IST)",
-      to: "Münih (MUC)",
-      flightNumber: "LH-1620",
-      seat: "14A",
-      flightClass: "Ekonomi",
-      guests: 1,
-      resNumber: "FLT-561029",
-      reservationNumber: "FLT-561029",
-      paymentStatus: "Paid",
-      totalPrice: 8500,
-      currency: "TRY",
-      price: formatPrice(8500, "TRY"),
-      passengers: [
-        {
-          firstName: "Mehmet",
-          lastName: "Yılmaz",
-          email: "mehmet@example.com",
-          phoneNumber: "05559876543",
-          identityNumber: "10987654321",
-          birthDate: "1988-03-08",
-          gender: "MR",
-          nationality: "TR",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Antalya Havalimanı Transferi",
-      itemName: "Antalya Havalimanı Transferi",
-      destination: "Antalya",
-      type: "Transfer",
-      date: "12.06.2026",
-      startDate: "2026-06-12",
-      endDate: "2026-06-12",
-      status: "Cancelled",
-      transferType: "Havalimanı Transferi",
-      driverStatus: "Operatör Tarafından İptal Edildi",
-      pickupLocation: "Antalya Havalimanı Terminal 2",
-      resNumber: "TRF-774021",
-      reservationNumber: "TRF-774021",
-      paymentStatus: "Refunded",
-      totalPrice: 45,
-      currency: "USD",
-      price: formatPrice(45, "USD"),
-      passengers: [],
-    },
-  ];
+
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -197,6 +106,7 @@ export default function PastAppointments() {
       return;
     }
     try {
+      setLoading(true);
       const response = await api.get("/api/reservations");
 
       const mappedReservations = response.data.map(
@@ -260,10 +170,12 @@ export default function PastAppointments() {
       setAppointments(mappedReservations);
     } catch (error) {
       console.error(
-        "Backend verisi yüklenemedi, mock veriler gösteriliyor:",
+        "Backend verisi yüklenemedi:",
         error
       );
-      setAppointments(mockAppointments);
+      setAppointments([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -446,10 +358,7 @@ export default function PastAppointments() {
     }
   };
 
-  const displayedAppointments =
-    appointments.length > 0
-      ? appointments
-      : mockAppointments;
+  const displayedAppointments = appointments;
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-transparent font-sans text-slate-900 dark:text-slate-100">
@@ -507,8 +416,19 @@ export default function PastAppointments() {
           </div>
 
           <div className="relative ml-6 space-y-6 border-l-2 border-slate-200 py-2 pl-8 dark:border-slate-800">
-            {displayedAppointments.map((appointment) => (
-              <div
+            {displayedAppointments.length === 0 && !loading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Calendar className="mb-4 h-16 w-16 text-slate-300 dark:text-slate-600" />
+                <h3 className="mb-2 text-lg font-medium text-slate-900 dark:text-white">
+                  {t("past_appointments_empty_title", "Henüz geçmiş randevunuz bulunmuyor")}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("past_appointments_empty_desc", "Yeni bir rezervasyon yaptığınızda burada görünecektir.")}
+                </p>
+              </div>
+            ) : (
+              displayedAppointments.map((appointment) => (
+                <div
                 key={appointment.id}
                 className="group relative"
               >
@@ -654,7 +574,7 @@ export default function PastAppointments() {
                   </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       </div>
