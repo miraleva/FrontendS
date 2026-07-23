@@ -117,6 +117,7 @@ export default function ReservationFormPanel({
   const [submitError, setSubmitError] = useState("");
   const [reservationResult, setReservationResult] =
     useState(null);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof setGuests !== "function") return;
@@ -378,9 +379,7 @@ export default function ReservationFormPanel({
     event.preventDefault();
 
     if (!termsAccepted) {
-      alert(
-        "Lütfen şartlar ve koşulları kabul ediniz."
-      );
+      alert(t("acceptTermsWarning", "Lütfen şartlar ve koşulları kabul ediniz."));
       return;
     }
 
@@ -536,6 +535,7 @@ export default function ReservationFormPanel({
   }
 
   return (
+    <>
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 font-sans w-full relative">
       <div className="relative flex h-full w-full flex-col overflow-hidden">
         <div className="relative h-48 flex-shrink-0 bg-slate-800 md:h-64">
@@ -916,31 +916,31 @@ export default function ReservationFormPanel({
                 )}
                             <Info size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
                             <div>
-                              <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">İptal Politikası</h4>
+                              <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300">{t("cancellationPolicyTitle", "İptal Politikası")}</h4>
                               <p className="text-xs text-blue-700 dark:text-slate-350 mt-1 leading-relaxed">
                                 {hotel.isRefundable === true
-                                  ? "Bu rezervasyon ücretsiz iptal edilebilir."
+                                  ? t("res_form_cancel_free", "Bu rezervasyon ücretsiz iptal edilebilir.")
                                   : hotel.isRefundable === false
-                                    ? "Bu rezervasyon iade edilemez."
-                                    : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
+                                    ? t("res_form_cancel_nonref", "Bu rezervasyon iade edilemez.")
+                                    : t("cancellationPolicyText", "İptal koşulları rezervasyon onayı sonrası bildirilecektir.")}
                               </p>
                             </div>
                           </div>
 
                           {/* Price Breakdown */ }
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Fiyat Özeti</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">{t("res_form_price_summary", "Fiyat Özeti")}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>Oda Fiyatı ({bookingDetails?.guests || '1 Oda'})</span>
+                  <span>{t("res_form_room_price", { guests: bookingDetails?.guests || '1 Oda', defaultValue: `Oda Fiyatı (${bookingDetails?.guests || '1 Oda'})` })}</span>
                   <span className="font-medium">{formatSubPrice(roomPriceValue)}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                  <span>Vergiler ve Harçlar</span>
+                  <span>{t("res_form_taxes", "Vergiler ve Harçlar")}</span>
                   <span className="font-medium">{formatSubPrice(taxValue)}</span>
                 </div>
                 <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">Toplam</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{t("res_form_total", "Toplam")}</span>
                   <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">{formattedPrice}</span>
                 </div>
               </div>
@@ -964,14 +964,22 @@ export default function ReservationFormPanel({
                   htmlFor="terms"
                   className="cursor-pointer select-none text-xs leading-relaxed text-slate-600 dark:text-slate-400"
                 >
-                  <span className="text-blue-600 hover:underline dark:text-blue-400">
-                    Satış Sözleşmesini
-                  </span>{" "}
-                  ve{" "}
-                  <span className="text-blue-600 hover:underline dark:text-blue-400">
-                    İptal/İade Koşullarını
-                  </span>{" "}
-                  okudum, anladım ve kabul ediyorum.
+                  <button
+                    type="button"
+                    onClick={() => setTermsModalOpen(true)}
+                    className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
+                  >
+                    {t("res_form_sales_contract", "Satış Sözleşmesini")}
+                  </button>{" "}
+                  {t("res_form_terms_read_part1", "ve")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setTermsModalOpen(true)}
+                    className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
+                  >
+                    {t("res_form_cancel_terms", "İptal/İade Koşullarını")}
+                  </button>{" "}
+                  {t("res_form_terms_read_part2", "okudum, anladım ve kabul ediyorum.")}
                 </label>
               </div>
             </form>
@@ -981,7 +989,7 @@ export default function ReservationFormPanel({
           <div className="sticky bottom-0 z-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:border-slate-800 dark:bg-slate-900 md:flex-row md:p-6">
             <div className="flex w-full flex-col text-center md:w-auto md:text-left">
               <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Toplam Tutar
+                {t("res_form_total_amount", "Toplam Tutar")}
               </span>
 
               <span className="text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
@@ -1005,11 +1013,68 @@ export default function ReservationFormPanel({
               {isSubmitting
                 ? t("reservation_submitting")
                 : bookingDetails?.editMode
-                  ? "Güncellemeyi Onayla"
-                  : "Rezervasyonu Onayla"}
+                  ? t("res_form_confirm_update", "Güncellemeyi Onayla")
+                  : t("res_form_confirm_reservation", "Rezervasyonu Onayla")}
             </button>
           </div>
         </div>
       </div>
-      );
+
+      {/* ── Terms & Sales Contract Modal ── */}
+      {termsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setTermsModalOpen(false)}
+        >
+          <div
+            className="relative max-h-[80vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 dark:border-slate-700">
+              <h2 className="pr-4 text-sm font-bold leading-snug text-white">
+                {t("termsModalTitle", "Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi")}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setTermsModalOpen(false)}
+                className="flex-shrink-0 rounded-full p-1 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                aria-label={t("close", "Kapat")}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(80vh - 130px)' }}>
+              <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+                {t("termsModalContent", "")}
+              </pre>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsAccepted?.(true);
+                  setTermsModalOpen(false);
+                }}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 active:scale-[0.98]"
+              >
+                {t("res_form_terms_read_part2", "okudum, anladım ve kabul ediyorum.")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTermsModalOpen(false)}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+              >
+                {t("close", "Kapat")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
