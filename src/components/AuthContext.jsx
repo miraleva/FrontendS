@@ -80,6 +80,13 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('user');
     localStorage.removeItem('userId');
     sessionStorage.removeItem('userId');
+    
+    // Ensure guestSessionId exists in sessionStorage (resets on tab close)
+    if (!sessionStorage.getItem('guestSessionId')) {
+      const guestId = 'guest-' + (window.crypto?.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
+      sessionStorage.setItem('guestSessionId', guestId);
+    }
+
     setToken(null);
     setUser(null);
     setIsGuest(true);

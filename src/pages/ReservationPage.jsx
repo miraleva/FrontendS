@@ -510,6 +510,7 @@ export default function ReservationPage() {
             return Object.keys(errors).length === 0;
         });
 
+
     const handleConfirm = async (event) => {
         event?.preventDefault();
 

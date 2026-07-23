@@ -153,6 +153,7 @@ export default function ChatSidebar({
       <div className="px-5 pt-4 flex justify-start">
         <button
           onClick={() => {
+            sessionStorage.removeItem('guestSessionId');
             navigate('/chat');
             if (onNewChat) onNewChat();
           }}
