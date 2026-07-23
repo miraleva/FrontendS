@@ -49,21 +49,13 @@ export function initGoogleAuth(targetElementId, callbacks = {}, options = {}) {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1058043134555-n4q6pioq7ui2i0gjlt8tqlttgq363apd.apps.googleusercontent.com';
   const locale = (options.locale || 'tr').slice(0, 2).toLowerCase();
 
-  // Debug logs requested for origin & client id inspection
-  console.log('[DEBUG] window.location.origin:', window.location.origin);
-  console.log('[DEBUG] import.meta.env.VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
-  console.log('[DEBUG] Effective Google Client ID:', clientId);
-  console.log('[DEBUG] Google Auth locale:', locale);
-
   return loadGoogleScript(locale).then(() => {
     const targetElement = document.getElementById(targetElementId);
     if (!targetElement) {
-      console.error(`[DEBUG] Element with id "${targetElementId}" not found in DOM.`);
       return;
     }
 
     if (!window.google?.accounts?.id) {
-      console.error('[DEBUG] window.google.accounts.id unavailable after script load.');
       return;
     }
 
@@ -71,7 +63,6 @@ export function initGoogleAuth(targetElementId, callbacks = {}, options = {}) {
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: (response) => {
-        console.log("Google ID Token Başarıyla Alındı:", response.credential);
         if (callbacks.onSuccess) {
           callbacks.onSuccess(response.credential);
         } else {
@@ -89,7 +80,6 @@ export function initGoogleAuth(targetElementId, callbacks = {}, options = {}) {
       { theme: "outline", size: "large", locale: locale }
     );
   }).catch((err) => {
-    console.error('[DEBUG] Failed to initialize Google Auth:', err);
     if (callbacks.onError) {
       callbacks.onError(err);
     }
@@ -103,19 +93,14 @@ export function signInWithGoogle(options = {}) {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1058043134555-n4q6pioq7ui2i0gjlt8tqlttgq363apd.apps.googleusercontent.com';
   const locale = typeof options === 'string' ? options.slice(0, 2).toLowerCase() : (options.locale || 'tr').slice(0, 2).toLowerCase();
 
-  console.log('[DEBUG] window.location.origin:', window.location.origin);
-  console.log('[DEBUG] import.meta.env.VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
-
   return loadGoogleScript(locale).then(() => {
     return new Promise((resolve, reject) => {
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: (response) => {
           if (response && response.credential) {
-            console.log("Google ID Token Başarıyla Alındı:", response.credential);
             resolve(response.credential);
           } else {
-            console.error('[OAuth] Google Sign-In response does not contain credential:', response);
             reject(new Error('Google Sign-In failed: No credential received'));
           }
         },
@@ -184,11 +169,9 @@ export async function handleOAuthLogin(providerOrToken, tokenIfTwoArgs, remember
 
   // Prevent backend call if token is missing or invalid
   if (!idToken || typeof idToken !== 'string' || idToken.trim() === '') {
-    console.error('[OAuth] Aborting backend request: ID token is invalid or empty.');
     throw new Error('Token alımı başarısız: Geçerli bir Google token bulunamadı.');
   }
 
-  console.log('[OAuth] Sending ID token to backend /api/auth/oauth-login...');
   const response = await api.post(
     '/api/auth/oauth-login',
     {
