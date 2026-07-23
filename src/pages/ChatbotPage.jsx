@@ -193,6 +193,7 @@ export default function Index() {
   const [thinkingStep, setThinkingStep] = useState("");
   // Mesaj başına (msg.id ile) sonuç sıralama tercihi; varsayılan ucuzdan pahalıya.
   const [resultSortOptions, setResultSortOptions] = useState({});
+  const isChatTerminated = messages.length > 0 && messages[messages.length - 1].chatStatus === 'TERMINATED';
 
   // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
@@ -1090,20 +1091,22 @@ export default function Index() {
                             value={searchQuery}
                             onChange={handleTextareaChange}
                             onKeyDown={handleKeyDown}
-                            placeholder={t("input_placeholder_chat")}
-                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                            disabled={isChatTerminated}
+                            placeholder={isChatTerminated ? t("chat_terminated") : t("input_placeholder_chat")}
+                            className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <div className="absolute right-2 flex items-center gap-1.5 z-40">
                             <button
                               type="button"
                               onClick={startVoiceRecognition}
-                              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50"
+                              disabled={isChatTerminated}
+                              className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Mic size={16} className="pointer-events-none" />
                             </button>
                             <button
                               onClick={handleSend}
-                              disabled={!searchQuery.trim()}
+                              disabled={!searchQuery.trim() || isChatTerminated}
                               className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm relative z-50"
                             >
                               <ArrowUp size={14} className="pointer-events-none" />

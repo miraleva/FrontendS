@@ -133,6 +133,7 @@
   "query_transfer_cancel": "Transfer cancellation procedure",
   "input_placeholder_welcome": "Ask about reservation, cancellation, refund or SOP rules...",
   "input_placeholder_chat": "Ask Sanny anything...",
+  "chat_terminated": "This chat has been terminated.",
   "try_asking": "TRY ASKING:",
   "thinking_sop": "Sanny is searching for the best options for you...",
   "thinking_res": "Searching reservation records...",
