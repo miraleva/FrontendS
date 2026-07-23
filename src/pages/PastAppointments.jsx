@@ -668,9 +668,4 @@ export default function PastAppointments() {
       )}
     </div>
   );
-} onCancel = { handleCancelReservation }
-  />
-      )}
-    </div >
-  );
 }
