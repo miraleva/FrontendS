@@ -60,6 +60,12 @@ function sortResults(results, sortKey) {
     case "stars_asc":
       sorted.sort((a, b) => (Number(a.stars) || 0) - (Number(b.stars) || 0));
       break;
+    case "name_asc":
+      sorted.sort((a, b) => (a.name || "").localeCompare(b.name || "", 'tr'));
+      break;
+    case "name_desc":
+      sorted.sort((a, b) => (b.name || "").localeCompare(a.name || "", 'tr'));
+      break;
     case "duration_asc":
       sorted.sort((a, b) => getFlightDurationMs(a) - getFlightDurationMs(b));
       break;
@@ -196,6 +202,18 @@ export default function Index() {
   const isChatTerminated = messages.length > 0 && messages[messages.length - 1].chatStatus === 'TERMINATED';
   const [isChatCompleted, setIsChatCompleted] = useState(false);
   const isChatLocked = isChatTerminated || isChatCompleted;
+
+  const [maxPriceFilter, setMaxPriceFilter] = useState("");
+  const [minStarsFilter, setMinStarsFilter] = useState("");
+
+  const updateBackendCriteria = async (filters) => {
+    if (!sessionId) return;
+    try {
+      await api.post(`/api/chat/sessions/${sessionId}/criteria`, filters);
+    } catch (err) {
+      console.error("Failed to update criteria", err);
+    }
+  };
 
   // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
@@ -335,6 +353,16 @@ export default function Index() {
                   arrivalCity: c.arrivalLocation || "",
                   returnDate: c.returnDate || ""
                 }));
+                if (c.maxPrice !== undefined && c.maxPrice !== null) {
+                  setMaxPriceFilter(c.maxPrice === 0 ? "" : c.maxPrice);
+                } else {
+                  setMaxPriceFilter("");
+                }
+                if (c.minStars !== undefined && c.minStars !== null) {
+                  setMinStarsFilter(c.minStars === 0 ? "" : c.minStars.toString());
+                } else {
+                  setMinStarsFilter("");
+                }
               }
             } catch (criteriaErr) {
             console.error("Failed to load session criteria", sessionId, criteriaErr);
@@ -431,7 +459,9 @@ export default function Index() {
         sessionId: sessionId || null,
         country: userCountry,
         currencySymbol: preferredCurrency.symbol,
-        currencyName: preferredCurrency.name
+        currencyName: preferredCurrency.name,
+        maxPrice: maxPriceFilter ? parseFloat(maxPriceFilter) : null,
+        minStars: minStarsFilter ? parseInt(minStarsFilter) : null
       });
 
       const data = response.data;
@@ -516,6 +546,16 @@ export default function Index() {
           arrivalCity: c.arrivalLocation || "",
           returnDate: c.returnDate || ""
         }));
+        if (c.maxPrice !== undefined && c.maxPrice !== null) {
+          setMaxPriceFilter(c.maxPrice === 0 ? "" : c.maxPrice);
+        } else {
+          setMaxPriceFilter("");
+        }
+        if (c.minStars !== undefined && c.minStars !== null) {
+          setMinStarsFilter(c.minStars === 0 ? "" : c.minStars.toString());
+        } else {
+          setMinStarsFilter("");
+        }
       } else {
         // Backend kriteri dönmediyse (ör. kapsam dışı mesaj) en azından kullanıcının
         // sorgusundaki verileri güncelle
@@ -655,6 +695,26 @@ export default function Index() {
       console.error("Donanım hatası:", err);
       setIsListening(false);
     }
+  };
+  const filterResults = (results) => {
+    if (!Array.isArray(results)) return [];
+    return results.filter(item => {
+      // Only apply filters to hotels
+      if (item.airline !== undefined) return true;
+
+      // Apply maxPriceFilter
+      if (maxPriceFilter !== "" && item.price !== undefined && item.price > parseFloat(maxPriceFilter)) {
+        return false;
+      }
+      // Apply minStarsFilter
+      if (minStarsFilter !== "") {
+        const minStarsVal = parseInt(minStarsFilter);
+        if (item.stars !== undefined && item.stars < minStarsVal) {
+          return false;
+        }
+      }
+      return true;
+    });
   };
 
   return (
@@ -898,39 +958,106 @@ export default function Index() {
                           {msg.results && msg.results.length > 0 && (
                             <div className="mt-3 w-full">
                               {msg.results.length > 1 && (
-                                <div className="mb-2 flex items-center justify-end gap-2">
-                                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                                    {t("sort_by_label", "Sırala")}
-                                  </span>
-                                  <select
-                                    value={resultSortOptions[msg.id] || "price_asc"}
-                                    onChange={(event) =>
-                                      setResultSortOptions((prev) => ({
-                                        ...prev,
-                                        [msg.id]: event.target.value,
-                                      }))
-                                    }
-                                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-                                  >
-                                    <option value="price_asc">{t("sort_price_asc", "Fiyat: Ucuzdan Pahalıya")}</option>
-                                    <option value="price_desc">{t("sort_price_desc", "Fiyat: Pahalıdan Ucuza")}</option>
-                                    {msg.results[0]?.airline !== undefined ? (
-                                      <>
-                                        <option value="duration_asc">{t("sort_duration_asc", "Süre: En Kısa")}</option>
-                                        <option value="duration_desc">{t("sort_duration_desc", "Süre: En Uzun")}</option>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <option value="stars_desc">{t("sort_stars_desc", "Yıldız: Yüksekten Düşüğe")}</option>
-                                        <option value="stars_asc">{t("sort_stars_asc", "Yıldız: Düşükten Yükseğe")}</option>
-                                      </>
-                                    )}
-                                  </select>
+                                <div className="mb-2 flex items-center justify-between gap-2 flex-wrap bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 w-full">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                      {t("sort_by_label", "Sırala")}
+                                    </span>
+                                    <select
+                                      value={resultSortOptions[msg.id] || "price_asc"}
+                                      onChange={(event) =>
+                                        setResultSortOptions((prev) => ({
+                                          ...prev,
+                                          [msg.id]: event.target.value,
+                                        }))
+                                      }
+                                      className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                                    >
+                                      <option value="price_asc">{t("sort_price_asc", "Fiyat: Ucuzdan Pahalıya")}</option>
+                                      <option value="price_desc">{t("sort_price_desc", "Fiyat: Pahalıdan Ucuza")}</option>
+                                      {msg.results[0]?.airline !== undefined ? (
+                                        <>
+                                          <option value="duration_asc">{t("sort_duration_asc", "Süre: En Kısa")}</option>
+                                          <option value="duration_desc">{t("sort_duration_desc", "Süre: En Uzun")}</option>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <option value="stars_desc">{t("sort_stars_desc", "Yıldız: Yüksekten Düşüğe")}</option>
+                                          <option value="stars_asc">{t("sort_stars_asc", "Yıldız: Düşükten Yükseğe")}</option>
+                                          <option value="name_asc">İsim: A'dan Z'ye</option>
+                                          <option value="name_desc">İsim: Z'den A'ya</option>
+                                        </>
+                                      )}
+                                    </select>
+                                  </div>
+
+                                  {msg.results[0]?.airline === undefined && (
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                      {/* Yıldız Filtresi */}
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Yıldız</span>
+                                        <select
+                                          value={minStarsFilter}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            setMinStarsFilter(val);
+                                            updateBackendCriteria({ minStars: val === "" ? null : parseInt(val) });
+                                          }}
+                                          className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                                        >
+                                          <option value="">Tüm Yıldızlar</option>
+                                          <option value="5">5 Yıldız</option>
+                                          <option value="4">4 Yıldız ve Üzeri</option>
+                                        </select>
+                                      </div>
+
+                                      {/* Maks Fiyat Filtresi */}
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Maks Fiyat</span>
+                                        <input
+                                          type="number"
+                                          placeholder="Tutar"
+                                          value={maxPriceFilter}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            setMaxPriceFilter(val);
+                                            updateBackendCriteria({ maxPrice: val === "" ? null : parseFloat(val) });
+                                          }}
+                                          className="w-20 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                                        />
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max="50000"
+                                          step="500"
+                                          value={maxPriceFilter || 50000}
+                                          onChange={(e) => {
+                                            const val = e.target.value === "50000" ? "" : e.target.value;
+                                            setMaxPriceFilter(val);
+                                            updateBackendCriteria({ maxPrice: val === "" ? null : parseFloat(val) });
+                                          }}
+                                          className="w-16 accent-amber-500 cursor-pointer"
+                                        />
+                                      </div>
+
+                                      {/* Sıfırla Butonu */}
+                                      <button
+                                        onClick={() => {
+                                          setMaxPriceFilter("");
+                                          setMinStarsFilter("");
+                                          updateBackendCriteria({ maxPrice: null, minPrice: null, minStars: null });
+                                        }}
+                                        className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 transition-colors"
+                                      >
+                                        Sıfırla
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                              {sortResults(msg.results, resultSortOptions[msg.id] || "price_asc").map((result, idx) => {
+                              {sortResults(filterResults(msg.results), resultSortOptions[msg.id] || "price_asc").map((result, idx) => {
                                 const isFlight = result.airline !== undefined;
                                 if (isFlight) {
                                   const isCurrentlySelected = selectedFlight
