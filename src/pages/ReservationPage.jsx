@@ -573,6 +573,7 @@ export default function ReservationPage() {
                 selectedItem?.currency ||
                 editData?.currency ||
                 "TRY",
+            chatSessionId: sessionId || editData?.chatSessionId || null,
             passengers: passengers.map(
                 (passenger, passengerIndex) => ({
                     firstName:

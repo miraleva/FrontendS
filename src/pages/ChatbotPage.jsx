@@ -1171,6 +1171,7 @@ export default function Index() {
                 setGuests={setReservationGuests}
                 termsAccepted={reservationTermsAccepted}
                 setTermsAccepted={setReservationTermsAccepted}
+                chatSessionId={sessionId}
               />
             )}
           </div>
