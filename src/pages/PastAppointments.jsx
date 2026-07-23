@@ -158,10 +158,12 @@ export default function PastAppointments() {
           from: reservation.from,
           to: reservation.to,
           flightNumber: reservation.flightNumber,
+          flightNumber: reservation.flightNumber,
           seat: reservation.seat,
           flightClass: reservation.flightClass,
           transferType: reservation.transferType,
           pickupLocation: reservation.pickupLocation,
+          imageUrl: reservation.imageUrl,
         })
       );
 
@@ -432,9 +434,23 @@ export default function PastAppointments() {
                   {getIcon(appointment.type)}
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white/95 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95">
-                  <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                    <div className="space-y-3">
+                <div className={`flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95`}>
+                  {appointment.imageUrl && (
+                    <div className="w-full sm:w-64 shrink-0 h-48 sm:h-auto border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
+                      <img
+                        src={appointment.imageUrl}
+                        alt={appointment.title}
+                        className="h-full w-full object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
+                        onError={(e) => {
+                          e.currentTarget.parentElement.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex flex-col flex-1 p-5 gap-4">
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                      <div className="space-y-3">
                       <h3 className="text-xl font-bold leading-tight text-[#0F172A] dark:text-white">
                         {appointment.title}
                       </h3>
@@ -567,6 +583,7 @@ export default function PastAppointments() {
                         "Detaylar"
                       )}
                     </button>
+                  </div>
                   </div>
                 </div>
               </div>

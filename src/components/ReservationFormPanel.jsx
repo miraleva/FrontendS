@@ -422,6 +422,7 @@ export default function ReservationFormPanel({
       totalPrice: Number(safeHotel?.price) || 0,
       currency: safeHotel?.currency || "TRY",
       chatSessionId: chatSessionId || null,
+      imageUrl: safeHotel?.thumbnailFull || safeHotel?.thumbnail || "",
       passengers: (guests || []).map((guest) => {
         const today = new Date();
         const birthDate = guest.birthDate ? new Date(guest.birthDate) : null;
