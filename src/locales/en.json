@@ -475,5 +475,12 @@
         "answer": "Yes, airport and hotel transfers are included in our Antalya tour."
       }
     }
-  }
+  },
+  "cancellationPolicyTitle": "Cancellation Policy",
+  "cancellationPolicyText": "Cancellations made up to 24 hours before the reservation check-in date are fully refunded. Cancellations made less than 24 hours before check-in are subject to a one-night accommodation fee deduction.",
+  "termsCheckboxText": "I have read, understood, and accepted the Sales Agreement and Cancellation/Refund Terms.",
+  "termsModalTitle": "Pre-Information Form and Distance Sales Agreement",
+  "termsModalContent": "This agreement covers test/demo reservation transactions made through the TourVisio / Sanny platform.\n\n1. PARTIES AND SUBJECT: This document contains information and reservation terms related to the hotel/tour service selected by the user.\n2. RESERVATION AND CANCELLATION: The user has the right to cancel their reservation up to 24 hours before the reservation date without any penalty.\n3. PRIVACY AND DATA PROTECTION: User data is processed solely for simulation purposes in accordance with KVKK and GDPR standards.\n4. PAYMENT SECURITY: All transactions made in the test environment are simulations; no real bank/credit card charges are made.",
+  "close": "Close",
+  "acceptTermsWarning": "Please accept the agreement to proceed."
 }
