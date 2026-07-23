@@ -146,6 +146,7 @@
   "input_placeholder_welcome": "Ask about reservation, cancellation, refund or SOP rules...",
   "input_placeholder_chat": "Ask Sanny anything...",
   "chat_terminated": "This chat has been terminated.",
+  "chat_completed": "Reservation completed. This chat session is now closed.",
   "try_asking": "TRY ASKING:",
   "thinking_sop": "Sanny is searching for the best options for you...",
   "thinking_res": "Searching reservation records...",

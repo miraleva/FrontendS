@@ -194,6 +194,8 @@ export default function Index() {
   // Mesaj başına (msg.id ile) sonuç sıralama tercihi; varsayılan ucuzdan pahalıya.
   const [resultSortOptions, setResultSortOptions] = useState({});
   const isChatTerminated = messages.length > 0 && messages[messages.length - 1].chatStatus === 'TERMINATED';
+  const [isChatCompleted, setIsChatCompleted] = useState(false);
+  const isChatLocked = isChatTerminated || isChatCompleted;
 
   // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
@@ -1091,22 +1093,28 @@ export default function Index() {
                             value={searchQuery}
                             onChange={handleTextareaChange}
                             onKeyDown={handleKeyDown}
-                            disabled={isChatTerminated}
-                            placeholder={isChatTerminated ? t("chat_terminated") : t("input_placeholder_chat")}
+                            disabled={isChatLocked}
+                            placeholder={
+                              isChatCompleted
+                                ? t("chat_completed")
+                                : isChatTerminated
+                                  ? t("chat_terminated")
+                                  : t("input_placeholder_chat")
+                            }
                             className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <div className="absolute right-2 flex items-center gap-1.5 z-40">
                             <button
                               type="button"
                               onClick={startVoiceRecognition}
-                              disabled={isChatTerminated}
+                              disabled={isChatLocked}
                               className="p-1.5 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer relative z-50 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Mic size={16} className="pointer-events-none" />
                             </button>
                             <button
                               onClick={handleSend}
-                              disabled={!searchQuery.trim() || isChatTerminated}
+                              disabled={!searchQuery.trim() || isChatLocked}
                               className="p-1.5 rounded-lg bg-[#3B82F6] text-white hover:bg-[#3B82F6]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm relative z-50"
                             >
                               <ArrowUp size={14} className="pointer-events-none" />
@@ -1172,6 +1180,16 @@ export default function Index() {
                 termsAccepted={reservationTermsAccepted}
                 setTermsAccepted={setReservationTermsAccepted}
                 chatSessionId={sessionId}
+                onReservationComplete={async () => {
+                  setIsChatCompleted(true);
+                  if (sessionId) {
+                    try {
+                      await api.patch(`/api/chat/sessions/${sessionId}/status`, { chatStatus: 'COMPLETED' });
+                    } catch (e) {
+                      console.error('Failed to mark chat session as COMPLETED', e);
+                    }
+                  }
+                }}
               />
             )}
           </div>

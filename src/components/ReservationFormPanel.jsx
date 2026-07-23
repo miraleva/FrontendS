@@ -105,6 +105,7 @@ export default function ReservationFormPanel({
   setGuests,
   termsAccepted = false,
   setTermsAccepted,
+  onReservationComplete,
   chatSessionId,
 }) {
   const { t, i18n } = useTranslation();
@@ -473,6 +474,10 @@ export default function ReservationFormPanel({
       }
 
       setReservationResult(response.data);
+      // Notify parent (ChatbotPage) to lock the chat session
+      if (typeof onReservationComplete === 'function') {
+        onReservationComplete();
+      }
     } catch (error) {
       console.error(
         "Reservation process failed",

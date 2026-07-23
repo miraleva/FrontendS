@@ -146,6 +146,7 @@
   "input_placeholder_welcome": "Fragen Sie nach Reservierungs-, Stornierungs-, Rückerstattungs- oder Regeln...",
   "input_placeholder_chat": "Fragen Sie die Sanny KI-Operationsunterstützung...",
   "chat_terminated": "Dieser Chat wurde beendet.",
+  "chat_completed": "Reservierung abgeschlossen. Diese Chat-Sitzung ist jetzt geschlossen.",
   "try_asking": "Versuchen Sie zu fragen:",
   "thinking_sop": "Sanny sucht die besten Optionen für Sie...",
   "thinking_res": "Reservierungsdatensätze werden durchsucht...",

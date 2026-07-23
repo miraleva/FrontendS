@@ -146,6 +146,7 @@
   "input_placeholder_welcome": "Rezervasyon, iptal veya iade hakkında sorun...",
   "input_placeholder_chat": "Sanny yapay zeka operasyon desteğine sorun...",
   "chat_terminated": "Bu sohbet sonlandırılmıştır.",
+  "chat_completed": "Rezervasyon tamamlandı. Bu sohbet oturumu kapatılmıştır.",
   "try_asking": "Şunu sormayı deneyin:",
   "thinking_sop": "Sanny sizin için en uygun seçenekleri arıyor...",
   "thinking_res": "Rezervasyon kayıtları aranıyor...",
