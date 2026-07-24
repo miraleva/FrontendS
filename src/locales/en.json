@@ -88,7 +88,6 @@
   "unit_adult": "Adult",
   "unit_child": "Child",
   "unit_infant": "Infant",
-  "unit_room": "Room",
   "unit_age": "Age",
   "hoteldetail_loading_photos": "Loading photos",
   "hoteldetail_no_map": "No location available",
@@ -578,5 +577,6 @@
   "res_preview_complete_update": "Complete Update",
   "res_preview_complete": "Complete Reservation",
   "res_preview_flight_title": "Flight Preview",
-  "res_preview_complete_flight": "Buy Ticket"
+  "res_preview_complete_flight": "Buy Ticket",
+  "reservation_update_confirm": "Update"
 }

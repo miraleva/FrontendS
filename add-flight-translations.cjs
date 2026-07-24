@@ -5,20 +5,16 @@ const localesDir = path.join("c:\\Users\\Almira\\Desktop\\FrontendS\\src\\locale
 
 const newTranslations = {
   en: {
-    res_preview_flight_title: "Flight Preview",
-    res_preview_complete_flight: "Buy Ticket"
+    reservation_update_confirm: "Update"
   },
   de: {
-    res_preview_flight_title: "Flugvorschau",
-    res_preview_complete_flight: "Ticket kaufen"
+    reservation_update_confirm: "Aktualisieren"
   },
   ru: {
-    res_preview_flight_title: "Предварительный просмотр рейса",
-    res_preview_complete_flight: "Купить билет"
+    reservation_update_confirm: "Обновить"
   },
   tr: {
-    res_preview_flight_title: "Uçuş Önizlemesi",
-    res_preview_complete_flight: "Bileti Satın Al"
+    reservation_update_confirm: "Güncelle"
   }
 };
 

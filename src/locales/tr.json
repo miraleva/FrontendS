@@ -88,7 +88,6 @@
   "unit_adult": "Yetişkin",
   "unit_child": "Çocuk",
   "unit_infant": "Bebek",
-  "unit_room": "Oda",
   "unit_age": "Yaş",
   "hoteldetail_loading_photos": "Fotoğraflar yükleniyor",
   "hoteldetail_no_map": "Konum bilgisi yok",
@@ -629,5 +628,6 @@
   "res_preview_complete_update": "Güncellemeyi Tamamla",
   "res_preview_complete": "Rezervasyonu Tamamla",
   "res_preview_flight_title": "Uçuş Önizlemesi",
-  "res_preview_complete_flight": "Bileti Satın Al"
+  "res_preview_complete_flight": "Bileti Satın Al",
+  "reservation_update_confirm": "Güncelle"
 }
