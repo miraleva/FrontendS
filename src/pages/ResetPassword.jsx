@@ -74,13 +74,10 @@ export default function ResetPasswordPage() {
                 <button
                     type="button"
                     onClick={toggleTheme}
-                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center gap-2 shadow-lg"
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center shadow-lg w-10 h-10"
                     title={theme === 'dark' ? (t('theme_light', 'Aydınlık Mod')) : (t('theme_dark', 'Karanlık Mod'))}
                 >
                     {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-slate-700" />}
-                    <span className="text-xs font-semibold hidden sm:inline text-slate-700 dark:text-slate-200">
-                        {theme === 'dark' ? (t('theme_light', 'Aydınlık')) : (t('theme_dark', 'Karanlık'))}
-                    </span>
                 </button>
                 <LanguageSelector className="relative" />
             </div>
