@@ -24,6 +24,8 @@ import { useAuth } from "../components/AuthContext";
 import ChatSidebar from "../components/ChatSidebar";
 import HotelDetailPanel from "../components/HotelDetailPanel";
 import ReservationFormPanel from "../components/ReservationFormPanel";
+import FlightDetailPanel from "../components/FlightDetailPanel";
+import FlightReservationFormPanel from "../components/FlightReservationFormPanel";
 import RightSidebar from "../components/RightSidebar";
 
 function cn(...inputs) {
@@ -374,9 +376,12 @@ function HotelSearchResults({
                 key={idx}
                 onClick={() => {
                   setSelectedFlight(result);
+                  setActivePanel('flightDetail');
                   setBookingDetails(prev => ({
                     ...prev,
                     airline: result.airline,
+                    departureCity: result.departureCity || prev.departureCity || "Gidiş",
+                    arrivalCity: result.arrivalCity || prev.arrivalCity || "Varış",
                     checkIn: result.departureTime || prev.checkIn,
                     returnDate: result.returnDepartureTime || "",
                     price: `${formatPrice(result.price)} ${result.currency || 'TRY'}`
@@ -1382,6 +1387,7 @@ export default function Index() {
               selectedHotel={selectedHotel}
               selectedFlight={selectedFlight}
               sessionId={sessionId}
+              onComplete={() => setActivePanel(searchType === 'hotel' ? 'hotelDetail' : 'flightDetail')}
             />
           )}
 
@@ -1416,6 +1422,37 @@ export default function Index() {
                 bookingDetails={bookingDetails}
                 onClose={() => setActivePanel(null)}
                 onBack={() => setActivePanel('hotelDetail')}
+                guests={reservationGuests}
+                setGuests={setReservationGuests}
+                termsAccepted={reservationTermsAccepted}
+                setTermsAccepted={setReservationTermsAccepted}
+                chatSessionId={sessionId}
+                onReservationComplete={async () => {
+                  setIsChatCompleted(true);
+                  if (sessionId) {
+                    try {
+                      await api.patch(`/api/chat/sessions/${sessionId}/status`, { chatStatus: 'COMPLETED' });
+                    } catch (e) {
+                      console.error('Failed to mark chat session as COMPLETED', e);
+                    }
+                  }
+                }}
+              />
+            )}
+            {activePanel === 'flightDetail' && (
+              <FlightDetailPanel
+                flight={selectedFlight}
+                bookingDetails={bookingDetails}
+                onClose={() => setActivePanel(null)}
+                onProceed={() => setActivePanel('flightReservation')}
+              />
+            )}
+            {activePanel === 'flightReservation' && (
+              <FlightReservationFormPanel
+                flight={selectedFlight}
+                bookingDetails={bookingDetails}
+                onClose={() => setActivePanel(null)}
+                onBack={() => setActivePanel('flightDetail')}
                 guests={reservationGuests}
                 setGuests={setReservationGuests}
                 termsAccepted={reservationTermsAccepted}

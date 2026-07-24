@@ -23,7 +23,8 @@ export default function RightSidebar({
   bookingDetails,
   selectedHotel,
   selectedFlight,
-  sessionId
+  sessionId,
+  onComplete
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -215,13 +216,17 @@ export default function RightSidebar({
               : !bookingDetails.departureCity || !bookingDetails.arrivalCity || !bookingDetails.checkIn || !selectedFlight
           }
           onClick={() => {
-            navigate('/reservation', {
-              state: {
-                selectedItem: searchType === "hotel" ? selectedHotel : selectedFlight,
-                bookingDetails: bookingDetails,
-                sessionId: sessionId
-              }
-            });
+            if (onComplete) {
+              onComplete();
+            } else {
+              navigate('/reservation', {
+                state: {
+                  selectedItem: searchType === "hotel" ? selectedHotel : selectedFlight,
+                  bookingDetails: bookingDetails,
+                  sessionId: sessionId
+                }
+              });
+            }
           }}
           className="w-full py-3 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
         >
