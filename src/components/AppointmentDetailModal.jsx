@@ -128,8 +128,8 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
             {/* Text Overlay with Glow */}
             <div className="absolute top-0 left-0 w-full p-4 sm:p-6 flex flex-col justify-start z-20 pr-16">
               <h2 
-                className="text-3xl sm:text-4xl font-black text-black leading-tight font-display tracking-tight"
-                style={{ textShadow: '0 0 15px rgba(255,255,255,1), 0 0 30px rgba(255,255,255,0.9), 0 0 45px rgba(255,255,255,0.8), 0 0 10px rgba(255,255,255,1)' }}
+                className="text-2xl sm:text-3xl font-black text-white leading-tight font-display tracking-tight"
+                style={{ textShadow: '0 2px 6px rgba(0,0,0,0.7), 0 0 15px rgba(0,0,0,0.5)' }}
               >
                 {appointment.title}
               </h2>
