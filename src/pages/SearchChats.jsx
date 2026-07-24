@@ -23,16 +23,11 @@ export default function SearchChats() {
     }
   }, [theme]);
 
-  // Mock sessions
-  const mockSessions = [
-    { id: 1, title: 'Cancellation & Refund Procedures', category: 'General SOP', date: '2026-07-07' },
-    { id: 2, title: 'Titanic Hotel Reservation Cancellation', category: 'Hotel', date: '2026-07-06' },
-    { id: 3, title: 'THY Ticket Change Rules', category: 'Flight', date: '2026-07-05' },
-    { id: 4, title: 'VIP Transfer Voucher Delay', category: 'Transfer', date: '2026-07-04' }
-  ];
+  // State for chat sessions (currently empty, can be fetched from API later)
+  const [sessions, setSessions] = useState([]);
 
   // Filtering
-  const filteredSessions = mockSessions.filter(session => 
+  const filteredSessions = sessions.filter(session => 
     session.title.toLocaleLowerCase('tr-TR').includes(searchQuery.toLocaleLowerCase('tr-TR')) ||
     session.category.toLocaleLowerCase('tr-TR').includes(searchQuery.toLocaleLowerCase('tr-TR'))
   );
@@ -103,39 +98,41 @@ export default function SearchChats() {
           </div>
 
           {/* Results List */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredSessions.length > 0 ? (
-              filteredSessions.map((session) => (
-                <div 
-                  key={session.id}
-                  onClick={() => navigate('/chat')}
-                  className="p-5 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all flex items-center justify-between group"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <h3 className="font-bold text-[#0F172A] dark:text-slate-100 group-hover:text-primary transition-colors text-base truncate pr-4">
-                      {session.title}
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${getBadgeStyle(session.category)}`}>
-                        {session.category}
-                      </span>
-                      <span className="text-xs text-text-secondary dark:text-slate-400">
-                        Last active: {session.date}
-                      </span>
+          {(filteredSessions.length > 0 || searchQuery) && (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {filteredSessions.length > 0 ? (
+                filteredSessions.map((session) => (
+                  <div 
+                    key={session.id}
+                    onClick={() => navigate('/chat')}
+                    className="p-5 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all flex items-center justify-between group"
+                  >
+                    <div className="space-y-1.5 min-w-0">
+                      <h3 className="font-bold text-[#0F172A] dark:text-slate-100 group-hover:text-primary transition-colors text-base truncate pr-4">
+                        {session.title}
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${getBadgeStyle(session.category)}`}>
+                          {session.category}
+                        </span>
+                        <span className="text-xs text-text-secondary dark:text-slate-400">
+                          Last active: {session.date}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center text-slate-400 dark:text-slate-500 group-hover:text-primary transition-all pr-1">
+                      <ChevronRight size={20} className="transform group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
-                  
-                  <div className="flex items-center text-slate-400 dark:text-slate-500 group-hover:text-primary transition-all pr-1">
-                    <ChevronRight size={20} className="transform group-hover:translate-x-1 transition-transform" />
-                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-text-secondary dark:text-slate-400 text-sm font-medium">
+                  No chat sessions found matching "{searchQuery}"
                 </div>
-              ))
-            ) : (
-              <div className="p-8 text-center text-text-secondary dark:text-slate-400 text-sm font-medium">
-                No chat sessions found matching "{searchQuery}"
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
