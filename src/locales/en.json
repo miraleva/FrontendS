@@ -176,6 +176,7 @@
   "starter_hotel_antalya": "I'm looking for a hotel in Antalya",
   "starter_flight_ist_ayt": "I'm looking for a flight ticket from Istanbul to Antalya",
   "starter_best_hotels_antalya": "Show me the best hotels in Antalya",
+  "suggested_prompt_istanbul_hotel": "I am looking for a hotel in Istanbul",
   "profile_edit": "Edit",
   "profile_save_changes": "Save Changes",
   "profile_cancel": "Cancel",

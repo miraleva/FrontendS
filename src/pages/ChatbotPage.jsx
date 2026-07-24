@@ -1251,7 +1251,7 @@ export default function Index() {
                       {[
                         "starter_hotel_antalya",
                         "starter_flight_ist_ayt",
-                        "starter_best_hotels_antalya"
+                        "suggested_prompt_istanbul_hotel"
                       ].map((queryKey) => (
                         <button
                           key={queryKey}
