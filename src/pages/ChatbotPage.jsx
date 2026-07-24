@@ -640,8 +640,14 @@ export default function Index() {
     setIsChatCompleted(false);
     if (urlSessionId) {
       const loadHistory = async () => {
+        setIsThinking(true);
+        // Oturum değiştiğinde önceki oturumun state'lerinin sızmasını engellemek için resetle
+        setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], roomCount: 1, passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
+        setReservationGuests(null);
+        setSelectedHotel(null);
+        setSelectedFlight(null);
+
         try {
-          setIsThinking(true);
           setThinkingStep("Loading history...");
 
           try {
