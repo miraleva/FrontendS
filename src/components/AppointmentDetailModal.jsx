@@ -149,7 +149,7 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-700/50">
               <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('past_appointments_drawer_res_no')}</span>
-              <span className="text-sm font-bold text-[#0F172A] dark:text-slate-200 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{appointment.resNumber}</span>
+              <span className="text-sm font-bold text-[#0F172A] dark:text-slate-200 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">#{appointment.pnrCode || appointment.bookingNumber || appointment.resNumber || appointment.reservationNumber || `REZ-${appointment.id}`}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-700/50">
               <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('reservation.amount')}</span>

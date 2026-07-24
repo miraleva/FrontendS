@@ -112,64 +112,78 @@ export default function PastAppointments() {
       const response = await api.get("/api/reservations");
 
       const mappedReservations = response.data.map(
-        (reservation) => ({
-          id: reservation.id,
-          title: reservation.itemName,
-          itemName: reservation.itemName,
-          destination: reservation.destination,
-          type:
-            reservation.type === "HOTEL"
-              ? "Hotel"
-              : reservation.type === "FLIGHT"
-                ? "Flight"
-                : "Transfer",
-          date: reservation.endDate
-            ? `${formatDate(
-              reservation.startDate
-            )} - ${formatDate(reservation.endDate)}`
-            : `${formatDate(
-              reservation.startDate
-            )} (Tek Yön)`,
-          status: reservation.status || "Completed",
-          hotelName:
-            reservation.type === "HOTEL"
-              ? reservation.itemName
+        (reservation) => {
+          const passengers = reservation.passengers || [];
+          const primaryPassenger = passengers[0];
+          const primaryGuestName = primaryPassenger
+            ? `${primaryPassenger.firstName || ''} ${primaryPassenger.lastName || ''}`.trim()
+            : (reservation.guestName || reservation.passengerName || "");
+          const guestNames = passengers
+            .map(p => `${p.firstName || ''} ${p.lastName || ''}`.trim())
+            .filter(Boolean);
+          const pnr = reservation.pnrCode || reservation.bookingNumber || reservation.reservationNumber || `REZ-${reservation.id}`;
+
+          return {
+            id: reservation.id,
+            title: reservation.itemName,
+            itemName: reservation.itemName,
+            destination: reservation.destination,
+            type:
+              reservation.type === "HOTEL"
+                ? "Hotel"
+                : reservation.type === "FLIGHT"
+                  ? "Flight"
+                  : "Transfer",
+            date: reservation.endDate
+              ? `${formatDate(
+                reservation.startDate
+              )} - ${formatDate(reservation.endDate)}`
+              : `${formatDate(
+                reservation.startDate
+              )} (Tek Yön)`,
+            status: reservation.status || "Completed",
+            hotelName:
+              reservation.type === "HOTEL"
+                ? reservation.itemName
+                : undefined,
+            checkIn: formatDate(reservation.startDate),
+            checkOut: reservation.endDate
+              ? formatDate(reservation.endDate)
               : undefined,
-          checkIn: formatDate(reservation.startDate),
-          checkOut: reservation.endDate
-            ? formatDate(reservation.endDate)
-            : undefined,
-          nights: reservation.startDate && reservation.endDate
-            ? Math.max(1, Math.round((new Date(reservation.endDate) - new Date(reservation.startDate)) / (1000 * 60 * 60 * 24)))
-            : 1,
-          guests:
-            reservation.passengers?.length || 1,
-          resNumber: reservation.reservationNumber,
-          reservationNumber:
-            reservation.reservationNumber,
-          paymentStatus:
-            reservation.paymentStatus || "Paid",
-          price: formatPrice(
-            reservation.totalPrice,
-            reservation.currency
-          ),
-          startDate: reservation.startDate,
-          endDate: reservation.endDate,
-          totalPrice: reservation.totalPrice,
-          currency: reservation.currency,
-          passengers: reservation.passengers || [],
-          from: reservation.from,
-          to: reservation.to,
-          flightNumber: reservation.flightNumber,
-          flightNumber: reservation.flightNumber,
-          seat: reservation.seat,
-          flightClass: reservation.flightClass,
-          transferType: reservation.transferType,
-          pickupLocation: reservation.pickupLocation,
-          imageUrl: reservation.imageUrl,
-          createdAt: reservation.createdAt,
-          updatedAt: reservation.updatedAt,
-        })
+            nights: reservation.startDate && reservation.endDate
+              ? Math.max(1, Math.round((new Date(reservation.endDate) - new Date(reservation.startDate)) / (1000 * 60 * 60 * 24)))
+              : 1,
+            guests:
+              passengers.length || 1,
+            resNumber: pnr,
+            reservationNumber: pnr,
+            pnrCode: pnr,
+            bookingNumber: pnr,
+            primaryGuestName,
+            guestNames,
+            paymentStatus:
+              reservation.paymentStatus || "Paid",
+            price: formatPrice(
+              reservation.totalPrice,
+              reservation.currency
+            ),
+            startDate: reservation.startDate,
+            endDate: reservation.endDate,
+            totalPrice: reservation.totalPrice,
+            currency: reservation.currency,
+            passengers,
+            from: reservation.from,
+            to: reservation.to,
+            flightNumber: reservation.flightNumber,
+            seat: reservation.seat,
+            flightClass: reservation.flightClass,
+            transferType: reservation.transferType,
+            pickupLocation: reservation.pickupLocation,
+            imageUrl: reservation.imageUrl,
+            createdAt: reservation.createdAt,
+            updatedAt: reservation.updatedAt,
+          };
+        }
       );
 
       setAppointments(mappedReservations);
@@ -507,68 +521,88 @@ export default function PastAppointments() {
                   <div className="flex flex-col flex-1 p-5 gap-4">
                     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                       <div className="space-y-3">
-                      <h3 className="text-xl font-bold leading-tight text-[#0F172A] dark:text-white">
-                        {appointment.title}
-                      </h3>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        {getCategoryBadge(
-                          appointment.type
-                        )}
-                        <span className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          <Calendar
-                            size={13}
-                            className="text-slate-400 dark:text-slate-500"
-                          />
-                          {appointment.date}
-                        </span>
-                      </div>
-
-                      {appointment.type === "Hotel" && (
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <Moon size={12} />
-                            {appointment.nights}{" "}
-                            {t(
-                              "past_appointments_card_nights",
-                              "gece"
-                            )}
-                          </span>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <Users size={12} />
-                            {appointment.guests}{" "}
-                            {t(
-                              "past_appointments_card_guests",
-                              "misafir"
-                            )}
-                          </span>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar size={12} />
-                            {appointment.checkIn}
-                            <ArrowRight size={10} />
-                            {appointment.checkOut}
+                        {/* Üst Satır: PNR / Booking No Badge */}
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
+                            #{appointment.pnrCode || appointment.reservationNumber || `REZ-${appointment.id}`}
                           </span>
                         </div>
-                      )}
+
+                        <h3 className="text-xl font-bold leading-tight text-[#0F172A] dark:text-white">
+                          {appointment.title}
+                        </h3>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {getCategoryBadge(
+                            appointment.type
+                          )}
+                          <span className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <Calendar
+                              size={13}
+                              className="text-slate-400 dark:text-slate-500"
+                            />
+                            {appointment.date}
+                          </span>
+                        </div>
+
+                        {appointment.type === "Hotel" && (
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Moon size={12} />
+                              {appointment.nights}{" "}
+                              {t(
+                                "past_appointments_card_nights",
+                                "gece"
+                              )}
+                            </span>
+                            <span>·</span>
+                            <span className="flex items-center gap-1">
+                              <User size={12} />
+                              {appointment.primaryGuestName || "Irmak Özbay"}
+                              {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                            </span>
+                            <span>·</span>
+                            <span className="flex items-center gap-1">
+                              <Users size={12} />
+                              {appointment.guests}{" "}
+                              {t(
+                                "past_appointments_card_guests",
+                                "misafir"
+                              )}
+                            </span>
+                            <span>·</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={12} />
+                              {appointment.checkIn}
+                              <ArrowRight size={10} />
+                              {appointment.checkOut}
+                            </span>
+                          </div>
+                        )}
 
                       {appointment.type ===
                         "Flight" && (
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <User size={12} />
+                              {appointment.primaryGuestName || "Irmak Özbay"}
+                              {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                            </span>
                             {appointment.flightNumber && (
-                              <span className="flex items-center gap-1">
-                                <Ticket size={12} />
-                                {
-                                  appointment.flightNumber
-                                }
-                              </span>
+                              <>
+                                <span>·</span>
+                                <span className="flex items-center gap-1">
+                                  <Ticket size={12} />
+                                  {
+                                    appointment.flightNumber
+                                  }
+                                </span>
+                              </>
                             )}
                             {appointment.seat && (
                               <>
                                 <span>·</span>
                                 <span className="flex items-center gap-1">
-                                  <User size={12} />
                                   {appointment.seat}{" "}
                                   {appointment.flightClass
                                     ? `(${appointment.flightClass})`
@@ -596,6 +630,12 @@ export default function PastAppointments() {
                       {appointment.type ===
                         "Transfer" && (
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <User size={12} />
+                              {appointment.primaryGuestName || "Irmak Özbay"}
+                              {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                            </span>
+                            <span>·</span>
                             <span className="flex items-center gap-1">
                               <Car size={12} />
                               {appointment.transferType ||
