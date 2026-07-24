@@ -237,12 +237,12 @@ export default function SignupPage() {
       <div className="fixed inset-0 z-10 pointer-events-none bg-slate-900/20 dark:bg-slate-950/70" />
 
       {/* Katman 3 (z-20): Form Container */}
-      <div className="relative z-20 w-full max-w-[550px] bg-white/70 backdrop-blur-md border border-white/40 dark:bg-slate-900/75 dark:border-slate-800/50 rounded-[32px] shadow-2xl p-6 md:p-8 animate-fade-in my-8">
-        <div className="text-center mb-8">
-          <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-display">
+      <div className="relative z-20 w-full max-w-[500px] bg-white/40 backdrop-blur-md border border-white/30 dark:bg-slate-900/50 dark:border-slate-800/40 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-6 md:p-8 animate-fade-in my-8">
+        <div className="text-center mb-6">
+          <h1 className="text-[32px] md:text-[36px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-display">
             {t('create_account_title')}
           </h1>
-          <p className="text-[16px] md:text-[18px] text-slate-600 dark:text-slate-300">
+          <p className="text-[15px] md:text-[16px] text-slate-600 dark:text-slate-300">
             {renderSubtitle(t('signup_subtitle'))}
           </p>
         </div>
@@ -463,7 +463,7 @@ export default function SignupPage() {
         </form>
 
         {/* Bottom Text */}
-        <div className="mt-8 text-center flex flex-col gap-4">
+        <div className="mt-6 text-center flex flex-col gap-3">
           <p className="text-[16px] text-slate-600 dark:text-slate-300">
             {t('have_account')}{' '}
             <Link

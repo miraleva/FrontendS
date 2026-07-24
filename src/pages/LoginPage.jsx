@@ -77,9 +77,16 @@ export default function LoginPage() {
           console.error('Google Auth Init error:', err);
           setSocialError(err.message);
         }
-      }, { locale: i18n.language });
+      }, { 
+        locale: i18n.language,
+        buttonOptions: { 
+          theme: theme === 'dark' ? 'filled_black' : 'outline',
+          shape: 'pill',
+          text: 'continue_with'
+        }
+      });
     }
-  }, [isAdminMode, navigate, t, i18n.language]);
+  }, [isAdminMode, navigate, t, i18n.language, theme]);
 
   // Validasyonlar
   const validateEmail = (val) => {
@@ -265,14 +272,14 @@ export default function LoginPage() {
       <div className="fixed inset-0 z-10 pointer-events-none bg-slate-900/20 dark:bg-slate-950/70" />
 
       {/* Katman 3 (z-20): Form Container */}
-      <div className="relative z-20 w-full max-w-[550px] bg-white/70 backdrop-blur-md border border-white/40 dark:bg-slate-900/75 dark:border-slate-800/50 rounded-[32px] shadow-2xl p-10 md:p-12 animate-fade-in">
+      <div className="relative z-20 w-full max-w-[500px] bg-white/40 backdrop-blur-md border border-white/30 dark:bg-slate-900/50 dark:border-slate-800/40 rounded-[40px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-8 md:p-10 animate-fade-in my-8">
 
         {/* BAŞLIK */}
-        <div className="text-center mb-8">
-          <h1 className="text-[34px] md:text-[40px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-display transition-all">
+        <div className="text-center mb-6">
+          <h1 className="text-[32px] md:text-[36px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-display transition-all">
             {isAdminMode ? t('admin_login_title', 'Yönetici Girişi') : t('welcome_title')}
           </h1>
-          <p className="text-[16px] md:text-[18px] text-slate-600 dark:text-slate-300">
+          <p className="text-[15px] md:text-[16px] text-slate-600 dark:text-slate-300">
             {isAdminMode
               ? t('admin_login_subtitle', 'Lütfen devam etmek için admin şifresini giriniz.')
               : renderSubtitle(t('welcome_subtitle'))}
@@ -281,7 +288,7 @@ export default function LoginPage() {
 
         {/* ADMIN GİRİŞ FORMU */}
         {isAdminMode ? (
-          <form onSubmit={handleAdminSubmit} className="flex flex-col gap-6">
+          <form onSubmit={handleAdminSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <label htmlFor="adminPassword" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
                 {t('admin_password_label', 'Admin Şifresi')}
@@ -349,7 +356,7 @@ export default function LoginPage() {
           </form>
         ) : (
           /* NORMAL KULLANICI GİRİŞ FORMU */
-          <form onSubmit={handleUserSubmit} className="flex flex-col gap-6">
+          <form onSubmit={handleUserSubmit} className="flex flex-col gap-4">
             {/* Email */}
             <div className="flex flex-col gap-2">
               <label htmlFor="email" className="text-[15px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-4">
@@ -485,9 +492,9 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Google Varsayılan Buton (İzolasyon Testi) */}
+              {/* Google Button */}
               <div className="flex flex-col items-center justify-center w-full min-h-[44px]">
-                <div id="googleBtnDiv" className="flex justify-center"></div>
+                <div id="googleBtnDiv" className="flex justify-center w-full"></div>
               </div>
             </div>
           </form>
@@ -495,7 +502,7 @@ export default function LoginPage() {
 
         {/* ALT ALAN (Kayıt ol & Admin olarak giriş yap) */}
         {!isAdminMode && (
-          <div className="mt-8 text-center flex flex-col gap-4">
+          <div className="mt-6 text-center flex flex-col gap-3">
             <p className="text-[16px] text-slate-600 dark:text-slate-300">
               {t('no_account')}{' '}
               <Link
