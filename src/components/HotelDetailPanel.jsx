@@ -77,6 +77,11 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
   const uniqueLocationParts = [...new Set(locationParts)];
   const locationText = uniqueLocationParts.length > 0 ? uniqueLocationParts.join(', ') : '';
 
+  // Sadece TourVisio'nun kendi verdiği koordinat (geolocation) kullanılır — tahmini/
+  // yaklaşık bir konum üretilmez. TourVisio bu oteli için koordinat vermediyse harita
+  // yerine "konum bilgisi yok" gösterilir.
+  const hasExactCoords = Boolean(hotel.geolocation?.latitude && hotel.geolocation?.longitude);
+
   // Facilities formatting if it's an array or string
   let facilitiesList = [];
   if (Array.isArray(hotel.facilities)) {
@@ -95,89 +100,110 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 font-sans w-full relative">
-      {/* Header / Fotoğraf Galerisi */}
-      <div className="relative h-48 md:h-64 flex-shrink-0 bg-slate-200 dark:bg-slate-800">
-        {photos.length > 0 ? (
-          <img
-            key={photoIndex}
-            src={photos[photoIndex]}
-            alt={hotel.name || "Hotel"}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              if (e.currentTarget.nextElementSibling) {
-                e.currentTarget.nextElementSibling.classList.remove('hidden');
-              }
-            }}
-          />
-        ) : null}
-        <div className={`absolute inset-0 flex items-center justify-center ${photos.length > 0 ? 'hidden' : ''}`}>
-          <span className="text-5xl">🏨</span>
+      {/* Header / Fotoğraf Galerisi + Harita */}
+      <div className="relative h-48 md:h-64 flex-shrink-0 flex bg-slate-200 dark:bg-slate-800">
+        {/* Sol yarı: fotoğraf galerisi */}
+        <div className="relative w-1/2 h-full overflow-hidden">
+          {photos.length > 0 ? (
+            <img
+              key={photoIndex}
+              src={photos[photoIndex]}
+              alt={hotel.name || "Hotel"}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                if (e.currentTarget.nextElementSibling) {
+                  e.currentTarget.nextElementSibling.classList.remove('hidden');
+                }
+              }}
+            />
+          ) : null}
+          <div className={`absolute inset-0 flex items-center justify-center ${photos.length > 0 ? 'hidden' : ''}`}>
+            <span className="text-5xl">🏨</span>
+          </div>
+
+          {/* Detay yüklenirken küçük bir gösterge (galeri zaten thumbnail ile açılmış olur) */}
+          {loadingDetail && (
+            <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full">
+              <Loader2 size={12} className="animate-spin" />
+              {t("hoteldetail_loading_photos")}
+            </div>
+          )}
+
+          {/* Galeri Ok Butonları */}
+          {hasMultiplePhotos && (
+            <>
+              <button
+                onClick={goToPrevPhoto}
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={goToNextPhoto}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+              {/* Nokta Göstergeleri */}
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {photos.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${i === photoIndex ? "bg-white w-4" : "bg-white/50 w-1.5"}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Gradient Overlay for Text */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md leading-tight">
+              {hotel.name || hotel.hotelId}
+            </h2>
+            <div className="flex items-center gap-2 mt-2">
+              {hotel.stars && (
+                <span className="text-amber-400 text-sm flex-shrink-0 flex items-center">
+                  {hotel.stars} <Star size={14} className="ml-1 fill-amber-400" />
+                </span>
+              )}
+              {(hotel.address || locationText) && (
+                <span className="text-white/90 text-sm flex items-center gap-1">
+                  <span className="text-white/40">•</span>
+                  <MapPin size={14} className="ml-1 opacity-80" />
+                  {hotel.address || locationText}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Detay yüklenirken küçük bir gösterge (galeri zaten thumbnail ile açılmış olur) */}
-        {loadingDetail && (
-          <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full">
-            <Loader2 size={12} className="animate-spin" />
-            {t("hoteldetail_loading_photos")}
-          </div>
-        )}
-
-        {/* Galeri Ok Butonları */}
-        {hasMultiplePhotos && (
-          <>
-            <button
-              onClick={goToPrevPhoto}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={goToNextPhoto}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
-            >
-              <ChevronRight size={18} />
-            </button>
-            {/* Nokta Göstergeleri */}
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {photos.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all ${i === photoIndex ? "bg-white w-4" : "bg-white/50 w-1.5"}`}
-                />
-              ))}
+        {/* Sağ yarı: otel konumu haritası */}
+        <div className="relative w-1/2 h-full bg-slate-300 dark:bg-slate-700">
+          {hasExactCoords ? (
+            <iframe
+              title="hotel-location-map"
+              className="w-full h-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://maps.google.com/maps?q=${hotel.geolocation.latitude},${hotel.geolocation.longitude}&z=14&output=embed`}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400">
+              <MapPin size={24} className="opacity-50" />
+              <span className="text-xs">{t("hoteldetail_no_map", "Konum bilgisi yok")}</span>
             </div>
-          </>
-        )}
+          )}
+        </div>
 
-        {/* Close Button */}
+        {/* Close Button (her iki yarının da üzerinde, sağ üst köşe) */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
+          className="absolute top-4 right-4 z-10 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
         >
           <X size={20} />
         </button>
-
-        {/* Gradient Overlay for Text */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md leading-tight">
-            {hotel.name || hotel.hotelId}
-          </h2>
-          <div className="flex items-center gap-2 mt-2">
-            {hotel.stars && (
-              <span className="text-amber-400 text-sm flex-shrink-0 flex items-center">
-                {hotel.stars} <Star size={14} className="ml-1 fill-amber-400" />
-              </span>
-            )}
-            {(hotel.address || locationText) && (
-              <span className="text-white/90 text-sm flex items-center gap-1">
-                <span className="text-white/40">•</span>
-                <MapPin size={14} className="ml-1 opacity-80" />
-                {hotel.address || locationText}
-              </span>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Body / Scrollable Info */}

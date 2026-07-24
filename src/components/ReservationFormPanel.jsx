@@ -194,7 +194,7 @@ export default function ReservationFormPanel({
         return;
       }
 
-      if (!guests || guests.length === 0) {
+      if (!guests || guests.length === 0 || (!bookingDetails?.editMode && guests.length !== ((parseInt(bookingDetails?.adultCount, 10) || 1) + (parseInt(bookingDetails?.childCount, 10) || 0) + (parseInt(bookingDetails?.infantCount, 10) || 0)))) {
         const adultCount =
           parseInt(bookingDetails?.adultCount, 10) || 1;
         const childCount =

@@ -86,19 +86,27 @@ function sortResults(results, sortKey) {
 // TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
 // ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
 // gösterilir.
-function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount) {
+function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount, roomCount, childAges) {
+  const guestParts = [];
   if (adultCount) {
-    const parts = [`${adultCount} ${t("unit_adult")}`];
-    if (childCount) {
-      parts.push(`${childCount} ${t("unit_child")}`);
+    guestParts.push(`${adultCount} ${t("unit_adult") || "Yetişkin"}`);
+  }
+  if (childCount && childCount > 0) {
+    if (childAges && childAges.length > 0) {
+      const ageLabel = t("unit_age") || "Yaş";
+      guestParts.push(`${childCount} ${t("unit_child") || "Çocuk"} (${ageLabel}: ${childAges.join(", ")})`);
+    } else {
+      guestParts.push(`${childCount} ${t("unit_child") || "Çocuk"}`);
     }
-    if (infantCount) {
-      parts.push(`${infantCount} ${t("unit_infant")}`);
-    }
-    return parts.join(", ");
+  }
+  if (infantCount && infantCount > 0) {
+    guestParts.push(`${infantCount} ${t("unit_infant") || "Bebek"}`);
+  }
+  if (guestParts.length > 0) {
+    return guestParts.join(", ");
   }
   if (passengerCount) {
-    return `${passengerCount} ${t("unit_person")}`;
+    return `${passengerCount} ${t("unit_person") || "Kişi"}`;
   }
   return null;
 }
@@ -154,6 +162,9 @@ function mapProductInfoToHotelDetail(productInfo) {
     description: description || null,
     facilities: [...facilities],
     themes: (hotel.themes || []).map(t => t.name).filter(Boolean),
+    geolocation: hotel.geolocation
+      ? { latitude: hotel.geolocation.latitude, longitude: hotel.geolocation.longitude }
+      : null,
   };
 }
 
@@ -571,6 +582,7 @@ export default function Index() {
     childAges: [],
     infantCount: 0,
     infantAges: [],
+    roomCount: 1,
     passengerCount: 1,
     hotelName: "",
     price: "",
@@ -582,8 +594,12 @@ export default function Index() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  // Guest users get or reuse a guestSessionId stored in sessionStorage
+  const urlSessionId = searchParams.get('sessionId') || '';
+  // Misafir oturumlarında sessionId URL'ye yazılmıyor (geçmiş kaydedilmesin diye),
+  // ama bu yüzden aktif sohbetin kendi kimliği de hiçbir yerde tutulmuyordu — her
+  // mesaj sessionId=null gönderip backend'de YENİ bir oturum açtırıyor, önceki
+  // tüm kriterleri (konum, tarih, yolcu sayısı) sıfırlıyordu. Misafir için bu
+  // kimliği sessionStorage'da tutuyoruz ki sekme yenilense bile sohbet devam etsin.
   const getGuestSessionId = () => {
     let id = sessionStorage.getItem('guestSessionId');
     if (!id) {
@@ -592,8 +608,7 @@ export default function Index() {
     }
     return id;
   };
-
-  const sessionId = searchParams.get('sessionId') || (isGuest ? getGuestSessionId() : '');
+  const sessionId = urlSessionId || (isGuest ? getGuestSessionId() : '');
   const [isListening, setIsListening] = useState(false);
 
   const videoRef = useRef(null);
@@ -615,24 +630,36 @@ export default function Index() {
   }, [theme]);
 
   // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
+  // Bu efekt SADECE URL'deki sessionId'ye (deep-link / kayıtlı geçmişe dönüş)
+  // tepki verir — misafirin kendi içindeki guestSessionId'ye değil. Aksi hâlde
+  // ilk mesajdan sonra guestSessionId dolduğunda bu efekt tekrar tetiklenip
+  // az önce eklenen mesajın üzerine geçmişi yeniden yükler (ya da URL'de
+  // hiçbir zaman sessionId olmayacağı için "else" dalı her seferinde sohbeti
+  // sıfırlardı).
   useEffect(() => {
     setIsChatCompleted(false);
-    if (sessionId) {
+    if (urlSessionId) {
       const loadHistory = async () => {
+        setIsThinking(true);
+        // Oturum değiştiğinde önceki oturumun state'lerinin sızmasını engellemek için resetle
+        setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], roomCount: 1, passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
+        setReservationGuests(null);
+        setSelectedHotel(null);
+        setSelectedFlight(null);
+
         try {
-          setIsThinking(true);
           setThinkingStep("Loading history...");
 
           try {
-            const sessionResponse = await api.get(`/api/chat/sessions/${sessionId}`);
+            const sessionResponse = await api.get(`/api/chat/sessions/${urlSessionId}`);
             if (sessionResponse.data?.chatStatus === 'COMPLETED') {
               setIsChatCompleted(true);
             }
           } catch (sessionErr) {
-            console.error("Failed to load session details", sessionId, sessionErr);
+            console.error("Failed to load session details", urlSessionId, sessionErr);
           }
 
-          const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+          const response = await api.get(`/api/chat/sessions/${urlSessionId}/messages`);
 
           const history = response.data.map((msg, idx) => ({
             id: idx,
@@ -670,7 +697,7 @@ export default function Index() {
             // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
             // kriter kaydından (search_criteria_json) geliyor.
             try {
-              const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
+              const criteriaResponse = await api.get(`/api/chat/sessions/${urlSessionId}/criteria`);
               const c = criteriaResponse.data;
               if (c) {
                 // Backend'den gelen kriter (c) her zaman TAM ve GÜNCEL bir anlık
@@ -684,12 +711,13 @@ export default function Index() {
                   city: c.locationOrHotelName || "",
                   checkIn: c.checkInDate || c.departureDate || "",
                   checkOut: c.checkOutDate || "",
-                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || "",
+                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount, c.roomCount, c.childAges) || "",
                   adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
                   childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
                   childAges: c.childAges || [],
                   infantCount: c.infantCount !== undefined && c.infantCount !== null ? c.infantCount : prev.infantCount,
                   infantAges: c.infantAges || [],
+                  roomCount: c.roomCount !== undefined && c.roomCount !== null ? c.roomCount : prev.roomCount,
                   passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
                   departureCity: c.departureLocation || "",
                   arrivalCity: c.arrivalLocation || "",
@@ -701,10 +729,10 @@ export default function Index() {
                 });
               }
             } catch (criteriaErr) {
-            console.error("Failed to load session criteria", sessionId, criteriaErr);
+            console.error("Failed to load session criteria", urlSessionId, criteriaErr);
           }
         } catch (err) {
-          console.error("Failed to load message history for session", sessionId, err);
+          console.error("Failed to load message history for session", urlSessionId, err);
         } finally {
           setIsThinking(false);
         }
@@ -718,7 +746,7 @@ export default function Index() {
       setSelectedHotel(null);
       setSelectedFlight(null);
     }
-  }, [sessionId]);
+  }, [urlSessionId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -877,12 +905,13 @@ export default function Index() {
           city: c.locationOrHotelName || "",
           checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || "",
           checkOut: c.checkOutDate || extractedFromQuery.checkOut || "",
-          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || "",
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount, c.roomCount, c.childAges) || extractedFromQuery.guests || "",
           adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
           childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
           childAges: c.childAges || [],
           infantCount: c.infantCount !== undefined && c.infantCount !== null ? c.infantCount : prev.infantCount,
           infantAges: c.infantAges || [],
+          roomCount: c.roomCount !== undefined && c.roomCount !== null ? c.roomCount : prev.roomCount,
           passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
           departureCity: c.departureLocation || "",
           arrivalCity: c.arrivalLocation || "",
@@ -926,11 +955,8 @@ export default function Index() {
         });
       }
 
-      if (data.sessionId && data.sessionId !== sessionId) {
-        // Misafir oturumlarında sessionId URL'ye yazılmaz (geçmiş kaydedilmez)
-        if (!isGuest) {
-          setSearchParams({ sessionId: data.sessionId });
-        }
+      if (data.sessionId && data.sessionId !== sessionId && !isGuest) {
+        setSearchParams({ sessionId: data.sessionId });
       }
 
     } catch (err) {
@@ -1086,9 +1112,10 @@ export default function Index() {
           setSearchQuery("");
           setSearchType("hotel");
           setActivePanel(null);
-          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
+          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], roomCount: 1, passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
           setSelectedHotel(null);
           setSelectedFlight(null);
+          sessionStorage.removeItem('guestSessionId');
         }}
       />
 
