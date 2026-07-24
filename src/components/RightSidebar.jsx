@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Calendar, Hotel, Plane, Users, Sparkles, PanelRightClose } from 'lucide-react';
+import { MapPin, Calendar, Hotel, Plane, Users, Sparkles, PanelRightClose, DoorClosed } from 'lucide-react';
 
 function formatFlightDateTime(value) {
   if (!value) return value;
@@ -46,7 +46,7 @@ export default function RightSidebar({
               <PanelRightClose size={18} />
             </button>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-amber-500/20 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex-shrink-0">
               <Sparkles size={18} className="animate-pulse" />
@@ -95,6 +95,28 @@ export default function RightSidebar({
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_checkout")}</span>
                   <span className={`text-sm font-semibold truncate block ${bookingDetails.checkOut ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
                     {bookingDetails.checkOut ? formatFlightDateTime(bookingDetails.checkOut) : t("panel_checkout_placeholder")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Oda Sayısı (Ayrı Satır) */}
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <DoorClosed size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_room_count") || "ODA SAYISI"}</span>
+                  <span className="text-sm font-semibold truncate block text-slate-800 dark:text-slate-200">
+                    {`${bookingDetails.roomCount || 1} ${t("unit_room") || "Oda"}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Konuk Sayısı */}
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Users size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_guest_count")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
+                    {bookingDetails.guests || t("panel_count_placeholder")}
                   </span>
                 </div>
               </div>
@@ -152,7 +174,7 @@ export default function RightSidebar({
                 </div>
               </div>
 
-              {/* Dönüş Tarihi — sadece gidiş-dönüş uçuşlarında gösterilir */}
+              {/* Dönüş Tarihi */}
               {bookingDetails.returnDate && (
                 <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
                   <Calendar size={18} className="text-[#3B82F6] mt-0.5 flex-shrink-0" />
@@ -165,31 +187,29 @@ export default function RightSidebar({
                 </div>
               )}
 
-              {/* Seçilen Havayolu */}
+              {/* Seçilen Havayolu (Düzeltilen Kısım) */}
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
                 <Plane size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_selected_airline")}</span>
                   <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
-                    {bookingDetails.airline || t("panel_selected_airline_placeholder")}
+                    {bookingDetails.airline || t("panel_selected_airline_placeholder") || "Havayolu Seçilmedi"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Yolcu Sayısı */}
+              <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                <Users size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_passenger_count")}</span>
+                  <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
+                    {bookingDetails.guests || t("panel_count_placeholder")}
                   </span>
                 </div>
               </div>
             </>
           )}
-
-          {/* ================= ORTAK ALAN: YOLCU / KONUK SAYISI ================= */}
-          <div className="flex items-start gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <Users size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">
-                {searchType === "hotel" ? t("panel_guest_count") : t("panel_passenger_count")}
-              </span>
-              <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
-                {bookingDetails.guests || t("panel_count_placeholder")}
-              </span>
-            </div>
-          </div>
 
           {/* Fiyat Bilgisi */}
           {bookingDetails.price && (

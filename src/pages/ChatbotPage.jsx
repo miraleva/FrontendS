@@ -86,19 +86,27 @@ function sortResults(results, sortKey) {
 // TourVisio aramasında çocuklar yetişkin sayısına eklenerek gönderilir (TourVisio'da
 // ayrı bir çocuk kavramı yok), ama kullanıcıya burada gerçek yetişkin/çocuk ayrımı
 // gösterilir.
-function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount) {
+function formatGuestCount(adultCount, childCount, passengerCount, t, infantCount, roomCount, childAges) {
+  const guestParts = [];
   if (adultCount) {
-    const parts = [`${adultCount} ${t("unit_adult")}`];
-    if (childCount) {
-      parts.push(`${childCount} ${t("unit_child")}`);
+    guestParts.push(`${adultCount} ${t("unit_adult") || "Yetişkin"}`);
+  }
+  if (childCount && childCount > 0) {
+    if (childAges && childAges.length > 0) {
+      const ageLabel = t("unit_age") || "Yaş";
+      guestParts.push(`${childCount} ${t("unit_child") || "Çocuk"} (${ageLabel}: ${childAges.join(", ")})`);
+    } else {
+      guestParts.push(`${childCount} ${t("unit_child") || "Çocuk"}`);
     }
-    if (infantCount) {
-      parts.push(`${infantCount} ${t("unit_infant")}`);
-    }
-    return parts.join(", ");
+  }
+  if (infantCount && infantCount > 0) {
+    guestParts.push(`${infantCount} ${t("unit_infant") || "Bebek"}`);
+  }
+  if (guestParts.length > 0) {
+    return guestParts.join(", ");
   }
   if (passengerCount) {
-    return `${passengerCount} ${t("unit_person")}`;
+    return `${passengerCount} ${t("unit_person") || "Kişi"}`;
   }
   return null;
 }
@@ -571,6 +579,7 @@ export default function Index() {
     childAges: [],
     infantCount: 0,
     infantAges: [],
+    roomCount: 1,
     passengerCount: 1,
     hotelName: "",
     price: "",
@@ -684,12 +693,13 @@ export default function Index() {
                   city: c.locationOrHotelName || "",
                   checkIn: c.checkInDate || c.departureDate || "",
                   checkOut: c.checkOutDate || "",
-                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || "",
+                  guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount, c.roomCount, c.childAges) || "",
                   adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
                   childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
                   childAges: c.childAges || [],
                   infantCount: c.infantCount !== undefined && c.infantCount !== null ? c.infantCount : prev.infantCount,
                   infantAges: c.infantAges || [],
+                  roomCount: c.roomCount !== undefined && c.roomCount !== null ? c.roomCount : prev.roomCount,
                   passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
                   departureCity: c.departureLocation || "",
                   arrivalCity: c.arrivalLocation || "",
@@ -877,12 +887,13 @@ export default function Index() {
           city: c.locationOrHotelName || "",
           checkIn: c.checkInDate || c.departureDate || extractedFromQuery.checkIn || "",
           checkOut: c.checkOutDate || extractedFromQuery.checkOut || "",
-          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount) || extractedFromQuery.guests || "",
+          guests: formatGuestCount(c.adultCount, c.childCount, c.passengerCount, t, c.infantCount, c.roomCount, c.childAges) || extractedFromQuery.guests || "",
           adultCount: c.adultCount !== undefined && c.adultCount !== null ? c.adultCount : prev.adultCount,
           childCount: c.childCount !== undefined && c.childCount !== null ? c.childCount : prev.childCount,
           childAges: c.childAges || [],
           infantCount: c.infantCount !== undefined && c.infantCount !== null ? c.infantCount : prev.infantCount,
           infantAges: c.infantAges || [],
+          roomCount: c.roomCount !== undefined && c.roomCount !== null ? c.roomCount : prev.roomCount,
           passengerCount: c.passengerCount !== undefined && c.passengerCount !== null ? c.passengerCount : prev.passengerCount,
           departureCity: c.departureLocation || "",
           arrivalCity: c.arrivalLocation || "",
@@ -1086,7 +1097,7 @@ export default function Index() {
           setSearchQuery("");
           setSearchType("hotel");
           setActivePanel(null);
-          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
+          setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], roomCount: 1, passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
           setSelectedHotel(null);
           setSelectedFlight(null);
         }}
