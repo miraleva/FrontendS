@@ -154,6 +154,9 @@ function mapProductInfoToHotelDetail(productInfo) {
     description: description || null,
     facilities: [...facilities],
     themes: (hotel.themes || []).map(t => t.name).filter(Boolean),
+    geolocation: hotel.geolocation
+      ? { latitude: hotel.geolocation.latitude, longitude: hotel.geolocation.longitude }
+      : null,
   };
 }
 
@@ -582,8 +585,12 @@ export default function Index() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  // Guest users get or reuse a guestSessionId stored in sessionStorage
+  const urlSessionId = searchParams.get('sessionId') || '';
+  // Misafir oturumlarında sessionId URL'ye yazılmıyor (geçmiş kaydedilmesin diye),
+  // ama bu yüzden aktif sohbetin kendi kimliği de hiçbir yerde tutulmuyordu — her
+  // mesaj sessionId=null gönderip backend'de YENİ bir oturum açtırıyor, önceki
+  // tüm kriterleri (konum, tarih, yolcu sayısı) sıfırlıyordu. Misafir için bu
+  // kimliği sessionStorage'da tutuyoruz ki sekme yenilense bile sohbet devam etsin.
   const getGuestSessionId = () => {
     let id = sessionStorage.getItem('guestSessionId');
     if (!id) {
@@ -592,8 +599,7 @@ export default function Index() {
     }
     return id;
   };
-
-  const sessionId = searchParams.get('sessionId') || (isGuest ? getGuestSessionId() : '');
+  const sessionId = urlSessionId || (isGuest ? getGuestSessionId() : '');
   const [isListening, setIsListening] = useState(false);
 
   const videoRef = useRef(null);
@@ -615,24 +621,30 @@ export default function Index() {
   }, [theme]);
 
   // --- Oturum Geçmişini ve bookingMeta Durumunu Yükleme ---
+  // Bu efekt SADECE URL'deki sessionId'ye (deep-link / kayıtlı geçmişe dönüş)
+  // tepki verir — misafirin kendi içindeki guestSessionId'ye değil. Aksi hâlde
+  // ilk mesajdan sonra guestSessionId dolduğunda bu efekt tekrar tetiklenip
+  // az önce eklenen mesajın üzerine geçmişi yeniden yükler (ya da URL'de
+  // hiçbir zaman sessionId olmayacağı için "else" dalı her seferinde sohbeti
+  // sıfırlardı).
   useEffect(() => {
     setIsChatCompleted(false);
-    if (sessionId) {
+    if (urlSessionId) {
       const loadHistory = async () => {
         try {
           setIsThinking(true);
           setThinkingStep("Loading history...");
 
           try {
-            const sessionResponse = await api.get(`/api/chat/sessions/${sessionId}`);
+            const sessionResponse = await api.get(`/api/chat/sessions/${urlSessionId}`);
             if (sessionResponse.data?.chatStatus === 'COMPLETED') {
               setIsChatCompleted(true);
             }
           } catch (sessionErr) {
-            console.error("Failed to load session details", sessionId, sessionErr);
+            console.error("Failed to load session details", urlSessionId, sessionErr);
           }
 
-          const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+          const response = await api.get(`/api/chat/sessions/${urlSessionId}/messages`);
 
           const history = response.data.map((msg, idx) => ({
             id: idx,
@@ -670,7 +682,7 @@ export default function Index() {
             // ayrıca çek — mesaj geçmişinde bu bilgiler saklanmıyor, oturumun kendi
             // kriter kaydından (search_criteria_json) geliyor.
             try {
-              const criteriaResponse = await api.get(`/api/chat/sessions/${sessionId}/criteria`);
+              const criteriaResponse = await api.get(`/api/chat/sessions/${urlSessionId}/criteria`);
               const c = criteriaResponse.data;
               if (c) {
                 // Backend'den gelen kriter (c) her zaman TAM ve GÜNCEL bir anlık
@@ -701,10 +713,10 @@ export default function Index() {
                 });
               }
             } catch (criteriaErr) {
-            console.error("Failed to load session criteria", sessionId, criteriaErr);
+            console.error("Failed to load session criteria", urlSessionId, criteriaErr);
           }
         } catch (err) {
-          console.error("Failed to load message history for session", sessionId, err);
+          console.error("Failed to load message history for session", urlSessionId, err);
         } finally {
           setIsThinking(false);
         }
@@ -718,7 +730,7 @@ export default function Index() {
       setSelectedHotel(null);
       setSelectedFlight(null);
     }
-  }, [sessionId]);
+  }, [urlSessionId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -926,11 +938,8 @@ export default function Index() {
         });
       }
 
-      if (data.sessionId && data.sessionId !== sessionId) {
-        // Misafir oturumlarında sessionId URL'ye yazılmaz (geçmiş kaydedilmez)
-        if (!isGuest) {
-          setSearchParams({ sessionId: data.sessionId });
-        }
+      if (data.sessionId && data.sessionId !== sessionId && !isGuest) {
+        setSearchParams({ sessionId: data.sessionId });
       }
 
     } catch (err) {
@@ -1089,6 +1098,7 @@ export default function Index() {
           setBookingDetails({ city: "", departureCity: "", arrivalCity: "", checkIn: "", checkOut: "", guests: "", adultCount: 1, childCount: 0, childAges: [], infantCount: 0, infantAges: [], passengerCount: 1, hotelName: "", airline: "", price: "", returnDate: "" });
           setSelectedHotel(null);
           setSelectedFlight(null);
+          sessionStorage.removeItem('guestSessionId');
         }}
       />
 
