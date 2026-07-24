@@ -88,7 +88,7 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[550px] min-h-[500px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+        className="w-full max-w-[700px] min-h-[500px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -106,10 +106,10 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
           </button>
           
           {/* Banner Container */}
-          <div className="relative h-48 w-full bg-slate-200 dark:bg-slate-800">
-            {appointment.type === "Hotel" && (appointment.thumbnailFull || appointment.thumbnail) ? (
+          <div className="relative h-80 sm:h-96 w-full bg-slate-200 dark:bg-slate-800">
+            {appointment.imageUrl || appointment.thumbnailFull || appointment.thumbnail ? (
               <img 
-                src={appointment.thumbnailFull || appointment.thumbnail} 
+                src={appointment.imageUrl || appointment.thumbnailFull || appointment.thumbnail} 
                 alt="Thumbnail" 
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -120,21 +120,17 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
                 }}
               />
             ) : null}
-            <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 ${appointment.type === "Hotel" && (appointment.thumbnailFull || appointment.thumbnail) ? 'hidden' : ''}`}>
+            <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 ${appointment.imageUrl || appointment.thumbnailFull || appointment.thumbnail ? 'hidden' : ''}`}>
               <span className="text-7xl opacity-40 drop-shadow-sm">
                 {appointment.type === "Hotel" ? "🏨" : appointment.type === "Flight" ? "✈" : "🚗"}
               </span>
             </div>
-            
-            {/* Overlay Gradient for Text */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
-            
-            {/* Text Overlay */}
-            <div className="absolute bottom-0 left-0 w-full p-6 flex flex-col justify-end z-10">
-              <div className="flex items-center gap-2 mb-2">
-                {getCategoryBadge(appointment.type)}
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight font-display tracking-tight drop-shadow-md">
+            {/* Text Overlay with Glow */}
+            <div className="absolute top-0 left-0 w-full p-4 sm:p-6 flex flex-col justify-start z-20 pr-16">
+              <h2 
+                className="text-2xl sm:text-3xl font-black text-white leading-tight font-display tracking-tight"
+                style={{ textShadow: '0 2px 6px rgba(0,0,0,0.7), 0 0 15px rgba(0,0,0,0.5)' }}
+              >
                 {appointment.title}
               </h2>
             </div>

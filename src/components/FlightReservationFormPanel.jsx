@@ -13,6 +13,8 @@ import {
   Star,
   Info,
   CheckCircle2,
+  Plane,
+  ArrowRight,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PhoneInput, {
@@ -35,38 +37,38 @@ function toDateOnly(value) {
   return date.toISOString().slice(0, 10);
 }
 
-const getPassengerErrors = (passenger, index = 0) => {
+const getPassengerErrors = (passenger, index = 0, t) => {
   const errors = {};
   const isPrimaryContact = index === 0;
 
   if (!passenger.firstName?.trim()) {
-    errors.firstName = "Ad gereklidir.";
+    errors.firstName = t("res_form_error_first_name", "Ad gereklidir.");
   }
 
   if (!passenger.lastName?.trim()) {
-    errors.lastName = "Soyad gereklidir.";
+    errors.lastName = t("res_form_error_last_name", "Soyad gereklidir.");
   }
 
   if (passenger.nationality?.toUpperCase() === "TR") {
     if (!/^[1-9]\d{10}$/.test(passenger.identityNumber || "")) {
       errors.identityNumber =
-        "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+        t("res_form_error_invalid_tc", "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).");
     }
   } else if (
     !passenger.identityNumber?.trim() ||
     passenger.identityNumber.trim().length < 5
   ) {
     errors.identityNumber =
-      "Geçersiz Pasaport No (en az 5 karakter).";
+      t("res_form_error_invalid_passport", "Geçersiz Pasaport No (en az 5 karakter).");
   }
 
   if (!passenger.birthDate) {
-    errors.birthDate = "Doğum tarihi gereklidir.";
+    errors.birthDate = t("res_form_error_birth_date", "Doğum tarihi gereklidir.");
   } else {
     const birthDate = new Date(passenger.birthDate);
 
     if (birthDate >= new Date()) {
-      errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+      errors.birthDate = t("res_form_error_past_birth_date", "Doğum tarihi geçmişte olmalıdır.");
     } else if (isPrimaryContact) {
       const eighteenYearsAgo = new Date();
       eighteenYearsAgo.setFullYear(
@@ -75,34 +77,34 @@ const getPassengerErrors = (passenger, index = 0) => {
 
       if (birthDate > eighteenYearsAgo) {
         errors.birthDate =
-          "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
+          t("res_form_error_age", "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.");
       }
     }
   }
 
   if (isPrimaryContact) {
     if (!passenger.email?.trim()) {
-      errors.email = "E-posta gereklidir.";
+      errors.email = t("res_form_error_email", "E-posta gereklidir.");
     } else if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)
     ) {
       errors.email =
-        "Geçersiz e-posta formatı (örn: ad@example.com).";
+        t("res_form_error_invalid_email", "Geçersiz e-posta formatı (örn: ad@example.com).");
     }
 
     if (!passenger.phone) {
-      errors.phone = "Telefon numarası gereklidir.";
+      errors.phone = t("res_form_error_phone", "Telefon numarası gereklidir.");
     } else if (!isValidPhoneNumber(passenger.phone)) {
       errors.phone =
-        "Ülke formatına uymuyor (geçersiz uzunluk).";
+        t("res_form_error_invalid_phone", "Ülke formatına uymuyor (geçersiz uzunluk).");
     }
   }
 
   return errors;
 };
 
-export default function ReservationFormPanel({
-  hotel = {},
+export default function FlightReservationFormPanel({
+  flight = {},
   bookingDetails = {},
   onClose,
   onBack,
@@ -114,7 +116,7 @@ export default function ReservationFormPanel({
 }) {
   const { t, i18n } = useTranslation();
 
-  const safeHotel = hotel || {};
+  const safeFlight = flight || {};
 
   const [expandedGuestId, setExpandedGuestId] =
     useState("adult-0");
@@ -304,7 +306,7 @@ export default function ReservationFormPanel({
     bookingDetails?.adultCount,
     bookingDetails?.childCount,
     bookingDetails?.infantCount,
-    hotel,
+    flight,
     guests,
     setGuests,
   ]);
@@ -324,44 +326,29 @@ export default function ReservationFormPanel({
     });
   };
 
-  const locationParts = [
-    safeHotel?.city,
-    safeHotel?.town,
-    safeHotel?.village,
-    safeHotel?.region,
-  ].filter(Boolean);
-
-  const uniqueLocationParts = [
-    ...new Set(locationParts),
-  ];
-
-  const locationText =
-    uniqueLocationParts.length > 0
-      ? uniqueLocationParts.join(", ")
-      : "";
+  const locationText = `${bookingDetails?.departureCity || ''} -> ${bookingDetails?.arrivalCity || ''}`;
 
   const formattedPrice =
-    safeHotel?.price != null &&
-      !Number.isNaN(Number(safeHotel.price))
+    safeFlight?.price != null &&
+      !Number.isNaN(Number(safeFlight.price))
       ? new Intl.NumberFormat("tr-TR", {
         style: "currency",
-        currency: safeHotel.currency || "TRY",
+        currency: safeFlight.currency || "TRY",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(Number(safeHotel.price))
-      : `${safeHotel?.price || 0} ${safeHotel?.currency || "TRY"
-      }`;
+      }).format(Number(safeFlight.price))
+      : `${safeFlight?.price || 0} ${safeFlight?.currency || "TRY"}`;
 
   const roomPriceValue =
-    safeHotel?.price != null &&
-      !Number.isNaN(Number(safeHotel.price))
-      ? Number(safeHotel.price) * 0.92
+    safeFlight?.price != null &&
+      !Number.isNaN(Number(safeFlight.price))
+      ? Number(safeFlight.price) * 0.92
       : null;
 
   const taxValue =
-    safeHotel?.price != null &&
-      !Number.isNaN(Number(safeHotel.price))
-      ? Number(safeHotel.price) * 0.08
+    safeFlight?.price != null &&
+      !Number.isNaN(Number(safeFlight.price))
+      ? Number(safeFlight.price) * 0.08
       : null;
 
   const formatSubPrice = (value) => {
@@ -369,7 +356,7 @@ export default function ReservationFormPanel({
 
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
-      currency: safeHotel?.currency || "TRY",
+      currency: safeFlight?.currency || "TRY",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
@@ -434,22 +421,16 @@ export default function ReservationFormPanel({
     const primaryGuest = guests?.[0] || {};
 
     const payload = {
-      type: "HOTEL",
-      itemName:
-        safeHotel?.name ||
-        safeHotel?.hotelId ||
-        "Otel Rezervasyonu",
+      type: "FLIGHT",
+      itemName: safeFlight?.airline || t("flight_ticket", "Uçak Bileti"),
       destination:
-        locationText ||
-        safeHotel?.city ||
-        safeHotel?.region ||
-        "-",
+        `${bookingDetails?.departureCity || 'Gidiş'} -> ${bookingDetails?.arrivalCity || 'Varış'} (${safeFlight?.baggage || '15kg'}, ${safeFlight?.transfers || 'Direkt'})`,
       startDate: toDateOnly(bookingDetails?.checkIn),
-      endDate: toDateOnly(bookingDetails?.checkOut),
-      totalPrice: Number(safeHotel?.price) || 0,
-      currency: safeHotel?.currency || "TRY",
+      endDate: toDateOnly(bookingDetails?.returnDate || bookingDetails?.checkIn),
+      totalPrice: Number(safeFlight?.price) || 0,
+      currency: safeFlight?.currency || "TRY",
       chatSessionId: chatSessionId || null,
-      imageUrl: safeHotel?.thumbnailFull || safeHotel?.thumbnail || "",
+      imageUrl: "",
       passengers: (guests || []).map((guest, index) => {
         const today = new Date();
         const birthDate = guest.birthDate
@@ -536,7 +517,7 @@ export default function ReservationFormPanel({
     }
   };
 
-  if (!hotel) return null;
+  if (!flight) return null;
 
   if (reservationResult) {
     return (
@@ -579,34 +560,29 @@ export default function ReservationFormPanel({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex justify-end bg-black/55 backdrop-blur-sm">
-        <div className="relative flex h-full w-full max-w-[760px] flex-col overflow-hidden border-l border-white/20 bg-slate-50 font-sans shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-          <div className="relative h-52 flex-shrink-0 overflow-hidden bg-slate-800 md:h-64">
-            {safeHotel?.thumbnailFull ||
-              safeHotel?.thumbnail ? (
-              <img
-                src={
-                  safeHotel.thumbnailFull ||
-                  safeHotel.thumbnail
-                }
-                alt={
-                  safeHotel.name ||
-                  safeHotel.hotelId ||
-                  "Hotel"
-                }
-                className="h-full w-full object-cover"
-                onError={(event) => {
-                  event.currentTarget.style.display =
-                    "none";
-                }}
-              />
-            ) : null}
-
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50 font-sans dark:bg-slate-900">
+          <div className="relative h-48 md:h-56 flex-shrink-0 overflow-hidden bg-white">
+            {safeFlight?.airline?.toLowerCase()?.includes('ajet') ? (
+              <div className="absolute inset-0 bg-white">
+                 <img src="/ajet.png" alt="Ajet" className="w-full h-full object-cover opacity-90" />
+              </div>
+            ) : safeFlight?.airline?.toLowerCase()?.includes('pegasus') ? (
+              <div className="absolute inset-0 bg-white">
+                 <img src="/pegasus.png" alt="Pegasus" className="w-full h-full object-cover opacity-90" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-sky-400 flex items-center justify-center">
+                <Plane size={64} className="opacity-50 text-white" />
+              </div>
+            )}
+            
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+            
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-black/60 p-2 pr-4 text-sm font-semibold text-white transition-colors hover:bg-black/80"
+                className="absolute left-4 top-4 z-20 flex items-center gap-1 rounded-full bg-black/40 p-2 pr-4 text-sm font-semibold text-white transition-colors hover:bg-black/60 cursor-pointer"
               >
                 <ArrowLeft size={18} />
                 Geri
@@ -616,48 +592,29 @@ export default function ReservationFormPanel({
             <button
               type="button"
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80"
+              className="absolute right-4 top-4 z-20 rounded-full bg-black/40 p-2 text-white transition-colors hover:bg-black/60 cursor-pointer"
             >
               <X size={20} />
             </button>
 
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
-              <div className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400 drop-shadow-md">
+            <div className="absolute bottom-5 left-6 right-6 z-10">
+              <div className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-400 drop-shadow-md">
                 {bookingDetails?.editMode
-                  ? "Rezervasyon Düzenleme"
-                  : "Rezervasyon Detayları"}
+                  ? t("res_form_edit", "Rezervasyon Düzenleme")
+                  : t("flight_reservation", "Uçuş Rezervasyonu")}
               </div>
 
-              <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md md:text-3xl">
-                {safeHotel?.name ||
-                  safeHotel?.hotelId ||
-                  "Otel Rezervasyonu"}
+              {!safeFlight?.airline?.toLowerCase()?.includes('ajet') && !safeFlight?.airline?.toLowerCase()?.includes('pegasus') && (
+                 <div className="text-white/90 text-sm font-bold mb-1 tracking-wider uppercase">
+                   {safeFlight?.airline || t("flight_ticket", "Uçak Bileti")}
+                 </div>
+              )}
+              
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-lg flex items-center gap-3">
+                {bookingDetails?.departureCity || t("reservation_departure", "Gidiş")} 
+                <ArrowRight size={32} className="opacity-80" /> 
+                {bookingDetails?.arrivalCity || t("reservation_arrival", "Varış")}
               </h2>
-
-              <div className="mt-2 flex items-center gap-2">
-                {safeHotel?.stars && (
-                  <span className="flex flex-shrink-0 items-center text-sm text-amber-400">
-                    {safeHotel.stars}
-                    <Star
-                      size={14}
-                      className="ml-1 fill-amber-400"
-                    />
-                  </span>
-                )}
-
-                {locationText && (
-                  <span className="flex items-center gap-1 text-sm text-white/90">
-                    <span className="text-white/40">
-                      •
-                    </span>
-                    <MapPin
-                      size={14}
-                      className="ml-1 opacity-80"
-                    />
-                    {locationText}
-                  </span>
-                )}
-              </div>
             </div>
           </div>
 
@@ -670,7 +627,7 @@ export default function ReservationFormPanel({
               >
                 <div className="space-y-5">
                   <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.14em] text-slate-800 dark:text-slate-200">
-                    Konuk Bilgileri
+                    {t("passenger_information", "Yolcu Bilgileri")}
                   </h3>
 
                   {(guests || []).map(
@@ -695,7 +652,7 @@ export default function ReservationFormPanel({
                             )}`;
 
                       const errors =
-                        getPassengerErrors(guest, index);
+                        getPassengerErrors(guest, index, t);
 
                       return (
                         <div
@@ -711,29 +668,29 @@ export default function ReservationFormPanel({
                                   : guest.id
                               )
                             }
-                            className="flex w-full items-center justify-between bg-white px-5 py-4.5 text-left transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+                            className="flex w-full items-center justify-between bg-white px-6 py-6 text-left transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
                           >
                             <div className="flex items-center gap-3">
                               {guest.type ===
                                 "ADULT" ? (
                                 <User
-                                  size={18}
+                                  size={20}
                                   className="text-blue-500"
                                 />
                               ) : (
                                 <Baby
-                                  size={18}
+                                  size={20}
                                   className="text-amber-500"
                                 />
                               )}
 
-                              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              <span className="text-base font-bold text-slate-800 dark:text-slate-200">
                                 {guestTitle}
                               </span>
 
                               {index === 0 && (
                                 <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                                  İletişim
+                                  {t("res_form_contact", "İletişim")}
                                 </span>
                               )}
 
@@ -763,7 +720,7 @@ export default function ReservationFormPanel({
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Ad
+                                    {t("res_form_first_name", "Ad")}
                                   </label>
                                   <input
                                     required
@@ -795,7 +752,7 @@ export default function ReservationFormPanel({
 
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Soyad
+                                    {t("res_form_last_name", "Soyad")}
                                   </label>
                                   <input
                                     required
@@ -828,7 +785,7 @@ export default function ReservationFormPanel({
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Cinsiyet
+                                    {t("res_form_gender", "Cinsiyet")}
                                   </label>
                                   <select
                                     required
@@ -857,7 +814,7 @@ export default function ReservationFormPanel({
 
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Doğum Tarihi
+                                    {t("res_form_birth_date", "Doğum Tarihi")}
                                   </label>
                                   <input
                                     required
@@ -894,7 +851,7 @@ export default function ReservationFormPanel({
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Uyruk
+                                    {t("res_form_nationality", "Uyruk")}
                                   </label>
 
                                   <select
@@ -935,8 +892,8 @@ export default function ReservationFormPanel({
                                       size={12}
                                     />
                                     {guest.nationality === "TR"
-                                      ? "T.C. Kimlik Numarası"
-                                      : "Pasaport Numarası"}
+                                      ? t("res_form_tc_id", "T.C. Kimlik Numarası")
+                                      : t("res_form_passport", "Pasaport Numarası")}
                                   </label>
                                   <input
                                     required
@@ -977,8 +934,8 @@ export default function ReservationFormPanel({
                                     }}
                                     placeholder={
                                       guest.nationality === "TR"
-                                        ? "11 haneli T.C. kimlik numarası"
-                                        : "En fazla 15 harf veya rakam"
+                                        ? t("res_form_tc_placeholder", "11 haneli T.C. kimlik numarası")
+                                        : t("res_form_passport_placeholder", "En fazla 15 harf veya rakam")
                                     }
                                     className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
                                       ? "border-red-500 ring-1 ring-red-500"
@@ -998,7 +955,7 @@ export default function ReservationFormPanel({
                               {guest.type === "CHILD" && (
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Yaş
+                                    {t("res_form_age", "Yaş")}
                                   </label>
                                   <input
                                     required
@@ -1023,7 +980,7 @@ export default function ReservationFormPanel({
                                   <div>
                                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                                       <Mail size={12} />
-                                      E-posta
+                                      {t("res_form_email", "E-posta")}
                                     </label>
                                     <input
                                       required
@@ -1056,7 +1013,7 @@ export default function ReservationFormPanel({
                                   <div>
                                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                                       <Phone size={12} />
-                                      Telefon
+                                      {t("res_form_phone", "Telefon")}
                                     </label>
                                     <PhoneInput
                                       international
@@ -1119,37 +1076,17 @@ export default function ReservationFormPanel({
                   )}
                 </div>
 
-                <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-5 shadow-sm dark:border-blue-900/50 dark:bg-blue-950/30">
-                  <Info
-                    size={20}
-                    className="mt-0.5 flex-shrink-0 text-blue-500"
-                  />
-                  <div>
-                    <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300">
-                      İptal Politikası
-                    </h4>
-                    <p className="mt-1 text-xs leading-relaxed text-blue-700 dark:text-slate-300">
-                      {safeHotel?.isRefundable === true
-                        ? "Bu rezervasyon ücretsiz iptal edilebilir."
-                        : safeHotel?.isRefundable ===
-                          false
-                          ? "Bu rezervasyon iade edilemez."
-                          : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
-                    </p>
-                  </div>
-                </div>
-
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)] dark:border-slate-700 dark:bg-slate-800 sm:p-6">
                   <h3 className="mb-4 border-b border-slate-100 pb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:border-slate-700 dark:text-slate-200">
-                    Fiyat Özeti
+                    {t("res_form_price_summary", "Fiyat Özeti")}
                   </h3>
 
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                       <span>
-                        Oda Fiyatı (
+                        {t("ticket_price", "Bilet Fiyatı")} (
                         {bookingDetails?.guests ||
-                          "1 Oda"}
+                          t("passenger_1", "1 Yolcu")}
                         )
                       </span>
                       <span className="font-medium">
@@ -1160,7 +1097,7 @@ export default function ReservationFormPanel({
                     </div>
 
                     <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                      <span>Vergiler ve Harçlar</span>
+                      <span>{t("res_form_taxes_fees", "Vergiler ve Harçlar")}</span>
                       <span className="font-medium">
                         {formatSubPrice(taxValue)}
                       </span>
@@ -1168,7 +1105,7 @@ export default function ReservationFormPanel({
 
                     <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
                       <span className="font-bold text-slate-800 dark:text-slate-200">
-                        Toplam
+                        {t("res_form_total", "Toplam")}
                       </span>
                       <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">
                         {formattedPrice}
@@ -1177,7 +1114,7 @@ export default function ReservationFormPanel({
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div className="mt-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
                   <input
                     type="checkbox"
                     id="terms"
@@ -1229,7 +1166,7 @@ export default function ReservationFormPanel({
           <div className="sticky bottom-0 z-20 flex flex-col items-stretch justify-between gap-4 border-t border-slate-200 bg-white/95 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 sm:px-6 md:flex-row md:items-center">
             <div className="flex w-full flex-col text-left md:w-auto">
               <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Toplam Tutar
+                {t("res_form_total_amount", "Toplam Tutar")}
               </span>
 
               <span className="mt-1 text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
@@ -1250,15 +1187,14 @@ export default function ReservationFormPanel({
               className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3.5 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-600 hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:disabled:bg-slate-700 md:w-auto md:min-w-[250px]"
             >
               <ShieldCheck size={18} />
-              {bookingDetails?.editMode
-                ? "Güncellemeyi Önizle"
-                : "Rezervasyonu Önizle"}
+              {isSubmitting
+                ? t("res_form_submit_loading", "Lütfen bekleyin...")
+                : bookingDetails?.editMode
+                  ? t("res_form_preview_edit", "Değişiklikleri Önizle")
+                  : t("preview_flight", "Uçuşu Önizle")}
             </button>
           </div>
         </div>
-      </div>
-
-
       {termsModalOpen && (
         <div
           className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
@@ -1327,11 +1263,11 @@ export default function ReservationFormPanel({
         onClose={() => setShowPreview(false)}
         onConfirm={handleSubmit}
         passengers={guests}
-        selectedItem={safeHotel}
+        selectedItem={safeFlight}
         bookingDetails={bookingDetails}
         editData={bookingDetails?.editData}
         isEditMode={Boolean(bookingDetails?.editMode)}
-        isFlight={false}
+        isFlight={true}
         isSubmitting={isSubmitting}
       />
     </>

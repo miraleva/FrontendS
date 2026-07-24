@@ -75,10 +75,13 @@ export function initGoogleAuth(targetElementId, callbacks = {}, options = {}) {
 
     // Render default Google button
     targetElement.innerHTML = '';
-    window.google.accounts.id.renderButton(
-      targetElement,
-      { theme: "outline", size: "large", locale: locale }
-    );
+    const buttonConfig = { 
+      theme: "outline", 
+      size: "large", 
+      locale: locale,
+      ...(options.buttonOptions || {})
+    };
+    window.google.accounts.id.renderButton(targetElement, buttonConfig);
   }).catch((err) => {
     if (callbacks.onError) {
       callbacks.onError(err);

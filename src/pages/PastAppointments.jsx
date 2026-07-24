@@ -18,6 +18,8 @@ import {
   Moon,
   Users,
   Car,
+  Filter,
+  Search,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -84,101 +86,13 @@ export default function PastAppointments() {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState("All"); 
+  const [sortType, setSortType] = useState("Newest"); 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const videoRef = useRef(null);
 
-  const mockAppointments = [
-    {
-      id: 1,
-      title: "Antalya Şehir Turu",
-      itemName: "Antalya Şehir Turu",
-      destination: "Antalya",
-      type: "Hotel",
-      date: "12.06.2026 - 19.06.2026",
-      startDate: "2026-06-12",
-      endDate: "2026-06-19",
-      status: "Completed",
-      hotelName: "Antalya Şehir Turu",
-      checkIn: "12.06.2026",
-      checkOut: "19.06.2026",
-      nights: 7,
-      guests: 1,
-      resNumber: "RES-163CF0BB",
-      reservationNumber: "RES-163CF0BB",
-      paymentStatus: "Paid",
-      totalPrice: 2400,
-      currency: "TRY",
-      price: formatPrice(2400, "TRY"),
-      passengers: [
-        {
-          firstName: "Ayşe",
-          lastName: "Yılmaz",
-          email: "ayse@example.com",
-          phoneNumber: "05551234567",
-          identityNumber: "12345678901",
-          birthDate: "1990-05-12",
-          gender: "MRS",
-          nationality: "TR",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "İstanbul (IST) - Münih (MUC)",
-      itemName: "İstanbul (IST) - Münih (MUC)",
-      destination: "Münih",
-      type: "Flight",
-      date: "08.05.2026 (Tek Yön)",
-      startDate: "2026-05-08",
-      endDate: "2026-05-08",
-      status: "Completed",
-      from: "İstanbul (IST)",
-      to: "Münih (MUC)",
-      flightNumber: "LH-1620",
-      seat: "14A",
-      flightClass: "Ekonomi",
-      guests: 1,
-      resNumber: "FLT-561029",
-      reservationNumber: "FLT-561029",
-      paymentStatus: "Paid",
-      totalPrice: 8500,
-      currency: "TRY",
-      price: formatPrice(8500, "TRY"),
-      passengers: [
-        {
-          firstName: "Mehmet",
-          lastName: "Yılmaz",
-          email: "mehmet@example.com",
-          phoneNumber: "05559876543",
-          identityNumber: "10987654321",
-          birthDate: "1988-03-08",
-          gender: "MR",
-          nationality: "TR",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Antalya Havalimanı Transferi",
-      itemName: "Antalya Havalimanı Transferi",
-      destination: "Antalya",
-      type: "Transfer",
-      date: "12.06.2026",
-      startDate: "2026-06-12",
-      endDate: "2026-06-12",
-      status: "Cancelled",
-      transferType: "Havalimanı Transferi",
-      driverStatus: "Operatör Tarafından İptal Edildi",
-      pickupLocation: "Antalya Havalimanı Terminal 2",
-      resNumber: "TRF-774021",
-      reservationNumber: "TRF-774021",
-      paymentStatus: "Refunded",
-      totalPrice: 45,
-      currency: "USD",
-      price: formatPrice(45, "USD"),
-      passengers: [],
-    },
-  ];
+
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -249,26 +163,54 @@ export default function PastAppointments() {
           from: reservation.from,
           to: reservation.to,
           flightNumber: reservation.flightNumber,
+          flightNumber: reservation.flightNumber,
           seat: reservation.seat,
           flightClass: reservation.flightClass,
           transferType: reservation.transferType,
           pickupLocation: reservation.pickupLocation,
+          imageUrl: reservation.imageUrl,
+          createdAt: reservation.createdAt,
+          updatedAt: reservation.updatedAt,
         })
       );
 
       setAppointments(mappedReservations);
     } catch (error) {
       console.error(
-        "Backend verisi yüklenemedi, mock veriler gösteriliyor:",
+        "Backend verisi yüklenemedi:",
         error
       );
-      setAppointments(mockAppointments);
+      setAppointments([]);
     }
   };
 
   useEffect(() => {
     fetchReservations();
   }, []);
+
+  const getFilteredAndSortedAppointments = () => {
+    let result = [...appointments];
+    
+    if (filterType === "Hotel") {
+      result = result.filter(a => a.type === "Hotel");
+    } else if (filterType === "Flight") {
+      result = result.filter(a => a.type === "Flight");
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.updatedAt || a.createdAt || a.startDate || 0);
+      const dateB = new Date(b.updatedAt || b.createdAt || b.startDate || 0);
+      if (sortType === "Newest") {
+        return dateB - dateA;
+      } else {
+        return dateA - dateB;
+      }
+    });
+
+    return result;
+  };
+
+  const displayAppointments = getFilteredAndSortedAppointments();
 
   const handleOpenModal = (appointment) => {
     setSelectedAppt(appointment);
@@ -307,14 +249,15 @@ export default function PastAppointments() {
       );
 
       setAppointments((previous) =>
-        previous.filter(
-          (appointment) =>
-            appointment.id !== appointmentToCancel.id
+        previous.map((appointment) =>
+          appointment.id === appointmentToCancel.id
+            ? { ...appointment, status: "CANCELLED" }
+            : appointment
         )
       );
 
       if (selectedAppt && selectedAppt.id === appointmentToCancel.id) {
-        setSelectedAppt(null);
+        setSelectedAppt({ ...selectedAppt, status: "CANCELLED" });
       }
     } catch (error) {
       console.error(
@@ -340,14 +283,15 @@ export default function PastAppointments() {
           </span>
         );
 
+      case "CANCELLED":
       case "Cancelled":
       case "İptal Edildi":
         return (
-          <span className="flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300">
-            <XCircle size={12} />
+          <span className="flex items-center gap-1.5 rounded-full border-2 border-red-500 bg-red-100 px-3 py-1.5 text-xs font-black text-red-700 shadow-md uppercase tracking-wider dark:border-red-700 dark:bg-red-950/80 dark:text-red-400">
+            <XCircle size={14} className="stroke-[3px]" />
             {t(
               "past_appointments_status_Cancelled",
-              "İptal Edildi"
+              "İPTAL EDİLDİ"
             )}
           </span>
         );
@@ -445,11 +389,6 @@ export default function PastAppointments() {
     }
   };
 
-  const displayedAppointments =
-    appointments.length > 0
-      ? appointments
-      : mockAppointments;
-
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-transparent font-sans text-slate-900 dark:text-slate-100">
       <video
@@ -506,7 +445,45 @@ export default function PastAppointments() {
           </div>
 
           <div className="relative ml-6 space-y-6 border-l-2 border-slate-200 py-2 pl-8 dark:border-slate-800">
-            {displayedAppointments.map((appointment) => (
+            {/* Filter Dropdown */}
+            <div className="absolute -left-[20px] top-0 z-30">
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/50 transition-all hover:scale-105 hover:bg-orange-600 hover:shadow-orange-500/70 border-none dark:bg-orange-500 dark:text-white"
+                title="Filtrele ve Sırala"
+              >
+                <Search size={18} />
+              </button>
+
+              {isFilterOpen && (
+                <div className="absolute left-12 top-0 mt-0 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                  <div className="mb-2">
+                    <div className="px-2 py-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Filtrele</div>
+                    <button onClick={() => { setFilterType('All'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterType === 'All' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('filter_all', 'Tümü')}</button>
+                    <button onClick={() => { setFilterType('Hotel'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterType === 'Hotel' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('filter_hotel', 'Sadece Otel')}</button>
+                    <button onClick={() => { setFilterType('Flight'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${filterType === 'Flight' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('filter_flight', 'Sadece Uçuş')}</button>
+                  </div>
+                  <div className="border-t border-slate-100 dark:border-slate-700 pt-2">
+                    <div className="px-2 py-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Sırala</div>
+                    <button onClick={() => { setSortType('Newest'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${sortType === 'Newest' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('sort_newest', 'En Yeni')}</button>
+                    <button onClick={() => { setSortType('Oldest'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm ${sortType === 'Oldest' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>{t('sort_oldest', 'En Eski')}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {displayAppointments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <Calendar className="mb-4 text-slate-300 dark:text-slate-600" size={48} />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1">
+                  {t("past_appointments_empty_title", "Geçmiş Randevu Bulunamadı")}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+                  {t("past_appointments_empty_desc", "Henüz bir otel, uçuş veya transfer rezervasyonu yapmamışsınız.")}
+                </p>
+              </div>
+            ) : (
+              displayAppointments.map((appointment) => (
               <div
                 key={appointment.id}
                 className="group relative"
@@ -515,9 +492,23 @@ export default function PastAppointments() {
                   {getIcon(appointment.type)}
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white/95 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95">
-                  <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                    <div className="space-y-3">
+                <div className={`flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95`}>
+                  {appointment.imageUrl && (
+                    <div className="w-full sm:w-64 shrink-0 h-48 sm:h-56 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
+                      <img
+                        src={appointment.imageUrl}
+                        alt={appointment.title}
+                        className="h-full w-full object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
+                        onError={(e) => {
+                          e.currentTarget.parentElement.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex flex-col flex-1 p-5 gap-4">
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                      <div className="space-y-3">
                       <h3 className="text-xl font-bold leading-tight text-[#0F172A] dark:text-white">
                         {appointment.title}
                       </h3>
@@ -651,9 +642,10 @@ export default function PastAppointments() {
                       )}
                     </button>
                   </div>
+                  </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       </div>
