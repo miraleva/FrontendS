@@ -123,6 +123,16 @@ export default function PastAppointments() {
             .filter(Boolean);
           const pnr = reservation.pnrCode || reservation.bookingNumber || reservation.reservationNumber || `REZ-${reservation.id}`;
 
+          let finalImageUrl = reservation.imageUrl;
+          if (!finalImageUrl && reservation.type === "FLIGHT") {
+            const itemNameLower = (reservation.itemName || "").toLowerCase();
+            if (itemNameLower.includes("pegasus")) {
+              finalImageUrl = "/pegasus.png";
+            } else if (itemNameLower.includes("ajet")) {
+              finalImageUrl = "/ajet.png";
+            }
+          }
+
           return {
             id: reservation.id,
             title: reservation.itemName,
@@ -165,7 +175,7 @@ export default function PastAppointments() {
             flightClass: reservation.flightClass,
             transferType: reservation.transferType,
             pickupLocation: reservation.pickupLocation,
-            imageUrl: reservation.imageUrl,
+            imageUrl: finalImageUrl,
             chatSessionId: reservation.chatSessionId,
             createdAt: reservation.createdAt,
             updatedAt: reservation.updatedAt,
@@ -417,7 +427,7 @@ export default function PastAppointments() {
 
                   <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95">
                     {appointment.imageUrl && (
-                      <div className="w-full sm:w-64 shrink-0 h-48 sm:h-56 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
+                      <div className="w-full sm:w-56 shrink-0 h-40 sm:h-auto sm:self-stretch border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
                         <img
                           src={appointment.imageUrl}
                           alt={appointment.title}
@@ -429,9 +439,9 @@ export default function PastAppointments() {
                       </div>
                     )}
 
-                    <div className="flex flex-col flex-1 p-5 gap-4">
-                      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                        <div className="space-y-3">
+                    <div className="flex flex-col flex-1 p-4 gap-3">
+                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                        <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
                               #{appointment.pnrCode || appointment.reservationNumber || `REZ-${appointment.id}`}
