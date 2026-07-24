@@ -183,7 +183,10 @@ export default function FlightReservationFormPanel({
         return;
       }
 
-      if (!guests || guests.length === 0) {
+      // Sohbette yolcu kompozisyonu sonradan değişirse (ör. "1 çocuk 1 bebek de var"),
+      // form alanları yeni sayıya göre yeniden oluşturulmalı — sadece form boşken
+      // oluşturmak, ilk kurulumdan sonraki değişiklikleri sessizce yok sayıyordu.
+      if (!guests || guests.length === 0 || (!bookingDetails?.editMode && guests.length !== ((parseInt(bookingDetails?.adultCount, 10) || 1) + (parseInt(bookingDetails?.childCount, 10) || 0) + (parseInt(bookingDetails?.infantCount, 10) || 0)))) {
         const adultCount =
           parseInt(bookingDetails?.adultCount, 10) || 1;
         const childCount =
