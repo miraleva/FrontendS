@@ -23,6 +23,7 @@ import ChatLogs from "./pages/admin/ChatLogs.jsx";
 import { ThemeProvider } from "./components/ThemeContext.jsx";
 import { AuthProvider } from "./components/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 // ==========================================
 // GEÇİCİ BİLEŞENLER (PLACEHOLDERS)
@@ -48,10 +49,11 @@ function HistoryPagePlaceholder() {
 // ==========================================
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          {/* Dark mode ve açık tema için global sarmalayıcı */}
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            {/* Dark mode ve açık tema için global sarmalayıcı */}
           <div className="relative min-h-screen w-full bg-white text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-50">
             <Routes>
               {/* Ana yönlendirme */}
@@ -128,5 +130,6 @@ export default function App() {
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
+  </ErrorBoundary>
   );
 }

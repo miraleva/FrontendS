@@ -22,6 +22,7 @@ import { validatePhoneNumberLength } from "libphonenumber-js/max";
 import "react-phone-number-input/style.css";
 import api from "../services/api";
 import ReservationPreviewModal from "./ReservationPreviewModal";
+import { HotelConfirmationModal } from "./ConfirmationModal";
 
 function toDateOnly(value) {
   if (!value) return null;
@@ -551,42 +552,19 @@ export default function ReservationFormPanel({
 
   if (!hotel) return null;
 
+  const currentPassengers = (guests && guests.length > 0) ? guests : (bookingDetails?.passengers || []);
+
   if (reservationResult) {
     return (
-      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-        <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col items-center justify-center overflow-y-auto rounded-2xl bg-slate-50 p-8 text-center font-sans shadow-2xl dark:bg-slate-900">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 rounded-full bg-black/10 p-2 text-slate-600 transition-colors hover:bg-black/20 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
-          >
-            <X size={20} />
-          </button>
-
-          <CheckCircle2
-            size={48}
-            className="mb-4 text-emerald-500"
-          />
-
-          <p className="mb-6 max-w-sm font-medium text-slate-800 dark:text-slate-200">
-            {bookingDetails?.editMode
-              ? "Rezervasyon başarıyla güncellendi."
-              : t("reservation_confirm_success", {
-                number:
-                  reservationResult.reservationNumber ||
-                  reservationResult.id,
-              })}
-          </p>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl bg-blue-500 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-600"
-          >
-            {t("reservation_ok")}
-          </button>
-        </div>
-      </div>
+      <HotelConfirmationModal
+        isOpen={true}
+        onClose={onClose}
+        reservationResult={reservationResult}
+        selectedItem={safeHotel}
+        bookingDetails={bookingDetails}
+        passengers={currentPassengers}
+        userEmail={currentPassengers?.[0]?.email || bookingDetails?.email || ""}
+      />
     );
   }
 
