@@ -166,6 +166,7 @@ export default function PastAppointments() {
             transferType: reservation.transferType,
             pickupLocation: reservation.pickupLocation,
             imageUrl: reservation.imageUrl,
+            chatSessionId: reservation.chatSessionId,
             createdAt: reservation.createdAt,
             updatedAt: reservation.updatedAt,
           };
