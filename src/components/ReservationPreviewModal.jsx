@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     X,
     ArrowLeft,
@@ -79,6 +80,7 @@ export default function ReservationPreviewModal({
     isFlight = false,
     isSubmitting = false,
 }) {
+    const { t } = useTranslation();
     const [isApproved, setIsApproved] = useState(false);
 
     useEffect(() => {
@@ -149,30 +151,25 @@ export default function ReservationPreviewModal({
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-slate-950/60 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[120] flex h-full w-full flex-col overflow-hidden bg-slate-50 font-sans dark:bg-slate-900"
             role="dialog"
             aria-modal="true"
             aria-labelledby="reservation-preview-title"
-            onMouseDown={(event) => {
-                if (event.target === event.currentTarget && !isSubmitting) {
-                    onClose();
-                }
-            }}
         >
-            <div className="flex h-full max-h-[calc(100dvh-2rem)] w-full max-w-[1280px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-                <div className="flex flex-shrink-0 items-start justify-between border-b border-slate-200 px-7 py-4 dark:border-slate-800 md:px-10">
+            <div className="flex h-full w-full flex-col overflow-hidden">
+                <div className="flex flex-shrink-0 items-start justify-between border-b border-slate-200 bg-white px-7 py-4 dark:border-slate-800 dark:bg-slate-900 md:px-10">
                     <div>
                         <h2
                             id="reservation-preview-title"
                             className="text-[28px] font-bold leading-tight text-slate-900 dark:text-white md:text-[30px]"
                         >
                             {isEditMode
-                                ? "Güncelleme Önizlemesi"
-                                : "Rezervasyon Önizlemesi"}
+                                ? t("res_preview_edit_title", "Güncelleme Önizlemesi")
+                                : t("res_preview_title", "Rezervasyon Önizlemesi")}
                         </h2>
 
                         <p className="mt-1.5 text-base text-slate-500 dark:text-slate-400">
-                            Lütfen bilgileri kontrol ederek işlemi onaylayın.
+                            {t("res_preview_desc", "Lütfen bilgileri kontrol ederek işlemi onaylayın.")}
                         </p>
                     </div>
 
@@ -192,7 +189,7 @@ export default function ReservationPreviewModal({
                         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                             <div>
                                 <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                                    {isFlight ? "Uçuş" : "Konaklama"}
+                                    {isFlight ? t("res_preview_flight", "Uçuş") : t("res_preview_accom", "Konaklama")}
                                 </p>
 
                                 <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
@@ -207,7 +204,7 @@ export default function ReservationPreviewModal({
 
                             <div className="rounded-xl bg-blue-50 px-4 py-3 text-right dark:bg-blue-950/40">
                                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    Toplam Tutar
+                                    {t("res_preview_total", "Toplam Tutar")}
                                 </p>
 
                                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -225,7 +222,7 @@ export default function ReservationPreviewModal({
 
                                 <div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Başlangıç
+                                        {t("res_preview_start", "Başlangıç")}
                                     </p>
                                     <p className="font-semibold text-slate-800 dark:text-slate-200">
                                         {formatDate(startDate)}
@@ -241,7 +238,7 @@ export default function ReservationPreviewModal({
 
                                 <div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Bitiş
+                                        {t("res_preview_end", "Bitiş")}
                                     </p>
                                     <p className="font-semibold text-slate-800 dark:text-slate-200">
                                         {formatDate(endDate)}
@@ -254,11 +251,11 @@ export default function ReservationPreviewModal({
                     <section>
                         <div className="mb-3 flex items-center justify-between">
                             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-white">
-                                Yolcu Bilgileri
+                                {t("res_preview_passengers", "Yolcu Bilgileri")}
                             </h3>
 
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                {passengers.length} kişi
+                                {passengers.length} {t("res_preview_person", "kişi")}
                             </span>
                         </div>
 
@@ -286,15 +283,15 @@ export default function ReservationPreviewModal({
 
                                                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                                                     {passenger.type === "CHILD"
-                                                        ? "Çocuk"
-                                                        : "Yetişkin"}
+                                                        ? t("res_preview_child", "Çocuk")
+                                                        : t("res_preview_adult", "Yetişkin")}
                                                 </span>
                                             </div>
 
                                             <div className="mt-3 grid grid-cols-1 gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                                                 <p>
                                                     <span className="font-semibold">
-                                                        Doğum tarihi:
+                                                        {t("res_preview_birthdate", "Doğum tarihi:")}
                                                     </span>{" "}
                                                     {formatDate(
                                                         passenger.birthDate
@@ -303,7 +300,7 @@ export default function ReservationPreviewModal({
 
                                                 <p>
                                                     <span className="font-semibold">
-                                                        Cinsiyet:
+                                                        {t("res_preview_gender", "Cinsiyet:")}
                                                     </span>{" "}
                                                     {getGenderLabel(
                                                         passenger.gender
@@ -312,7 +309,7 @@ export default function ReservationPreviewModal({
 
                                                 <p>
                                                     <span className="font-semibold">
-                                                        Uyruk:
+                                                        {t("res_preview_nationality", "Uyruk:")}
                                                     </span>{" "}
                                                     {getNationalityLabel(
                                                         passenger.nationality
@@ -323,8 +320,8 @@ export default function ReservationPreviewModal({
                                                     <span className="font-semibold">
                                                         {passenger.nationality ===
                                                             "TR"
-                                                            ? "T.C. Kimlik No:"
-                                                            : "Pasaport No:"}
+                                                            ? t("res_preview_tc_no", "T.C. Kimlik No:")
+                                                            : t("res_preview_passport", "Pasaport No:")}
                                                     </span>{" "}
                                                     {passenger.identityNumber ||
                                                         "-"}
@@ -371,13 +368,11 @@ export default function ReservationPreviewModal({
                                         size={18}
                                         className="text-blue-600 dark:text-blue-400"
                                     />
-                                    Bilgilerimin doğru olduğunu onaylıyorum
+                                    {t("res_preview_agree_title", "Bilgilerimin doğru olduğunu onaylıyorum")}
                                 </span>
 
                                 <span className="mt-1 block text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                    Yolcu, iletişim, tarih ve ücret bilgilerini
-                                    kontrol ettim. Rezervasyon işleminin bu
-                                    bilgilerle tamamlanmasını kabul ediyorum.
+                                    {t("res_preview_agree_desc", "Yolcu, iletişim, tarih ve ücret bilgilerini kontrol ettim. Rezervasyon işleminin bu bilgilerle tamamlanmasını kabul ediyorum.")}
                                 </span>
                             </span>
                         </label>
@@ -389,10 +384,10 @@ export default function ReservationPreviewModal({
                         type="button"
                         onClick={onClose}
                         disabled={isSubmitting}
-                        className="flex h-12 min-w-[230px] items-center justify-center gap-2 rounded-xl border border-slate-300 px-7 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="flex h-10 px-5 items-center justify-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     >
-                        <ArrowLeft size={17} />
-                        Bilgileri Düzenle
+                        <ArrowLeft size={16} />
+                        {t("res_preview_edit", "Bilgileri Düzenle")}
                     </button>
 
                     <button
@@ -402,13 +397,13 @@ export default function ReservationPreviewModal({
                         className="flex h-12 min-w-[320px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
                     >
                         {isSubmitting ? (
-                            "İşlem yapılıyor..."
+                            t("res_preview_loading", "İşlem yapılıyor...")
                         ) : (
                             <>
                                 <CheckCircle2 size={17} />
                                 {isEditMode
-                                    ? "Güncellemeyi Tamamla"
-                                    : "Rezervasyonu Tamamla"}
+                                    ? t("res_preview_complete_update", "Güncellemeyi Tamamla")
+                                    : t("res_preview_complete", "Rezervasyonu Tamamla")}
                             </>
                         )}
                     </button>

@@ -35,38 +35,45 @@ function toDateOnly(value) {
   return date.toISOString().slice(0, 10);
 }
 
-const getPassengerErrors = (passenger, index = 0) => {
+const getPassengerErrors = (passenger, index = 0, t) => {
   const errors = {};
   const isPrimaryContact = index === 0;
 
   if (!passenger.firstName?.trim()) {
-    errors.firstName = "Ad gereklidir.";
+    errors.firstName = t("err_first_name_req", "Ad gereklidir.");
   }
 
   if (!passenger.lastName?.trim()) {
-    errors.lastName = "Soyad gereklidir.";
+    errors.lastName = t("err_last_name_req", "Soyad gereklidir.");
   }
 
   if (passenger.nationality?.toUpperCase() === "TR") {
     if (!/^[1-9]\d{10}$/.test(passenger.identityNumber || "")) {
-      errors.identityNumber =
-        "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+      errors.identityNumber = t(
+        "err_invalid_tc",
+        "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı)."
+      );
     }
   } else if (
     !passenger.identityNumber?.trim() ||
     passenger.identityNumber.trim().length < 5
   ) {
-    errors.identityNumber =
-      "Geçersiz Pasaport No (en az 5 karakter).";
+    errors.identityNumber = t(
+      "err_invalid_passport",
+      "Geçersiz Pasaport No (en az 5 karakter)."
+    );
   }
 
   if (!passenger.birthDate) {
-    errors.birthDate = "Doğum tarihi gereklidir.";
+    errors.birthDate = t("err_birthdate_req", "Doğum tarihi gereklidir.");
   } else {
     const birthDate = new Date(passenger.birthDate);
 
     if (birthDate >= new Date()) {
-      errors.birthDate = "Doğum tarihi geçmişte olmalıdır.";
+      errors.birthDate = t(
+        "err_birthdate_past",
+        "Doğum tarihi geçmişte olmalıdır."
+      );
     } else if (isPrimaryContact) {
       const eighteenYearsAgo = new Date();
       eighteenYearsAgo.setFullYear(
@@ -74,27 +81,33 @@ const getPassengerErrors = (passenger, index = 0) => {
       );
 
       if (birthDate > eighteenYearsAgo) {
-        errors.birthDate =
-          "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır.";
+        errors.birthDate = t(
+          "err_adult_req",
+          "Rezervasyonu yapan kişi 18 yaşından büyük olmalıdır."
+        );
       }
     }
   }
 
   if (isPrimaryContact) {
     if (!passenger.email?.trim()) {
-      errors.email = "E-posta gereklidir.";
+      errors.email = t("err_email_req", "E-posta gereklidir.");
     } else if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)
     ) {
-      errors.email =
-        "Geçersiz e-posta formatı (örn: ad@example.com).";
+      errors.email = t(
+        "err_invalid_email",
+        "Geçersiz e-posta formatı (örn: ad@example.com)."
+      );
     }
 
     if (!passenger.phone) {
-      errors.phone = "Telefon numarası gereklidir.";
+      errors.phone = t("err_phone_req", "Telefon numarası gereklidir.");
     } else if (!isValidPhoneNumber(passenger.phone)) {
-      errors.phone =
-        "Ülke formatına uymuyor (geçersiz uzunluk).";
+      errors.phone = t(
+        "err_invalid_phone",
+        "Ülke formatına uymuyor (geçersiz uzunluk)."
+      );
     }
   }
 
@@ -540,7 +553,7 @@ export default function ReservationFormPanel({
 
   if (reservationResult) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
         <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col items-center justify-center overflow-y-auto rounded-2xl bg-slate-50 p-8 text-center font-sans shadow-2xl dark:bg-slate-900">
           <button
             type="button"
@@ -579,8 +592,7 @@ export default function ReservationFormPanel({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex justify-end bg-black/55 backdrop-blur-sm">
-        <div className="relative flex h-full w-full max-w-[760px] flex-col overflow-hidden border-l border-white/20 bg-slate-50 font-sans shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50 font-sans dark:bg-slate-900">
           <div className="relative h-52 flex-shrink-0 overflow-hidden bg-slate-800 md:h-64">
             {safeHotel?.thumbnailFull ||
               safeHotel?.thumbnail ? (
@@ -609,7 +621,7 @@ export default function ReservationFormPanel({
                 className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-black/60 p-2 pr-4 text-sm font-semibold text-white transition-colors hover:bg-black/80"
               >
                 <ArrowLeft size={18} />
-                Geri
+                {t("res_form_back", "Geri")}
               </button>
             )}
 
@@ -624,14 +636,14 @@ export default function ReservationFormPanel({
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12">
               <div className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400 drop-shadow-md">
                 {bookingDetails?.editMode
-                  ? "Rezervasyon Düzenleme"
-                  : "Rezervasyon Detayları"}
+                  ? t("res_form_edit_title", "Rezervasyon Düzenleme")
+                  : t("res_form_title", "Rezervasyon Detayları")}
               </div>
 
               <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md md:text-3xl">
                 {safeHotel?.name ||
                   safeHotel?.hotelId ||
-                  "Otel Rezervasyonu"}
+                  t("res_form_hotel_res", "Otel Rezervasyonu")}
               </h2>
 
               <div className="mt-2 flex items-center gap-2">
@@ -670,7 +682,7 @@ export default function ReservationFormPanel({
               >
                 <div className="space-y-5">
                   <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.14em] text-slate-800 dark:text-slate-200">
-                    Konuk Bilgileri
+                    {t("res_form_passenger_info", "Konuk Bilgileri")}
                   </h3>
 
                   {(guests || []).map(
@@ -695,7 +707,7 @@ export default function ReservationFormPanel({
                             )}`;
 
                       const errors =
-                        getPassengerErrors(guest, index);
+                        getPassengerErrors(guest, index, t);
 
                       return (
                         <div
@@ -711,29 +723,29 @@ export default function ReservationFormPanel({
                                   : guest.id
                               )
                             }
-                            className="flex w-full items-center justify-between bg-white px-5 py-4.5 text-left transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+                            className="flex w-full items-center justify-between bg-white px-6 py-6 text-left transition-colors hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700"
                           >
                             <div className="flex items-center gap-3">
                               {guest.type ===
                                 "ADULT" ? (
                                 <User
-                                  size={18}
+                                  size={20}
                                   className="text-blue-500"
                                 />
                               ) : (
                                 <Baby
-                                  size={18}
+                                  size={20}
                                   className="text-amber-500"
                                 />
                               )}
 
-                              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              <span className="text-base font-bold text-slate-800 dark:text-slate-200">
                                 {guestTitle}
                               </span>
 
                               {index === 0 && (
                                 <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                                  İletişim
+                                  {t("res_form_contact", "İletişim")}
                                 </span>
                               )}
 
@@ -763,7 +775,7 @@ export default function ReservationFormPanel({
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Ad
+                                    {t("res_form_first_name", "Ad")}
                                   </label>
                                   <input
                                     required
@@ -795,7 +807,7 @@ export default function ReservationFormPanel({
 
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Soyad
+                                    {t("res_form_last_name", "Soyad")}
                                   </label>
                                   <input
                                     required
@@ -828,7 +840,7 @@ export default function ReservationFormPanel({
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Cinsiyet
+                                    {t("res_form_gender", "Cinsiyet")}
                                   </label>
                                   <select
                                     required
@@ -857,7 +869,7 @@ export default function ReservationFormPanel({
 
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Doğum Tarihi
+                                    {t("res_form_birth_date", "Doğum Tarihi")}
                                   </label>
                                   <input
                                     required
@@ -894,7 +906,7 @@ export default function ReservationFormPanel({
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Uyruk
+                                    {t("res_form_nationality", "Uyruk")}
                                   </label>
 
                                   <select
@@ -915,17 +927,17 @@ export default function ReservationFormPanel({
                                     }}
                                     className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                   >
-                                    <option value="TR">Türkiye (TR)</option>
-                                    <option value="DE">Almanya (DE)</option>
-                                    <option value="GB">Birleşik Krallık (GB)</option>
-                                    <option value="US">Amerika Birleşik Devletleri (US)</option>
-                                    <option value="FR">Fransa (FR)</option>
-                                    <option value="NL">Hollanda (NL)</option>
-                                    <option value="IT">İtalya (IT)</option>
-                                    <option value="ES">İspanya (ES)</option>
-                                    <option value="AU">Avustralya (AU)</option>
-                                    <option value="CA">Kanada (CA)</option>
-                                    <option value="OTHER">Diğer</option>
+                                    <option value="TR">{t("country_tr", "Türkiye (TR)")}</option>
+                                    <option value="DE">{t("country_de", "Almanya (DE)")}</option>
+                                    <option value="GB">{t("country_gb", "Birleşik Krallık (GB)")}</option>
+                                    <option value="US">{t("country_us", "Amerika Birleşik Devletleri (US)")}</option>
+                                    <option value="FR">{t("country_fr", "Fransa (FR)")}</option>
+                                    <option value="NL">{t("country_nl", "Hollanda (NL)")}</option>
+                                    <option value="IT">{t("country_it", "İtalya (IT)")}</option>
+                                    <option value="ES">{t("country_es", "İspanya (ES)")}</option>
+                                    <option value="AU">{t("country_au", "Avustralya (AU)")}</option>
+                                    <option value="CA">{t("country_ca", "Kanada (CA)")}</option>
+                                    <option value="OTHER">{t("country_other", "Diğer")}</option>
                                   </select>
                                 </div>
 
@@ -935,8 +947,8 @@ export default function ReservationFormPanel({
                                       size={12}
                                     />
                                     {guest.nationality === "TR"
-                                      ? "T.C. Kimlik Numarası"
-                                      : "Pasaport Numarası"}
+                                      ? t("res_form_tc_no", "T.C. Kimlik Numarası")
+                                      : t("res_form_passport", "Pasaport Numarası")}
                                   </label>
                                   <input
                                     required
@@ -977,8 +989,8 @@ export default function ReservationFormPanel({
                                     }}
                                     placeholder={
                                       guest.nationality === "TR"
-                                        ? "11 haneli T.C. kimlik numarası"
-                                        : "En fazla 15 harf veya rakam"
+                                        ? t("res_form_tc_placeholder", "11 haneli T.C. kimlik numarası")
+                                        : t("res_form_passport_placeholder", "En fazla 15 harf veya rakam")
                                     }
                                     className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
                                       ? "border-red-500 ring-1 ring-red-500"
@@ -998,7 +1010,7 @@ export default function ReservationFormPanel({
                               {guest.type === "CHILD" && (
                                 <div>
                                   <label className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-400">
-                                    Yaş
+                                    {t("res_form_age", "Yaş")}
                                   </label>
                                   <input
                                     required
@@ -1023,7 +1035,7 @@ export default function ReservationFormPanel({
                                   <div>
                                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                                       <Mail size={12} />
-                                      E-posta
+                                      {t("res_form_email", "E-posta")}
                                     </label>
                                     <input
                                       required
@@ -1056,7 +1068,7 @@ export default function ReservationFormPanel({
                                   <div>
                                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                                       <Phone size={12} />
-                                      Telefon
+                                      {t("res_form_phone", "Telefon")}
                                     </label>
                                     <PhoneInput
                                       international
@@ -1119,38 +1131,15 @@ export default function ReservationFormPanel({
                   )}
                 </div>
 
-                <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-5 shadow-sm dark:border-blue-900/50 dark:bg-blue-950/30">
-                  <Info
-                    size={20}
-                    className="mt-0.5 flex-shrink-0 text-blue-500"
-                  />
-                  <div>
-                    <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300">
-                      İptal Politikası
-                    </h4>
-                    <p className="mt-1 text-xs leading-relaxed text-blue-700 dark:text-slate-300">
-                      {safeHotel?.isRefundable === true
-                        ? "Bu rezervasyon ücretsiz iptal edilebilir."
-                        : safeHotel?.isRefundable ===
-                          false
-                          ? "Bu rezervasyon iade edilemez."
-                          : "İptal koşulları rezervasyon onayı sonrası bildirilecektir."}
-                    </p>
-                  </div>
-                </div>
-
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)] dark:border-slate-700 dark:bg-slate-800 sm:p-6">
                   <h3 className="mb-4 border-b border-slate-100 pb-2 text-sm font-bold uppercase tracking-wider text-slate-800 dark:border-slate-700 dark:text-slate-200">
-                    Fiyat Özeti
+                    {t("res_form_price_summary", "Fiyat Özeti")}
                   </h3>
 
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                       <span>
-                        Oda Fiyatı (
-                        {bookingDetails?.guests ||
-                          "1 Oda"}
-                        )
+                        {t("res_form_room_price", "Oda Fiyatı")}
                       </span>
                       <span className="font-medium">
                         {formatSubPrice(
@@ -1160,7 +1149,7 @@ export default function ReservationFormPanel({
                     </div>
 
                     <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
-                      <span>Vergiler ve Harçlar</span>
+                      <span>{t("res_form_taxes_fees", "Vergiler ve Harçlar")}</span>
                       <span className="font-medium">
                         {formatSubPrice(taxValue)}
                       </span>
@@ -1168,7 +1157,7 @@ export default function ReservationFormPanel({
 
                     <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
                       <span className="font-bold text-slate-800 dark:text-slate-200">
-                        Toplam
+                        {t("res_form_total", "Toplam")}
                       </span>
                       <span className="text-xl font-extrabold text-[#3B82F6] dark:text-blue-400">
                         {formattedPrice}
@@ -1229,7 +1218,7 @@ export default function ReservationFormPanel({
           <div className="sticky bottom-0 z-20 flex flex-col items-stretch justify-between gap-4 border-t border-slate-200 bg-white/95 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 sm:px-6 md:flex-row md:items-center">
             <div className="flex w-full flex-col text-left md:w-auto">
               <span className="mb-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Toplam Tutar
+                {t("res_form_total_amount", "Toplam Tutar")}
               </span>
 
               <span className="mt-1 text-2xl font-extrabold leading-none text-[#3B82F6] dark:text-blue-400">
@@ -1251,12 +1240,11 @@ export default function ReservationFormPanel({
             >
               <ShieldCheck size={18} />
               {bookingDetails?.editMode
-                ? "Güncellemeyi Önizle"
-                : "Rezervasyonu Önizle"}
+                ? t("res_form_preview_update", "Güncellemeyi Önizle")
+                : t("res_form_preview_res", "Rezervasyonu Önizle")}
             </button>
           </div>
         </div>
-      </div>
 
 
       {termsModalOpen && (
