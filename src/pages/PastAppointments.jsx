@@ -92,8 +92,6 @@ export default function PastAppointments() {
 
   const videoRef = useRef(null);
 
-
-
   useEffect(() => {
     if (!videoRef.current) return;
 
@@ -177,7 +175,7 @@ export default function PastAppointments() {
       setAppointments(mappedReservations);
     } catch (error) {
       console.error(
-        "Backend verisi yüklenemedi:",
+        "Rezervasyonlar yüklenirken hata oluştu:",
         error
       );
       setAppointments([]);
