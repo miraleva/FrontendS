@@ -86,8 +86,8 @@ export default function PastAppointments() {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filterType, setFilterType] = useState("All"); 
-  const [sortType, setSortType] = useState("Newest"); 
+  const [filterType, setFilterType] = useState("All");
+  const [sortType, setSortType] = useState("Newest");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const videoRef = useRef(null);
@@ -150,6 +150,7 @@ export default function PastAppointments() {
             checkOut: reservation.endDate
               ? formatDate(reservation.endDate)
               : undefined,
+<<<<<<< HEAD
             nights: reservation.startDate && reservation.endDate
               ? Math.max(1, Math.round((new Date(reservation.endDate) - new Date(reservation.startDate)) / (1000 * 60 * 60 * 24)))
               : 1,
@@ -184,6 +185,42 @@ export default function PastAppointments() {
             updatedAt: reservation.updatedAt,
           };
         }
+=======
+          checkIn: formatDate(reservation.startDate),
+          checkOut: reservation.endDate
+            ? formatDate(reservation.endDate)
+            : undefined,
+          nights: reservation.startDate && reservation.endDate
+            ? Math.max(1, Math.round((new Date(reservation.endDate) - new Date(reservation.startDate)) / (1000 * 60 * 60 * 24)))
+            : 1,
+          guests:
+            reservation.passengers?.length || 1,
+          resNumber: reservation.reservationNumber,
+          reservationNumber:
+            reservation.reservationNumber,
+          paymentStatus:
+            reservation.paymentStatus || "Paid",
+          price: formatPrice(
+            reservation.totalPrice,
+            reservation.currency
+          ),
+          startDate: reservation.startDate,
+          endDate: reservation.endDate,
+          totalPrice: reservation.totalPrice,
+          currency: reservation.currency,
+          passengers: reservation.passengers || [],
+          from: reservation.from,
+          to: reservation.to,
+          flightNumber: reservation.flightNumber,
+          seat: reservation.seat,
+          flightClass: reservation.flightClass,
+          transferType: reservation.transferType,
+          pickupLocation: reservation.pickupLocation,
+          imageUrl: reservation.imageUrl,
+          createdAt: reservation.createdAt,
+          updatedAt: reservation.updatedAt,
+        })
+>>>>>>> f28a121 (Admin layout güncellendi ve rezervasyon düzenleme iyileştirildi)
       );
 
       setAppointments(mappedReservations);
@@ -202,7 +239,7 @@ export default function PastAppointments() {
 
   const getFilteredAndSortedAppointments = () => {
     let result = [...appointments];
-    
+
     if (filterType === "Hotel") {
       result = result.filter(a => a.type === "Hotel");
     } else if (filterType === "Flight") {
@@ -496,194 +533,170 @@ export default function PastAppointments() {
               </div>
             ) : (
               displayAppointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="group relative"
-              >
-                <div className="absolute -left-[54px] top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-slate-200 bg-white shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:border-[#0B5FFF]/40 dark:border-slate-800 dark:bg-slate-900 dark:group-hover:border-blue-500/50">
-                  {getIcon(appointment.type)}
-                </div>
+                <div
+                  key={appointment.id}
+                  className="group relative"
+                >
+                  <div className="absolute -left-[54px] top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-slate-200 bg-white shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:border-[#0B5FFF]/40 dark:border-slate-800 dark:bg-slate-900 dark:group-hover:border-blue-500/50">
+                    {getIcon(appointment.type)}
+                  </div>
 
-                <div className={`flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95`}>
-                  {appointment.imageUrl && (
-                    <div className="w-full sm:w-64 shrink-0 h-48 sm:h-56 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
-                      <img
-                        src={appointment.imageUrl}
-                        alt={appointment.title}
-                        className="h-full w-full object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
-                        onError={(e) => {
-                          e.currentTarget.parentElement.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
+                  <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95">
+                    {appointment.imageUrl && (
+                      <div className="w-full sm:w-64 shrink-0 h-48 sm:h-56 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
+                        <img
+                          src={appointment.imageUrl}
+                          alt={appointment.title}
+                          className="h-full w-full object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
+                          onError={(e) => {
+                            e.currentTarget.parentElement.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
 
-                  <div className="flex flex-col flex-1 p-5 gap-4">
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                      <div className="space-y-3">
-                        {/* Üst Satır: PNR / Booking No Badge */}
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
-                            #{appointment.pnrCode || appointment.reservationNumber || `REZ-${appointment.id}`}
-                          </span>
-                        </div>
-
-                        <h3 className="text-xl font-bold leading-tight text-[#0F172A] dark:text-white">
-                          {appointment.title}
-                        </h3>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          {getCategoryBadge(
-                            appointment.type
-                          )}
-                          <span className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-                            <Calendar
-                              size={13}
-                              className="text-slate-400 dark:text-slate-500"
-                            />
-                            {appointment.date}
-                          </span>
-                        </div>
-
-                        {appointment.type === "Hotel" && (
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                            <span className="flex items-center gap-1">
-                              <Moon size={12} />
-                              {appointment.nights}{" "}
-                              {t(
-                                "past_appointments_card_nights",
-                                "gece"
-                              )}
-                            </span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <User size={12} />
-                              {appointment.primaryGuestName || "Irmak Özbay"}
-                              {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
-                            </span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <Users size={12} />
-                              {appointment.guests}{" "}
-                              {t(
-                                "past_appointments_card_guests",
-                                "misafir"
-                              )}
-                            </span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <Calendar size={12} />
-                              {appointment.checkIn}
-                              <ArrowRight size={10} />
-                              {appointment.checkOut}
+                    <div className="flex flex-col flex-1 p-5 gap-4">
+                      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                        <div className="space-y-3">
+                          {/* Üst Satır: PNR / Booking No Badge */}
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
+                              #{appointment.pnrCode || appointment.reservationNumber || `REZ-${appointment.id}`}
                             </span>
                           </div>
-                        )}
 
-                      {appointment.type ===
-                        "Flight" && (
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                            <span className="flex items-center gap-1">
-                              <User size={12} />
-                              {appointment.primaryGuestName || "Irmak Özbay"}
-                              {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                          <h3 className="text-xl font-bold leading-tight text-[#0F172A] dark:text-white">
+                            {appointment.title}
+                          </h3>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            {getCategoryBadge(appointment.type)}
+                            <span className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <Calendar
+                                size={13}
+                                className="text-slate-400 dark:text-slate-500"
+                              />
+                              {appointment.date}
                             </span>
-                            {appointment.flightNumber && (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-1">
-                                  <Ticket size={12} />
-                                  {
-                                    appointment.flightNumber
-                                  }
-                                </span>
-                              </>
-                            )}
-                            {appointment.seat && (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-1">
-                                  {appointment.seat}{" "}
-                                  {appointment.flightClass
-                                    ? `(${appointment.flightClass})`
-                                    : ""}
-                                </span>
-                              </>
-                            )}
-                            {appointment.from &&
-                              appointment.to && (
+                          </div>
+
+                          {appointment.type === "Hotel" && (
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Moon size={12} />
+                                {appointment.nights}{" "}
+                                {t("past_appointments_card_nights", "gece")}
+                              </span>
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <User size={12} />
+                                {appointment.primaryGuestName || "Irmak Özbay"}
+                                {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                              </span>
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <Users size={12} />
+                                {appointment.guests}{" "}
+                                {t("past_appointments_card_guests", "misafir")}
+                              </span>
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <Calendar size={12} />
+                                {appointment.checkIn}
+                                <ArrowRight size={10} />
+                                {appointment.checkOut}
+                              </span>
+                            </div>
+                          )}
+
+                          {appointment.type === "Flight" && (
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <User size={12} />
+                                {appointment.primaryGuestName || "Irmak Özbay"}
+                                {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                              </span>
+                              {appointment.flightNumber && (
+                                <>
+                                  <span>·</span>
+                                  <span className="flex items-center gap-1">
+                                    <Ticket size={12} />
+                                    {appointment.flightNumber}
+                                  </span>
+                                </>
+                              )}
+                              {appointment.seat && (
+                                <>
+                                  <span>·</span>
+                                  <span className="flex items-center gap-1">
+                                    {appointment.seat}{" "}
+                                    {appointment.flightClass
+                                      ? `(${appointment.flightClass})`
+                                      : ""}
+                                  </span>
+                                </>
+                              )}
+                              {appointment.from && appointment.to && (
                                 <>
                                   <span>·</span>
                                   <span className="flex items-center gap-1">
                                     <Plane size={12} />
                                     {appointment.from}
-                                    <ArrowRight
-                                      size={10}
-                                    />
+                                    <ArrowRight size={10} />
                                     {appointment.to}
                                   </span>
                                 </>
                               )}
-                          </div>
-                        )}
+                            </div>
+                          )}
 
-                      {appointment.type ===
-                        "Transfer" && (
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                            <span className="flex items-center gap-1">
-                              <User size={12} />
-                              {appointment.primaryGuestName || "Irmak Özbay"}
-                              {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
-                            </span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <Car size={12} />
-                              {appointment.transferType ||
-                                "Transfer"}
-                            </span>
-                            {appointment.pickupLocation && (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin size={12} />
-                                  {
-                                    appointment.pickupLocation
-                                  }
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        )}
+                          {appointment.type === "Transfer" && (
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <User size={12} />
+                                {appointment.primaryGuestName || "Irmak Özbay"}
+                                {appointment.guests > 1 ? ` (+${appointment.guests - 1})` : ''}
+                              </span>
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <Car size={12} />
+                                {appointment.transferType || "Transfer"}
+                              </span>
+                              {appointment.pickupLocation && (
+                                <>
+                                  <span>·</span>
+                                  <span className="flex items-center gap-1">
+                                    <MapPin size={12} />
+                                    {appointment.pickupLocation}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-shrink-0 flex-col gap-3 sm:items-end">
+                          {getStatusBadge(appointment.status)}
+                          <span className="text-sm font-bold text-[#0F172A] dark:text-white">
+                            {appointment.price}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenModal(appointment)}
+                          className="cursor-pointer whitespace-nowrap rounded-lg bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-amber-600 hover:shadow dark:bg-amber-600 dark:hover:bg-amber-500"
+                        >
+                          {t("past_appointments_btn_details", "Detaylar")}
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="flex flex-shrink-0 flex-col gap-3 sm:items-end">
-                      {getStatusBadge(
-                        appointment.status
-                      )}
-                      <span className="text-sm font-bold text-[#0F172A] dark:text-white">
-                        {appointment.price}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-2 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleOpenModal(appointment)
-                      }
-                      className="cursor-pointer whitespace-nowrap rounded-lg bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-amber-600 hover:shadow dark:bg-amber-600 dark:hover:bg-amber-500"
-                    >
-                      {t(
-                        "past_appointments_btn_details",
-                        "Detaylar"
-                      )}
-                    </button>
-                  </div>
                   </div>
                 </div>
-              </div>
-            )))}
+              ))
+            )}
           </div>
         </div>
       </div>

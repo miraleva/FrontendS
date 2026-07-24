@@ -14,7 +14,7 @@ import ResetPasswordPage from "./pages/ResetPassword.jsx";
 import MainLayout from "./layouts/MainLayout.jsx";
 import AdminLayout from "./admin/AdminLayout.jsx";
 
-import Dashboard from "./admin/pages/Dashboard.jsx";
+import Dashboard from "./pages/admin/Dashboard.jsx";
 
 import Reservations from "./pages/admin/Reservations.jsx";
 import Users from "./pages/admin/Users.jsx";
