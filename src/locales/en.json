@@ -16,6 +16,7 @@
   },
   "baggage_not_included": "Baggage not included",
   "reservation_title": "Reservation Confirmation",
+  "reservation_edit_title": "Edit Reservation",
   "reservation_no_item": "No item selected",
   "reservation_back_to_chat": "Back to Chat",
   "reservation_departure": "Departure",

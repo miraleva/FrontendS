@@ -16,6 +16,7 @@
   },
   "baggage_not_included": "Bagaj dahil değil",
   "reservation_title": "Rezervasyonlar",
+  "reservation_edit_title": "Rezervasyon Düzenle",
   "reservation_no_item": "Hiçbir öğe seçilmedi",
   "reservation_back_to_chat": "Sohbete Dön",
   "reservation_departure": "Gidiş",

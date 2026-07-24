@@ -16,6 +16,7 @@
   },
   "baggage_not_included": "Gepäck nicht inbegriffen",
   "reservation_title": "Reservierungsbestätigung",
+  "reservation_edit_title": "Reservierung bearbeiten",
   "reservation_no_item": "Kein Element ausgewählt",
   "reservation_back_to_chat": "Zurück zum Chat",
   "reservation_departure": "Abflug",

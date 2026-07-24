@@ -16,6 +16,7 @@
   },
   "baggage_not_included": "Багаж не включен",
   "reservation_title": "Подтверждение бронирования",
+  "reservation_edit_title": "Редактировать бронирование",
   "reservation_no_item": "Ничего не выбрано",
   "reservation_back_to_chat": "Вернуться в чат",
   "reservation_departure": "Вылет",
