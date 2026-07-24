@@ -630,5 +630,6 @@
   "res_preview_complete_update": "Aktualisierung abschließen",
   "res_preview_complete": "Reservierung abschließen",
   "res_preview_flight_title": "Flugvorschau",
-  "res_preview_complete_flight": "Ticket kaufen"
+  "res_preview_complete_flight": "Ticket kaufen",
+  "reservation_update_confirm": "Aktualisieren"
 }

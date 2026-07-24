@@ -274,8 +274,8 @@ export default function PastAppointments() {
       case "Completed":
       case "Tamamlandı":
         return (
-          <span className="flex items-center gap-1 rounded-full border border-teal-100 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:border-teal-800/50 dark:bg-teal-950/40 dark:text-teal-300">
-            <CheckCircle2 size={12} />
+          <span className="flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3.5 py-1.5 text-[13px] sm:text-sm font-bold text-teal-700 shadow-sm dark:border-teal-800/50 dark:bg-teal-950/40 dark:text-teal-300">
+            <CheckCircle2 size={16} />
             {t("past_appointments_status_Completed", "Tamamlandı")}
           </span>
         );
@@ -293,8 +293,8 @@ export default function PastAppointments() {
       case "Pending":
       default:
         return (
-          <span className="flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300">
-            <AlertCircle size={12} />
+          <span className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-[13px] sm:text-sm font-bold text-amber-700 shadow-sm dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300">
+            <AlertCircle size={16} />
             {t("past_appointments_status_Pending", "Beklemede")}
           </span>
         );
