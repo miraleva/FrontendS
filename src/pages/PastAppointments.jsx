@@ -494,7 +494,7 @@ export default function PastAppointments() {
 
                 <div className={`flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95`}>
                   {appointment.imageUrl && (
-                    <div className="w-full sm:w-64 shrink-0 h-48 sm:h-auto border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
+                    <div className="w-full sm:w-64 shrink-0 h-48 sm:h-56 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
                       <img
                         src={appointment.imageUrl}
                         alt={appointment.title}
