@@ -9,7 +9,7 @@ export default function Settings() {
     const { t } = useTranslation();
     const { theme } = useTheme();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState("localization");
+    const [activeTab, setActiveTab] = useState("notifications");
 
     const videoRef = useRef(null);
 
@@ -19,15 +19,6 @@ export default function Settings() {
             videoRef.current.play().catch(err => console.log("Video oynatılamadı:", err));
         }
     }, [theme]);
-
-    const [localizationSettings, setLocalizationSettings] = useState(() => {
-        try {
-            const stored = localStorage.getItem("localizationSettings");
-            return stored ? JSON.parse(stored) : { currency: "usd" };
-        } catch (e) {
-            return { currency: "usd" };
-        }
-    });
 
     const [notificationSettings, setNotificationSettings] = useState(() => {
         try {
@@ -43,13 +34,11 @@ export default function Settings() {
     const [showPassword, setShowPassword] = useState(false);
 
     const tabs = [
-        { id: "localization" },
         { id: "notifications" },
         { id: "security" },
     ];
 
     const handleSave = async () => {
-        localStorage.setItem("localizationSettings", JSON.stringify(localizationSettings));
         localStorage.setItem("notificationSettings", JSON.stringify(notificationSettings));
 
         if (newPassword.trim() !== "") {
@@ -83,10 +72,6 @@ export default function Settings() {
 
     const handleCancel = () => {
         const loadDefaults = () => {
-            try {
-                const stored = localStorage.getItem("localizationSettings");
-                setLocalizationSettings(stored ? JSON.parse(stored) : { currency: "usd" });
-            } catch (e) { }
             try {
                 const stored = localStorage.getItem("notificationSettings");
                 setNotificationSettings(stored ? JSON.parse(stored) : { bookingConfirmations: true });
@@ -161,27 +146,6 @@ export default function Settings() {
 
                                 {/* Right Content Panel */}
                                 <div className="md:col-span-3 min-h-[400px]">
-                                    {/* 1. Localization Settings Tab */}
-                                    {activeTab === "localization" && (
-                                        <div className="space-y-[24px]">
-                                            <div>
-                                                <label className="block text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-[12px]">
-                                                    {t("settings_preferred_currency")}
-                                                </label>
-                                                <select
-                                                    value={localizationSettings.currency}
-                                                    onChange={(e) => setLocalizationSettings({ ...localizationSettings, currency: e.target.value })}
-                                                    className="w-full rounded-[12px] bg-slate-100 dark:bg-slate-800 px-[16px] py-[12px] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-500 cursor-pointer text-[14px]"
-                                                >
-                                                    <option value="try" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Turkish Lira (₺)</option>
-                                                    <option value="usd" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">US Dollar ($)</option>
-                                                    <option value="eur" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Euro (€)</option>
-                                                    <option value="gbp" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">British Pound (£)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {/* 2. Notifications Tab */}
                                     {activeTab === "notifications" && (
                                         <div className="space-y-[24px]">
