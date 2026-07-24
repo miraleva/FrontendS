@@ -157,150 +157,51 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-              {t('past_appointments_drawer_details')}
-            </h3>
-
-            {appointment.type === "Hotel" && (
-              <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_hotel_name')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.hotelName}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_payment')}</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded w-fit">{t('status.' + appointment.paymentStatus.toLowerCase(), appointment.paymentStatus)}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide flex items-center gap-1"><Calendar size={12}/> {t('past_appointments_drawer_checkin')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.checkIn}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide flex items-center gap-1"><Calendar size={12}/> {t('past_appointments_drawer_checkout')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.checkOut}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide flex items-center gap-1"><Moon size={12}/> {t('past_appointments_drawer_total_nights')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.nights} {t('past_appointments_card_nights')}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide flex items-center gap-1"><Users size={12}/> {t('past_appointments_drawer_guest_count')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.guests} {t('unit_person')}</span>
-                </div>
-                {appointment.roomName && (
-                  <div className="flex flex-col">
-                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('appointment_modal_room_type')}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.roomName}</span>
-                  </div>
-                )}
-                {appointment.boardType && (
-                  <div className="flex flex-col">
-                    <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('appointment_modal_board_type')}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.boardType}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {appointment.type === "Flight" && (
-              <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_flight_no')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded w-fit">{appointment.flightNumber}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_payment')}</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded w-fit">{t('status.' + appointment.paymentStatus.toLowerCase(), appointment.paymentStatus)}</span>
-                </div>
-                <div className="flex flex-col col-span-2 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-2 text-xs uppercase tracking-wide">{t('past_appointments_drawer_route')}</span>
-                  <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 text-base">
-                    <span>{appointment.from}</span>
-                    <Plane className="text-slate-300 dark:text-slate-600 mx-2" size={16} />
-                    <span>{appointment.to}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_seat_assignment')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.seat}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_flight_class')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.flightClass}</span>
-                </div>
-              </div>
-            )}
-
-            {appointment.type === "Transfer" && (
-              <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_service_type')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{appointment.transferType}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide">{t('past_appointments_drawer_driver_status')}</span>
-                  <span className="font-bold text-[#EF4444] dark:text-rose-400">{t('status.' + appointment.driverStatus.toLowerCase(), appointment.driverStatus)}</span>
-                </div>
-                <div className="flex flex-col col-span-2">
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold mb-1 text-xs uppercase tracking-wide flex items-center gap-1"><MapPin size={12}/> {t('past_appointments_drawer_pickup_location')}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 mt-1">{appointment.pickupLocation}</span>
-                </div>
-                {appointment.cancelReason && (
-                  <div className="col-span-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50 rounded-xl p-4 mt-2">
-                    <span className="text-xs font-bold text-rose-700 dark:text-rose-400 block mb-1 flex items-center gap-1"><AlertCircle size={14}/> {t('past_appointments_drawer_cancel_reason')}</span>
-                    <span className="text-sm text-rose-800 dark:text-rose-300 font-medium leading-relaxed">{appointment.cancelReason}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Passengers Section */}
-            {appointment.passengers && appointment.passengers.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
-                  {t('appointment_modal_guest_info')}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
-                  {appointment.passengers.map((passenger, index) => {
-                    const fullName = `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim();
-                    const maskedId = passenger.identityNumber 
-                      ? `***${passenger.identityNumber.slice(-4)}` 
-                      : null;
-                    const formattedDate = passenger.birthDate 
-                      ? passenger.birthDate.split('-').reverse().join('.') 
-                      : null;
-                      
-                    return (
-                      <div key={index} className="flex flex-col p-3.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex items-center gap-2.5 mb-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-700/50">
-                          <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
-                            <User size={13} className="text-slate-500 dark:text-slate-400" />
-                          </div>
-                          <span className="font-bold text-slate-800 dark:text-slate-200">{fullName}</span>
+          {/* Passengers Section */}
+          {appointment.passengers && appointment.passengers.length > 0 && (
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
+                {t('appointment_modal_guest_info')}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50/50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
+                {appointment.passengers.map((passenger, index) => {
+                  const fullName = `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim();
+                  const maskedId = passenger.identityNumber 
+                    ? `***${passenger.identityNumber.slice(-4)}` 
+                    : null;
+                  const formattedDate = passenger.birthDate 
+                    ? passenger.birthDate.split('-').reverse().join('.') 
+                    : null;
+                    
+                  return (
+                    <div key={index} className="flex flex-col p-3.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
+                      <div className="flex items-center gap-2.5 mb-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-700/50">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                          <User size={13} className="text-slate-500 dark:text-slate-400" />
                         </div>
-                        
-                        <div className="space-y-1.5">
-                          {maskedId && (
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">{t('appointment_modal_id_no')}</span>
-                              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{maskedId}</span>
-                            </div>
-                          )}
-                          {formattedDate && (
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">{t('appointment_modal_birth_date')}</span>
-                              <span className="font-bold text-slate-700 dark:text-slate-300">{formattedDate}</span>
-                            </div>
-                          )}
-                        </div>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{fullName}</span>
                       </div>
-                    );
-                  })}
-                </div>
+                      
+                      <div className="space-y-1.5">
+                        {maskedId && (
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">{t('appointment_modal_id_no')}</span>
+                            <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{maskedId}</span>
+                          </div>
+                        )}
+                        {formattedDate && (
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide">{t('appointment_modal_birth_date')}</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">{formattedDate}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Footer / Actions */}
