@@ -29,7 +29,34 @@ export default function RightSidebar({
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const renderGuestsText = (details) => {
+    if (!details) return t("panel_count_placeholder");
+    const adults = details.adultCount || details.adults || 0;
+    const children = details.childCount || details.children || 0;
+    const ages = details.childrenAges || details.childAges || [];
+
+    if (adults === 0 && children === 0) {
+      // Eğer eski string kaldıysa fallback veya varsayılan placeholder göster
+      return details.guests && typeof details.guests === 'string' && !details.guests.includes('Yetişkin')
+        ? details.guests
+        : t("panel_count_placeholder");
+    }
+
+    const parts = [];
+    if (adults > 0) {
+      parts.push(`${adults} ${t(adults > 1 ? "adults" : "adult")}`);
+    }
+    if (children > 0) {
+      const ageInfo = ages.length > 0 ? ` (${t("age")}: ${ages.join(", ")})` : "";
+      parts.push(`${children} ${t(children > 1 ? "children" : "child")}${ageInfo}`);
+    }
+
+    return parts.join(", ");
+  };
+
   if (!isRightSidebarOpen) return null;
+
+  const formattedGuestText = renderGuestsText(bookingDetails);
 
   return (
     <div className="hidden lg:flex w-[320px] h-full border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-6 flex-col justify-between animate-slide-in relative z-20">
@@ -103,9 +130,9 @@ export default function RightSidebar({
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
                 <DoorClosed size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_room_count") || "ODA SAYISI"}</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_room_count")}</span>
                   <span className="text-sm font-semibold truncate block text-slate-800 dark:text-slate-200">
-                    {`${bookingDetails.roomCount || 1} ${t("unit_room") || "Oda"}`}
+                    {`${bookingDetails.roomCount || 1} ${t((bookingDetails.roomCount || 1) > 1 ? "unit_rooms" : "unit_room")}`}
                   </span>
                 </div>
               </div>
@@ -115,8 +142,8 @@ export default function RightSidebar({
                 <Users size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_guest_count")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
-                    {bookingDetails.guests || t("panel_count_placeholder")}
+                  <span className={`text-sm font-semibold truncate block ${formattedGuestText !== t("panel_count_placeholder") ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
+                    {formattedGuestText}
                   </span>
                 </div>
               </div>
@@ -187,13 +214,13 @@ export default function RightSidebar({
                 </div>
               )}
 
-              {/* Seçilen Havayolu (Düzeltilen Kısım) */}
+              {/* Seçilen Havayolu */}
               <div className="flex items-start gap-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
                 <Plane size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_selected_airline")}</span>
                   <span className={`text-sm font-semibold block truncate ${bookingDetails.airline ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
-                    {bookingDetails.airline || t("panel_selected_airline_placeholder") || "Havayolu Seçilmedi"}
+                    {bookingDetails.airline || t("panel_selected_airline_placeholder")}
                   </span>
                 </div>
               </div>
@@ -203,8 +230,8 @@ export default function RightSidebar({
                 <Users size={18} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-bold uppercase">{t("panel_passenger_count")}</span>
-                  <span className={`text-sm font-semibold truncate block ${bookingDetails.guests ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
-                    {bookingDetails.guests || t("panel_count_placeholder")}
+                  <span className={`text-sm font-semibold truncate block ${formattedGuestText !== t("panel_count_placeholder") ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500 italic"}`}>
+                    {formattedGuestText}
                   </span>
                 </div>
               </div>
