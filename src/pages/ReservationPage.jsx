@@ -5,6 +5,8 @@ import {
     PanelLeftOpen,
     ArrowLeft,
     CheckCircle2,
+    MailCheck,
+    Download,
     User,
     Baby,
     Mail,
@@ -13,6 +15,7 @@ import {
     ChevronDown,
     ChevronUp,
 } from "lucide-react";
+import { generateReservationPdf } from "../utils/pdfGenerator";
 import PhoneInput, {
     isValidPhoneNumber,
 } from "react-phone-number-input";
@@ -704,45 +707,87 @@ export default function ReservationPage() {
                                     </button>
                                 </div>
                             ) : reservationResult ? (
-                                <div className="py-8 text-center">
-                                    <CheckCircle2
-                                        size={48}
-                                        className="mx-auto mb-4 text-emerald-500"
-                                    />
+                                <div className="py-8 text-center max-w-lg mx-auto">
+                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto shadow-inner">
+                                        <CheckCircle2 size={36} />
+                                    </div>
 
-                                    <p className="mb-4 font-medium text-slate-800 dark:text-slate-200">
+                                    <p className="mb-2 text-xl font-bold text-slate-900 dark:text-white">
                                         {isEditMode
                                             ? "Rezervasyon başarıyla güncellendi."
                                             : t(
                                                 "reservation_confirm_success",
                                                 {
                                                     number:
+                                                        reservationResult.pnrCode ||
                                                         reservationResult.reservationNumber ||
                                                         reservationResult.id,
                                                 }
                                             )}
                                     </p>
 
-                                    <p className="mb-6 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-xs md:text-sm font-medium text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
-                                        Rezervasyon detaylarınız ve biletiniz{" "}
-                                        <strong className="font-bold text-blue-600 dark:text-blue-400">
-                                            {passengers[0]?.email || reservationResult?.passengers?.[0]?.email || "e-posta"}
-                                        </strong>{" "}
-                                        adresine e-posta olarak gönderilmiştir.
-                                    </p>
+                                    {/* E-posta Gönderildi Bildirimi (UI Warning/Alert) */}
+                                    <div className="my-5 flex items-center gap-3 rounded-2xl border border-emerald-300/80 bg-emerald-50/90 p-4 text-left shadow-sm dark:border-emerald-800/80 dark:bg-emerald-950/40">
+                                        <div className="flex-shrink-0 rounded-xl bg-emerald-200/60 p-2 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+                                            <MailCheck size={22} />
+                                        </div>
+                                        <div className="min-w-0 flex-1 text-xs md:text-sm text-emerald-900 dark:text-emerald-200">
+                                            <p className="font-semibold leading-relaxed">
+                                                E-postanız başarıyla gönderildi! Bilet ve rezervasyon detaylarınız{" "}
+                                                <strong className="underline decoration-emerald-400 font-bold">
+                                                    {passengers[0]?.email || reservationResult?.passengers?.[0]?.email || "e-posta"}
+                                                </strong>{" "}
+                                                adresine iletilmiştir.
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                    <button
-                                        type="button"
-                                        onClick={handleBack}
-                                        className="mx-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#2563EB]"
-                                    >
-                                        <ArrowLeft size={16} />
-                                        {isEditMode
-                                            ? "Geçmiş Randevulara Dön"
-                                            : t(
-                                                "reservation_back_to_chat"
-                                            )}
-                                    </button>
+                                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const pnr = reservationResult.pnrCode || reservationResult.reservationNumber || reservationResult.id || "PNR12345";
+                                                const title = selectedItem?.airline || selectedItem?.name || bookingDetails?.hotelName || (isFlight ? "Uçuş Bileti" : "Otel Rezervasyonu");
+                                                const dest = isFlight ? (bookingDetails?.arrivalCity || selectedItem?.arrivalCity || "-") : (bookingDetails?.city || selectedItem?.city || "-");
+                                                const start = isFlight ? (selectedItem?.departureTime || bookingDetails?.startDate) : (bookingDetails?.checkIn || bookingDetails?.startDate);
+                                                const end = isFlight ? (selectedItem?.returnDepartureTime || selectedItem?.arrivalTime || bookingDetails?.endDate) : (bookingDetails?.checkOut || bookingDetails?.endDate);
+                                                const price = selectedItem?.price ?? bookingDetails?.totalPrice ?? reservationResult?.totalAmount ?? 0;
+                                                const curr = selectedItem?.currency || bookingDetails?.currency || "TRY";
+                                                const email = passengers[0]?.email || reservationResult?.passengers?.[0]?.email || "";
+
+                                                generateReservationPdf({
+                                                    isFlight,
+                                                    pnrCode: pnr,
+                                                    itemTitle: title,
+                                                    destination: dest,
+                                                    startDate: start,
+                                                    endDate: end,
+                                                    passengers,
+                                                    totalPrice: price,
+                                                    currency: curr,
+                                                    userEmail: email,
+                                                    extraDetails: reservationResult
+                                                });
+                                            }}
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750"
+                                        >
+                                            <Download size={18} className="text-blue-600 dark:text-blue-400" />
+                                            PDF Olarak İndir
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleBack}
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-[#3B82F6] px-6 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-[#2563EB]"
+                                        >
+                                            <ArrowLeft size={16} />
+                                            {isEditMode
+                                                ? "Geçmiş Randevulara Dön"
+                                                : t(
+                                                    "reservation_back_to_chat"
+                                                )}
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <form
