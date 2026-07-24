@@ -33,9 +33,10 @@ export default function RightSidebar({
     if (!details) return t("panel_count_placeholder");
     const adults = details.adultCount || details.adults || 0;
     const children = details.childCount || details.children || 0;
+    const infants = details.infantCount || details.infants || 0;
     const ages = details.childrenAges || details.childAges || [];
 
-    if (adults === 0 && children === 0) {
+    if (adults === 0 && children === 0 && infants === 0) {
       // Eğer eski string kaldıysa fallback veya varsayılan placeholder göster
       return details.guests && typeof details.guests === 'string' && !details.guests.includes('Yetişkin')
         ? details.guests
@@ -49,6 +50,9 @@ export default function RightSidebar({
     if (children > 0) {
       const ageInfo = ages.length > 0 ? ` (${t("age")}: ${ages.join(", ")})` : "";
       parts.push(`${children} ${t(children > 1 ? "children" : "child")}${ageInfo}`);
+    }
+    if (infants > 0) {
+      parts.push(`${infants} ${t(infants > 1 ? "infants" : "infant")}`);
     }
 
     return parts.join(", ");
