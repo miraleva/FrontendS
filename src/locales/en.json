@@ -560,5 +560,7 @@
   "res_preview_edit": "Edit Info",
   "res_preview_loading": "Processing...",
   "res_preview_complete_update": "Complete Update",
-  "res_preview_complete": "Complete Reservation"
+  "res_preview_complete": "Complete Reservation",
+  "res_preview_flight_title": "Flight Preview",
+  "res_preview_complete_flight": "Buy Ticket"
 }

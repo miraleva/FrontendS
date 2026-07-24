@@ -615,5 +615,7 @@
   "res_preview_edit": "Info bearbeiten",
   "res_preview_loading": "Wird verarbeitet...",
   "res_preview_complete_update": "Aktualisierung abschließen",
-  "res_preview_complete": "Reservierung abschließen"
+  "res_preview_complete": "Reservierung abschließen",
+  "res_preview_flight_title": "Flugvorschau",
+  "res_preview_complete_flight": "Ticket kaufen"
 }

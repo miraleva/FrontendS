@@ -165,7 +165,9 @@ export default function ReservationPreviewModal({
                         >
                             {isEditMode
                                 ? t("res_preview_edit_title", "Güncelleme Önizlemesi")
-                                : t("res_preview_title", "Rezervasyon Önizlemesi")}
+                                : isFlight
+                                    ? t("res_preview_flight_title", "Uçuş Önizlemesi")
+                                    : t("res_preview_title", "Rezervasyon Önizlemesi")}
                         </h2>
 
                         <p className="mt-1.5 text-base text-slate-500 dark:text-slate-400">
@@ -394,7 +396,7 @@ export default function ReservationPreviewModal({
                         type="button"
                         onClick={handleConfirm}
                         disabled={!isApproved || isSubmitting}
-                        className="flex h-12 min-w-[320px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
+                        className="flex h-12 min-w-[320px] items-center justify-center gap-2 rounded-xl bg-orange-500 px-7 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
                     >
                         {isSubmitting ? (
                             t("res_preview_loading", "İşlem yapılıyor...")
@@ -403,7 +405,9 @@ export default function ReservationPreviewModal({
                                 <CheckCircle2 size={17} />
                                 {isEditMode
                                     ? t("res_preview_complete_update", "Güncellemeyi Tamamla")
-                                    : t("res_preview_complete", "Rezervasyonu Tamamla")}
+                                    : isFlight
+                                        ? t("res_preview_complete_flight", "Bileti Satın Al")
+                                        : t("res_preview_complete", "Rezervasyonu Tamamla")}
                             </>
                         )}
                     </button>

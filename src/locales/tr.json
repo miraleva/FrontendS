@@ -611,5 +611,7 @@
   "res_preview_edit": "Bilgileri Düzenle",
   "res_preview_loading": "İşlem yapılıyor...",
   "res_preview_complete_update": "Güncellemeyi Tamamla",
-  "res_preview_complete": "Rezervasyonu Tamamla"
+  "res_preview_complete": "Rezervasyonu Tamamla",
+  "res_preview_flight_title": "Uçuş Önizlemesi",
+  "res_preview_complete_flight": "Bileti Satın Al"
 }

@@ -611,5 +611,7 @@
   "res_preview_edit": "Редактировать",
   "res_preview_loading": "Обработка...",
   "res_preview_complete_update": "Завершить обновление",
-  "res_preview_complete": "Завершить бронирование"
+  "res_preview_complete": "Завершить бронирование",
+  "res_preview_flight_title": "Предварительный просмотр рейса",
+  "res_preview_complete_flight": "Купить билет"
 }
