@@ -498,7 +498,9 @@ export default function RightSidebar({
     Number(bookingDetails.infantCount) || 0
   );
 
-  const isHotel = searchType !== "flight";
+  const isCombined = searchType === "combined" || searchType === "HOTEL_FLIGHT" || searchType === "COMBINED_SEARCH";
+  const isHotel = !isCombined && searchType === "hotel";
+  const isFlight = !isCombined && searchType === "flight";
 
   const language = i18n.language?.split("-")[0] || "tr";
 
@@ -530,8 +532,6 @@ export default function RightSidebar({
     [bookingDetails.checkIn, bookingDetails.checkOut]
   );
 
-  if (!isRightSidebarOpen) return null;
-
   const hotelName =
     selectedHotel?.name ||
     selectedHotel?.hotelName ||
@@ -555,7 +555,7 @@ export default function RightSidebar({
     bookingDetails.rooms ||
     1;
 
-  const guestText = isHotel
+  const guestText = isHotel || isCombined
     ? `${adultCount} ${t("rightSidebar.units.adult", {
       defaultValue: "Yetişkin",
     })}${childCount > 0
@@ -577,9 +577,16 @@ export default function RightSidebar({
       }
     )}`;
 
-  const selectedItem = isHotel
-    ? selectedHotel
-    : selectedFlight;
+  const selectedItem = isCombined
+    ? { type: "HOTEL_FLIGHT", hotel: selectedHotel, flight: selectedFlight }
+    : (isHotel ? selectedHotel : selectedFlight);
+
+  const combinedTotalPrice = useMemo(() => {
+    if (!isCombined) return null;
+    const hPrice = Number(selectedHotel?.price) || 0;
+    const fPrice = Number(selectedFlight?.price) || 0;
+    return hPrice + fPrice;
+  }, [isCombined, selectedHotel?.price, selectedFlight?.price]);
 
   const updatedBookingDetails = {
     ...bookingDetails,
@@ -590,6 +597,7 @@ export default function RightSidebar({
       age === "" ? "" : Number(age)
     ),
     guests: guestText,
+    price: combinedTotalPrice ? `${combinedTotalPrice} ${selectedHotel?.currency || selectedFlight?.currency || 'TRY'}` : bookingDetails.price,
   };
 
   const handlePrevious = () => {
@@ -604,6 +612,10 @@ export default function RightSidebar({
       return;
     }
 
+    if (isCombined && (!selectedHotel || !selectedFlight)) {
+      return;
+    }
+
     navigate("/reservation", {
       state: {
         selectedItem,
@@ -611,7 +623,7 @@ export default function RightSidebar({
         selectedFlight,
         bookingDetails: updatedBookingDetails,
         sessionId,
-        searchType: isHotel ? "hotel" : "flight",
+        searchType: isCombined ? "combined" : (isHotel ? "hotel" : "flight"),
       },
     });
   };
@@ -813,51 +825,105 @@ export default function RightSidebar({
     );
   };
 
-  const renderSelectionStep = () => (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            {isHotel ? t("rightSidebar.foundHotels", { defaultValue: "Bulunan Oteller" }) : t("rightSidebar.foundFlights", { defaultValue: "Bulunan Uçuşlar" })}
-          </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            {searchResults.length} {t("rightSidebar.optionsFound", { defaultValue: "seçenek listeleniyor" })}
-          </p>
-        </div>
-        <select
-          value={resultSort}
-          onChange={(e) => setResultSort(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-sm focus:border-[#FF8A00] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-        >
-          <option value="price_asc">{t("rightSidebar.sortPriceAsc", { defaultValue: "Fiyat: Düşükten Yükseğe" })}</option>
-          <option value="price_desc">{t("rightSidebar.sortPriceDesc", { defaultValue: "Fiyat: Yüksekten Düşüğe" })}</option>
-          {isHotel && <option value="stars_desc">{t("rightSidebar.sortStarsDesc", { defaultValue: "Yıldız: Yüksekten Düşüğe" })}</option>}
-        </select>
-      </div>
+  const renderSelectionStep = () => {
+    const flightResults = sortedSearchResults.filter(r => r.airline != null || r.departureTime != null);
+    const hotelResults = sortedSearchResults.filter(r => !r.airline && !r.departureTime && (r.name || r.hotelId));
 
-      {searchResults.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
-          <Sparkles className="mb-3 h-8 w-8 text-slate-300 dark:text-slate-600 animate-pulse" />
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {t("rightSidebar.noResultsYet", { defaultValue: "Arama sonuçları henüz hazır değil." })}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-            {t("rightSidebar.noResultsHint", { defaultValue: "Sohbet ekranında aramanızı belirtebilirsiniz." })}
-          </p>
+    return (
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {isCombined
+                ? "Otel & Uçuş Seçenekleri"
+                : isHotel
+                  ? t("rightSidebar.foundHotels", { defaultValue: "Bulunan Oteller" })
+                  : t("rightSidebar.foundFlights", { defaultValue: "Bulunan Uçuşlar" })}
+            </h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              {searchResults.length} {t("rightSidebar.optionsFound", { defaultValue: "seçenek listeleniyor" })}
+            </p>
+          </div>
+          <select
+            value={resultSort}
+            onChange={(e) => setResultSort(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-sm focus:border-[#FF8A00] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="price_asc">{t("rightSidebar.sortPriceAsc", { defaultValue: "Fiyat: Düşükten Yükseğe" })}</option>
+            <option value="price_desc">{t("rightSidebar.sortPriceDesc", { defaultValue: "Fiyat: Yüksekten Düşüğe" })}</option>
+            {(isHotel || isCombined) && <option value="stars_desc">{t("rightSidebar.sortStarsDesc", { defaultValue: "Yıldız: Yüksekten Düşüğe" })}</option>}
+          </select>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {sortedSearchResults.map((result, idx) =>
-            isHotel ? (
-              <HotelResultCard key={result.hotelId || idx} result={result} idx={idx} />
-            ) : (
-              <FlightResultCard key={result.airline + idx} result={result} idx={idx} />
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
+
+        {searchResults.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
+            <Sparkles className="mb-3 h-8 w-8 text-slate-300 dark:text-slate-600 animate-pulse" />
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t("rightSidebar.noResultsYet", { defaultValue: "Arama sonuçları henüz hazır değil." })}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+              {t("rightSidebar.noResultsHint", { defaultValue: "Sohbet ekranında aramanızı belirtebilirsiniz." })}
+            </p>
+          </div>
+        ) : isCombined ? (
+          <div className="space-y-6">
+            <div>
+              <div className="mb-2 flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2 dark:bg-orange-950/40 border border-orange-200/50 dark:border-orange-800/40">
+                <span className="text-xs font-bold text-orange-900 dark:text-orange-200 flex items-center gap-1.5">
+                  <Hotel size={14} className="text-orange-500" /> 1. Otel Seçimi
+                </span>
+                <span className="text-[11px] font-medium text-orange-700 dark:text-orange-300">
+                  {selectedHotel ? `✓ ${selectedHotel.name || "Seçildi"}` : "1 Otel seçin"}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {hotelResults.map((result, idx) => (
+                  <HotelResultCard key={result.hotelId || idx} result={result} idx={idx} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2 dark:bg-blue-950/40 border border-blue-200/50 dark:border-blue-800/40">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                  <Plane size={14} className="text-blue-500" /> 2. Uçuş Seçimi
+                </span>
+                <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300">
+                  {selectedFlight ? `✓ ${selectedFlight.airline || "Seçildi"}` : "1 Uçuş seçin"}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {flightResults.length > 0 ? (
+                  flightResults.map((result, idx) => (
+                    <FlightResultCard key={(result.airline || "flight") + idx} result={result} idx={idx} />
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/30 p-4 text-center dark:border-blue-900/40 dark:bg-blue-950/20">
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
+                      Uçuş seçeneği bulunamadı
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      Lütfen sohbet ekranında kalkış noktanızı belirtin veya farklı tarihler ile tekrar deneyin.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sortedSearchResults.map((result, idx) =>
+              isHotel ? (
+                <HotelResultCard key={result.hotelId || idx} result={result} idx={idx} />
+              ) : (
+                <FlightResultCard key={result.airline + idx} result={result} idx={idx} />
+              )
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderReviewStep = () => (
     <div>
@@ -868,16 +934,41 @@ export default function RightSidebar({
       </h2>
 
       <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-        {isHotel
-          ? t("rightSidebar.hotelDetails", {
-            defaultValue: "Otel detayları",
-          })
-          : t("rightSidebar.flightDetails", {
-            defaultValue: "Uçuş detayları",
-          })}
+        {isCombined
+          ? "Otel & Uçuş Detayları"
+          : isHotel
+            ? t("rightSidebar.hotelDetails", {
+              defaultValue: "Otel detayları",
+            })
+            : t("rightSidebar.flightDetails", {
+              defaultValue: "Uçuş detayları",
+            })}
       </p>
 
-      {isHotel ? (
+      {isCombined ? (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+            <h3 className="mb-2 text-xs font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1.5">
+              <Hotel size={14} /> Otel Detayları
+            </h3>
+            <DetailRow icon={Hotel} label="Seçilen Otel" value={hotelName} placeholder="Otel seçilmedi" />
+            <DetailRow icon={MapPin} label="Konum" value={destination} placeholder="Konum belirtilmedi" />
+            <DetailRow icon={Calendar} label="Giriş Tarihi" value={formatDate(bookingDetails.checkIn, language)} placeholder="Giriş tarihi yok" />
+            <DetailRow icon={Calendar} label="Çıkış Tarihi" value={formatDate(bookingDetails.checkOut, language)} placeholder="Çıkış tarihi yok" />
+            <DetailRow icon={Users} label="Konuklar" value={guestText} />
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+            <h3 className="mb-2 text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+              <Plane size={14} /> Uçuş Detayları
+            </h3>
+            <DetailRow icon={Plane} label="Havayolu" value={airlineName} placeholder="Uçuş seçilmedi" />
+            <DetailRow icon={MapPin} label="Kalkış Şehri" value={bookingDetails.departureCity} placeholder="Kalkış şehri yok" />
+            <DetailRow icon={MapPin} label="Varış Şehri" value={bookingDetails.arrivalCity} placeholder="Varış şehri yok" />
+            <DetailRow icon={Calendar} label="Gidiş Tarihi" value={formatDate(bookingDetails.checkIn || bookingDetails.departureDate, language)} placeholder="Tarih yok" />
+          </div>
+        </div>
+      ) : isHotel ? (
         <>
           <DetailRow
             icon={Hotel}
@@ -1063,7 +1154,7 @@ export default function RightSidebar({
         </>
       )}
 
-      {bookingDetails.price && (
+      {(bookingDetails.price || combinedTotalPrice) && (
         <div className="mt-4 flex items-center justify-between rounded-xl bg-orange-50 px-4 py-3 dark:bg-orange-500/10">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             {t("rightSidebar.totalAmount", {
@@ -1072,7 +1163,7 @@ export default function RightSidebar({
           </span>
 
           <span className="text-lg font-extrabold text-[#FF8A00] dark:text-orange-400">
-            {bookingDetails.price}
+            {combinedTotalPrice ? `${formatPrice(combinedTotalPrice)} ${selectedHotel?.currency || 'TRY'}` : bookingDetails.price}
           </span>
         </div>
       )}
@@ -1147,9 +1238,12 @@ export default function RightSidebar({
           <button
             type="button"
             onClick={handleNext}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8A00] px-4 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(255,138,0,0.28)] transition hover:bg-[#E87900] active:scale-[0.99] dark:bg-orange-500 dark:hover:bg-orange-600 cursor-pointer"
+            disabled={isCombined && (!selectedHotel || !selectedFlight)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8A00] px-4 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(255,138,0,0.28)] transition hover:bg-[#E87900] active:scale-[0.99] dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            {buttonText}
+            {isCombined && (!selectedHotel || !selectedFlight)
+              ? "1 Otel + 1 Uçuş Seçiniz"
+              : buttonText}
             <ChevronRight size={16} />
           </button>
         </div>

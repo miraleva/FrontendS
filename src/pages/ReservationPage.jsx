@@ -310,9 +310,12 @@ export default function ReservationPage() {
     const videoRef = useRef(null);
 
     const selectedItem = location.state?.selectedItem;
+    const selectedHotel = location.state?.selectedHotel;
+    const selectedFlight = location.state?.selectedFlight;
     const bookingDetails =
         location.state?.bookingDetails || {};
     const sessionId = location.state?.sessionId;
+    const locationSearchType = location.state?.searchType;
 
     const editData =
         location.state?.reservationData;
@@ -322,11 +325,16 @@ export default function ReservationPage() {
     const normalizedEditType =
         editData?.type?.toUpperCase();
 
-    const activeItem = selectedItem || editData;
+    // Combined booking: both hotel + flight selected
+    const isCombined = locationSearchType === "combined" ||
+        (selectedHotel != null && selectedFlight != null) ||
+        normalizedEditType === "HOTEL_FLIGHT";
 
-    const isFlight = selectedItem
+    const activeItem = isCombined ? (selectedHotel || selectedItem) : (selectedItem || editData);
+
+    const isFlight = !isCombined && (selectedItem
         ? selectedItem.airline !== undefined
-        : normalizedEditType === "FLIGHT";
+        : normalizedEditType === "FLIGHT");
 
     const adultCount = isEditMode
         ? Math.max(
@@ -653,7 +661,8 @@ export default function ReservationPage() {
         event?.preventDefault();
 
         if (
-            (!selectedItem && !isEditMode) ||
+            (!selectedItem && !isEditMode && !isCombined) ||
+            (isCombined && (!selectedHotel || !selectedFlight)) ||
             !isPassengerFormValid ||
             isSubmitting
         ) {
@@ -662,57 +671,86 @@ export default function ReservationPage() {
 
         setSubmitError("");
 
-        const startDate = selectedItem
-            ? isFlight
-                ? toDateOnly(
-                    selectedItem.departureTime
-                )
-                : toDateOnly(
-                    bookingDetails?.checkIn
-                )
-            : toDateOnly(editData?.startDate);
+        const startDate = isCombined
+            ? toDateOnly(bookingDetails?.checkIn)
+            : selectedItem
+                ? isFlight
+                    ? toDateOnly(
+                        selectedItem.departureTime
+                    )
+                    : toDateOnly(
+                        bookingDetails?.checkIn
+                    )
+                : toDateOnly(editData?.startDate);
 
-        const endDate = selectedItem
-            ? isFlight
-                ? toDateOnly(
-                    selectedItem.returnDepartureTime
-                ) || startDate
-                : toDateOnly(
-                    bookingDetails?.checkOut
-                )
-            : toDateOnly(editData?.endDate) ||
-            startDate;
+        const endDate = isCombined
+            ? toDateOnly(bookingDetails?.checkOut) || startDate
+            : selectedItem
+                ? isFlight
+                    ? toDateOnly(
+                        selectedItem.returnDepartureTime
+                    ) || startDate
+                    : toDateOnly(
+                        bookingDetails?.checkOut
+                    )
+                : toDateOnly(editData?.endDate) ||
+                startDate;
+
+        const combinedTotalPrice = isCombined
+            ? (Number(selectedHotel?.price) || 0) + (Number(selectedFlight?.price) || 0)
+            : null;
 
         const payload = {
             sessionId: sessionId || null,
-            type: isFlight ? "FLIGHT" : "HOTEL",
-            itemName: selectedItem
-                ? isFlight
-                    ? selectedItem.airline
-                    : selectedItem.name ||
-                    selectedItem.hotelId ||
-                    "-"
-                : editData?.itemName ||
-                editData?.title ||
-                "-",
-            destination: selectedItem
-                ? isFlight
-                    ? bookingDetails?.arrivalCity ||
-                    "-"
-                    : bookingDetails?.city ||
-                    selectedItem.region ||
-                    "-"
-                : editData?.destination || "-",
+            type: isCombined ? "HOTEL_FLIGHT" : (isFlight ? "FLIGHT" : "HOTEL"),
+            itemName: isCombined
+                ? `${selectedHotel?.name || selectedHotel?.hotelId || "Otel"} + ${selectedFlight?.airline || "Uçuş"}`
+                : selectedItem
+                    ? isFlight
+                        ? selectedItem.airline
+                        : selectedItem.name ||
+                        selectedItem.hotelId ||
+                        "-"
+                    : editData?.itemName ||
+                    editData?.title ||
+                    "-",
+            destination: isCombined
+                ? bookingDetails?.city || selectedHotel?.region || "-"
+                : selectedItem
+                    ? isFlight
+                        ? bookingDetails?.arrivalCity ||
+                        "-"
+                        : bookingDetails?.city ||
+                        selectedItem.region ||
+                        "-"
+                    : editData?.destination || "-",
             startDate,
             endDate,
-            totalPrice: selectedItem
-                ? Number(selectedItem.price) || 0
-                : Number(editData?.totalPrice) || 0,
+            totalPrice: isCombined
+                ? combinedTotalPrice
+                : selectedItem
+                    ? Number(selectedItem.price) || 0
+                    : Number(editData?.totalPrice) || 0,
             currency:
+                selectedHotel?.currency ||
+                selectedFlight?.currency ||
                 selectedItem?.currency ||
                 editData?.currency ||
                 "TRY",
             chatSessionId: sessionId || editData?.chatSessionId || null,
+            // Hotel-specific fields
+            ...(isCombined || !isFlight ? {
+                roomType: selectedHotel?.roomType || selectedItem?.roomType || null,
+                boardType: selectedHotel?.boardType || selectedHotel?.pensionType || selectedItem?.boardType || null,
+            } : {}),
+            // Flight-specific fields
+            ...(isCombined || isFlight ? {
+                flightNumber: selectedFlight?.flightNumber || selectedItem?.flightNumber || null,
+                departureCity: bookingDetails?.departureCity || selectedFlight?.departureCity || null,
+                arrivalCity: bookingDetails?.arrivalCity || selectedFlight?.arrivalCity || null,
+                departureTime: selectedFlight?.departureTime || selectedItem?.departureTime || null,
+                arrivalTime: selectedFlight?.arrivalTime || selectedItem?.arrivalTime || null,
+            } : {}),
             passengers: passengers.map(
                 (passenger, passengerIndex) => ({
                     firstName:
@@ -834,7 +872,7 @@ export default function ReservationPage() {
                                 </div>
                             </div>
 
-                            {!activeItem ? (
+                            {(!activeItem && !isCombined) ? (
                                 <div className="py-8 text-center">
                                     <p className="mb-6 font-medium text-slate-800 dark:text-slate-200">
                                         {t("reservation_no_item")}
@@ -956,7 +994,78 @@ export default function ReservationPage() {
                                     onKeyDown={handleFormKeyDown}
                                     className="space-y-4"
                                 >
-                                    {isFlight ? (
+                                    {isCombined ? (
+                                        <div className="space-y-3">
+                                            {/* Hotel Card */}
+                                            <div className="flex flex-col sm:flex-row gap-0 rounded-[16px] border border-orange-200 bg-orange-50/40 overflow-hidden dark:border-orange-900/40 dark:bg-orange-950/20">
+                                                {(selectedHotel?.thumbnailFull || selectedHotel?.thumbnail || selectedHotel?.imageUrl) && (
+                                                    <div className="w-full sm:w-40 shrink-0 border-b sm:border-b-0 sm:border-r border-orange-200 dark:border-orange-900/40">
+                                                        <img
+                                                            src={selectedHotel.thumbnailFull || selectedHotel.thumbnail || selectedHotel.imageUrl}
+                                                            alt={selectedHotel.name}
+                                                            className="h-36 sm:h-full w-full object-cover"
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 p-4">
+                                                    <div className="mb-1 flex items-center gap-2">
+                                                        <span className="rounded-md bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">Otel</span>
+                                                    </div>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div>
+                                                            <span className="text-base font-bold text-slate-900 dark:text-white">
+                                                                🏨 {selectedHotel?.name || selectedHotel?.hotelId || "-"}
+                                                            </span>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{selectedHotel?.region || bookingDetails?.city || ""}{selectedHotel?.stars ? ` • ${selectedHotel.stars}★` : ""}</p>
+                                                            {(selectedHotel?.boardType || selectedHotel?.pensionType) && (
+                                                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{selectedHotel.boardType || selectedHotel.pensionType}</p>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-base font-extrabold text-[#FF8A00] dark:text-orange-400 shrink-0">
+                                                            {selectedHotel?.price ? `${Math.round(Number(selectedHotel.price)).toLocaleString("tr-TR")} ${selectedHotel.currency || "TRY"}` : ""}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Flight Card */}
+                                            <div className="flex flex-col sm:flex-row gap-0 rounded-[16px] border border-blue-200 bg-blue-50/40 overflow-hidden dark:border-blue-900/40 dark:bg-blue-950/20">
+                                                <div className="flex-1 p-4">
+                                                    <div className="mb-1 flex items-center gap-2">
+                                                        <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Uçuş</span>
+                                                    </div>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div>
+                                                            <span className="text-base font-bold text-slate-900 dark:text-white">
+                                                                ✈️ {selectedFlight?.airline || "-"}
+                                                            </span>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                                {bookingDetails?.departureCity || ""} → {bookingDetails?.arrivalCity || ""}
+                                                            </p>
+                                                            {selectedFlight?.transfers && (
+                                                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{selectedFlight.transfers}</p>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-base font-extrabold text-blue-600 dark:text-blue-400 shrink-0">
+                                                            {selectedFlight?.price ? `${Math.round(Number(selectedFlight.price)).toLocaleString("tr-TR")} ${selectedFlight.currency || "TRY"}` : ""}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Combined Total Price */}
+                                            {(selectedHotel?.price || selectedFlight?.price) && (
+                                                <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-orange-50 to-blue-50 px-4 py-3 border border-slate-200 dark:from-orange-950/30 dark:to-blue-950/30 dark:border-slate-700">
+                                                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Toplam Tutar</span>
+                                                    <span className="text-xl font-extrabold text-[#FF8A00] dark:text-orange-400">
+                                                        {Math.round((Number(selectedHotel?.price) || 0) + (Number(selectedFlight?.price) || 0)).toLocaleString("tr-TR")}{" "}
+                                                        {selectedHotel?.currency || selectedFlight?.currency || "TRY"}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : isFlight ? (
                                         <div className="flex flex-col sm:flex-row gap-0 rounded-[16px] border border-slate-200 bg-white/50 overflow-hidden dark:border-slate-800 dark:bg-slate-900/40">
                                             {(selectedItem?.imageUrl || selectedItem?.thumbnailFull || selectedItem?.thumbnail || editData?.imageUrl) && (
                                                 <div className="w-full sm:w-48 shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">

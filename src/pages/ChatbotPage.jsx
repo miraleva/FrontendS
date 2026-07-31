@@ -559,7 +559,7 @@ export default function Index() {
       setMessages(prev => [...prev, botMsg]);
 
       // 1. Arama Tipini Güncelle ve YALNIZCA GERÇEK SONUÇLAR (results) GELDİĞİNDE Sağ Paneli Aç
-      const isSearchIntent = Boolean(data.searchType && (data.searchType.includes("HOTEL") || data.searchType.includes("FLIGHT")));
+      const isSearchIntent = Boolean(data.searchType && (data.searchType.includes("HOTEL") || data.searchType.includes("FLIGHT") || data.searchType.includes("COMBINED")));
       const hasResults = Boolean(data.results && data.results.length > 0);
       if (hasResults) {
         setHasValidSearch(true);
@@ -567,7 +567,9 @@ export default function Index() {
       }
       
       if (data.searchType) {
-        if (data.searchType.includes("HOTEL")) {
+        if (data.searchType.includes("COMBINED")) {
+          setSearchType("combined");
+        } else if (data.searchType.includes("HOTEL")) {
           setSearchType("hotel");
         } else if (data.searchType.includes("FLIGHT")) {
           setSearchType("flight");
