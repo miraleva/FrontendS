@@ -35,7 +35,9 @@ export default function Users() {
                         role: u.role || "user",
                         reservations: u.reservationCount ?? u.reservations ?? 0,
                         status: u.status || (u.isActive ? "active" : "inactive"),
-                        isActive: u.isActive !== undefined ? u.isActive : (u.status === "active")
+                        isActive: u.isActive !== undefined ? u.isActive : (u.status === "active"),
+                        lastLoginAt: u.lastLoginAt,
+                        lastLogoutAt: u.lastLogoutAt
                     }));
                     setUsers(formatted);
                 } else {
@@ -95,6 +97,22 @@ export default function Users() {
                 console.error("Error toggling user status:", err);
                 setError(t("users_page.status_toggle_error", "Kullanıcı durumu güncellenemedi. Lütfen tekrar deneyin."));
             });
+    };
+
+    const formatDateTime = (timeStr) => {
+        if (!timeStr) return "-";
+        try {
+            const date = new Date(timeStr);
+            return date.toLocaleString("tr-TR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        } catch (e) {
+            return timeStr;
+        }
     };
 
     return (
@@ -222,6 +240,24 @@ export default function Users() {
 
                                                 <span className="rounded bg-orange-50/70 px-2 py-0.5 font-bold text-orange-600 dark:bg-orange-950/20 dark:text-orange-400">
                                                     {user.reservations}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
+                                                <span className="text-gray-400 dark:text-slate-500">
+                                                    Son Giriş
+                                                </span>
+                                                <span className="font-semibold text-gray-700 dark:text-slate-350">
+                                                    {formatDateTime(user.lastLoginAt)}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-gray-400 dark:text-slate-500">
+                                                    Son Çıkış
+                                                </span>
+                                                <span className="font-semibold text-gray-700 dark:text-slate-350">
+                                                    {formatDateTime(user.lastLogoutAt)}
                                                 </span>
                                             </div>
                                         </div>

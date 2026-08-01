@@ -41,7 +41,15 @@ function toDateOnly(value) {
   return date.toISOString().slice(0, 10);
 }
 
-const getPassengerErrors = (passenger, index = 0, t, referenceDateStr) => {
+function isDuplicateTc(passengers, currentIndex) {
+  const current = passengers[currentIndex];
+  if (current?.nationality?.toUpperCase() !== "TR") return false;
+  const tc = (current.identityNumber || "").trim();
+  if (!tc) return false;
+  return passengers.some((p, i) => i !== currentIndex && p?.nationality?.toUpperCase() === "TR" && (p.identityNumber || "").trim() === tc);
+}
+
+const getPassengerErrors = (passenger, index = 0, t, referenceDateStr, passengers = []) => {
 
   const errors = {};
   const isPrimaryContact = index === 0;
@@ -58,6 +66,9 @@ const getPassengerErrors = (passenger, index = 0, t, referenceDateStr) => {
     if (!/^[1-9]\d{10}$/.test(passenger.identityNumber || "")) {
       errors.identityNumber =
         t("res_form_error_invalid_tc", "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).");
+    } else if (isDuplicateTc(passengers, index)) {
+      errors.identityNumber =
+        t("err_duplicate_tc", "Bu T.C. kimlik numarası başka bir yolcu için kullanılmıştır.");
     }
   } else if (
     !passenger.identityNumber?.trim() ||
@@ -551,7 +562,7 @@ export default function FlightReservationFormPanel({
       index++
     ) {
       const guest = guests[index];
-      const errors = getPassengerErrors(guest, index);
+      const errors = getPassengerErrors(guest, index, t, bookingDetails?.checkIn, guests);
       const errorKeys = Object.keys(errors);
 
       if (errorKeys.length > 0) {
@@ -832,7 +843,7 @@ export default function FlightReservationFormPanel({
                           )}`;
 
                     const errors =
-                      getPassengerErrors(guest, index, t);
+                      getPassengerErrors(guest, index, t, bookingDetails?.checkIn, guests);
 
                     return (
                       <div

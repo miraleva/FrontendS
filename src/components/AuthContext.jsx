@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api.js';
 
 const AuthContext = createContext(null);
 
@@ -94,7 +95,20 @@ export function AuthProvider({ children }) {
     setIsGuest(true);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const activeToken = token || localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (activeToken && activeToken !== 'null' && activeToken !== 'undefined') {
+      try {
+        await api.post('/api/auth/logout', {}, {
+          headers: {
+            Authorization: `Bearer ${activeToken}`
+          }
+        });
+      } catch (err) {
+        console.warn("Logout event logging failed:", err);
+      }
+    }
+
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     localStorage.removeItem('user');

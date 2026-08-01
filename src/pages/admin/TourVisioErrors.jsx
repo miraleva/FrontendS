@@ -53,6 +53,17 @@ export default function TourVisioErrors() {
         return () => clearInterval(interval);
     }, []);
 
+    // Format Payload Helper (JSON Pretty Print)
+    const formatPayload = (payload) => {
+        if (!payload) return "-";
+        try {
+            const parsed = typeof payload === "string" ? JSON.parse(payload) : payload;
+            return JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            return payload;
+        }
+    };
+
     // Format Timestamp Helper
     const formatTime = (timeStr) => {
         if (!timeStr) return "-";
@@ -62,6 +73,34 @@ export default function TourVisioErrors() {
         } catch (e) {
             return timeStr;
         }
+    };
+
+    // Error Resolution Suggestion Helper
+    const getErrorResolutionSuggestion = (log) => {
+        if (log.success) return null;
+        
+        const statusCode = log.statusCode;
+        const errMsg = (log.errorMessage || "").toLowerCase();
+        
+        if (statusCode === 401 || errMsg.includes("unauthorized") || errMsg.includes("invalid token")) {
+            return "Kimlik doğrulama hatası (401). TourVisio API token'ının süresi dolmuş veya hatalı olabilir. Lütfen 'start-local.ps1' dosyasındaki TOURVISIO_USERNAME ve TOURVISIO_PASSWORD bilgilerini doğrulayın.";
+        }
+        if (statusCode === 403) {
+            return "Yetki erişim hatası (403). Kullandığınız acente kodu (TOURVISIO_AGENCY) veya kullanıcının bu işlemi gerçekleştirmek için yetkisi bulunmuyor. Acente yetkilendirmelerini kontrol edin.";
+        }
+        if (statusCode === 404) {
+            return "Kaynak bulunamadı hatası (404). İstek yapılan servis adresi hatalı veya sorgulanan otel/uçuş verileri TourVisio tarafında mevcut değil. URI yolunu kontrol edin.";
+        }
+        if (statusCode === 504 || errMsg.includes("timeout") || errMsg.includes("sockettimeoutexception")) {
+            return "Zaman aşımı hatası (504/Timeout). TourVisio API sunucusu belirlenen sürede yanıt vermedi. İnternet bağlantısını kontrol edin veya 'application.properties' dosyasındaki read-timeout süresini yükseltin.";
+        }
+        if (errMsg.includes("connection refused") || errMsg.includes("connectexception") || errMsg.includes("unknownhostexception")) {
+            return "Bağlantı hatası (Connection Refused). TourVisio dış sunucusuna erişilemiyor. İnternet bağlantınızı veya 'TOURVISIO_BASE_URL' adresinin aktifliğini kontrol edin.";
+        }
+        if (statusCode >= 500) {
+            return "Dış sunucu hatası (500). TourVisio API sisteminde içsel bir problem oluştu. İstek parametrelerini veya JSON/XML gövdesini (Request Body) kontrol edin; geçersiz biçimlendirilmiş veriler sunucu hatasına yol açıyor olabilir.";
+        }
+        return "Bilinmeyen entegrasyon hatası. İstek gövdesinde gönderilen verilerle yanıt parametrelerinin (Request/Response) yapısını inceleyin.";
     };
 
     // Latency Color Helper
@@ -211,10 +250,8 @@ export default function TourVisioErrors() {
                                                 <>
                                                     <tr
                                                         key={idx}
-                                                        onClick={() => !log.success && setExpandedRow(isExpanded ? null : idx)}
-                                                        className={`hover:bg-gray-50/20 dark:hover:bg-slate-800/10 ${
-                                                            !log.success ? "cursor-pointer bg-red-500/5 dark:bg-red-500/[0.02]" : ""
-                                                        }`}
+                                                        onClick={() => setExpandedRow(isExpanded ? null : idx)}
+                                                        className="cursor-pointer hover:bg-gray-50/20 dark:hover:bg-slate-800/10"
                                                     >
                                                         <td className="px-4 py-3 font-semibold text-gray-400 dark:text-slate-500">
                                                             {formatTime(log.timestamp)}
@@ -247,31 +284,75 @@ export default function TourVisioErrors() {
                                                             </span>
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
-                                                            <div className="flex justify-end items-center gap-1">
+                                                            <div className="flex justify-end items-center gap-2">
                                                                 {log.success ? (
                                                                     <CheckCircle2 size={15} className="text-emerald-500" />
                                                                 ) : (
-                                                                    <>
-                                                                        <XCircle size={15} className="text-rose-500 animate-pulse" />
-                                                                        <span className="text-[10px] text-rose-500 font-bold underline">Detay</span>
-                                                                    </>
+                                                                    <XCircle size={15} className="text-rose-500" />
                                                                 )}
+                                                                <span className="text-[10px] text-gray-400 dark:text-slate-500 font-bold hover:underline">
+                                                                    {isExpanded ? t("common.hide", "Gizle") : t("common.detail", "Detay")}
+                                                                </span>
                                                             </div>
                                                         </td>
                                                     </tr>
 
-                                                    {/* Expandable Error Details Row */}
+                                                    {/* Expandable Log Details Row */}
                                                     {isExpanded && (
-                                                        <tr className="bg-red-500/[0.08] dark:bg-red-500/[0.04]">
+                                                        <tr className="bg-gray-50/50 dark:bg-slate-900/40">
                                                             <td colSpan="6" className="px-6 py-4">
-                                                                <div className="space-y-2 border-l-2 border-rose-500 pl-4">
-                                                                    <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                                                                        <AlertTriangle size={14} />
-                                                                        Entegrasyon Hata Ayrıntısı
-                                                                    </h4>
-                                                                    <p className="font-mono text-[10px] text-gray-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                                                                        {log.errorMessage || "Detaylı hata mesajı bulunmuyor."}
-                                                                    </p>
+                                                                <div className="space-y-4">
+                                                                    {/* 1. Error Message Section (only if unsuccessful) */}
+                                                                    {!log.success && (
+                                                                        <div className="space-y-3">
+                                                                            <div className="space-y-2 border-l-2 border-rose-500 pl-4">
+                                                                                <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                                                                                    <AlertTriangle size={14} />
+                                                                                    Entegrasyon Hata Ayrıntısı
+                                                                                </h4>
+                                                                                <p className="font-mono text-[10px] text-gray-700 dark:text-slate-350 whitespace-pre-wrap leading-relaxed">
+                                                                                    {log.errorMessage || "Detaylı hata mesajı bulunmuyor."}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            <div className="space-y-2 border-l-2 border-amber-500 bg-amber-500/5 p-3.5 rounded-r-xl pl-4">
+                                                                                <h4 className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                                                                    <CheckCircle2 size={14} className="text-amber-500" />
+                                                                                    Önerilen Çözüm Adımı
+                                                                                </h4>
+                                                                                <p className="text-[10.5px] text-gray-700 dark:text-slate-300 leading-relaxed font-semibold">
+                                                                                    {getErrorResolutionSuggestion(log)}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* 2. Payloads Section */}
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        {/* Request Payload */}
+                                                                        <div className="space-y-2">
+                                                                            <h4 className="text-xs font-bold text-gray-600 dark:text-slate-400">
+                                                                                İstek Gövdesi (Request Body)
+                                                                            </h4>
+                                                                            <div className="relative">
+                                                                                <pre className="font-mono text-[10px] text-slate-200 bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-x-auto max-h-72 leading-relaxed">
+                                                                                    {formatPayload(log.requestPayload)}
+                                                                                </pre>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Response Payload */}
+                                                                        <div className="space-y-2">
+                                                                            <h4 className="text-xs font-bold text-gray-600 dark:text-slate-400">
+                                                                                Yanıt Gövdesi (Response Body)
+                                                                            </h4>
+                                                                            <div className="relative">
+                                                                                <pre className="font-mono text-[10px] text-slate-200 bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-x-auto max-h-72 leading-relaxed">
+                                                                                    {formatPayload(log.responsePayload)}
+                                                                                </pre>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                         </tr>

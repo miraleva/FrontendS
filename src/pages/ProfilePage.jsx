@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../components/AuthContext";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import api from "../services/api";
 import "react-phone-number-input/style.css";
@@ -119,6 +120,7 @@ export default function Profile() {
     const { t, i18n } = useTranslation();
     const { theme } = useTheme();
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     const videoRef = useRef(null);
 
@@ -468,12 +470,7 @@ export default function Profile() {
 
     // Gerçek çıkış işlemini yapan fonksiyon
     const handleConfirmLogOut = () => {
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
-        localStorage.removeItem("user");
-        sessionStorage.removeItem("user");
-        localStorage.removeItem("userId");
-        sessionStorage.removeItem("userId");
+        logout();
         setShowLogoutModal(false);
         navigate("/login");
     };

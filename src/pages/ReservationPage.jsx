@@ -93,7 +93,39 @@ function toDateOnly(value) {
     return date.toISOString().slice(0, 10);
 }
 
-function getPassengerErrors(passenger, index = 0) {
+function isDuplicateTc(passengers, currentIndex) {
+    const current = passengers[currentIndex];
+
+    if (current?.nationality?.toUpperCase() !== "TR") {
+        return false;
+    }
+
+    const tc = (current.identityNumber || "").trim();
+
+    if (!tc) {
+        return false;
+    }
+
+    return passengers.some((passenger, index) => {
+        if (index == currentIndex) {
+            return false;
+        }
+
+        if (passenger?.nationality?.toUpperCase() !== "TR") {
+            return false;
+        }
+
+        return (
+            (passenger.identityNumber || "").trim() === tc
+        );
+    });
+}
+
+function getPassengerErrors(
+    passenger,
+    index = 0,
+    passengers = []
+) {
     const errors = {};
     const isPrimaryContact = index === 0;
 
@@ -113,6 +145,11 @@ function getPassengerErrors(passenger, index = 0) {
         ) {
             errors.identityNumber =
                 "Geçersiz T.C. Kimlik No (11 hane olmalı ve 0 ile başlamamalı).";
+        } else if (
+            isDuplicateTc(passengers, index)
+        ) {
+            errors.identityNumber =
+                "Bu T.C. kimlik numarası başka bir yolcu için kullanılmıştır.";
         }
     } else if (
         !passenger.identityNumber?.trim() ||
@@ -406,7 +443,7 @@ export default function ReservationPage() {
         videoRef.current.load();
         videoRef.current
             .play()
-            .catch(() => {});
+            .catch(() => { });
     }, [theme]);
 
     useEffect(() => {
@@ -651,7 +688,11 @@ export default function ReservationPage() {
         passengers.length > 0 &&
         passengers.every((passenger, passengerIndex) => {
             const errors =
-                getPassengerErrors(passenger, passengerIndex);
+                getPassengerErrors(
+                    passenger,
+                    passengerIndex,
+                    passengers
+                );
 
             return Object.keys(errors).length === 0;
         });
@@ -1078,110 +1119,110 @@ export default function ReservationPage() {
                                                 </div>
                                             )}
                                             <div className="flex-1 p-4 sm:p-6">
-                                                    <div className="mb-4 flex items-center justify-between gap-4">
-                                                        <span className="text-xl font-bold text-[#1E232C] dark:text-white">
-                                                            ✈️{" "}
-                                                            {selectedItem?.airline ||
-                                                                editData?.itemName}
-                                                        </span>
-
-                                                <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
-                                                    {formatPrice(
-                                                        selectedItem?.price ??
-                                                        editData?.totalPrice
-                                                    )}{" "}
-                                                    {selectedItem?.currency ||
-                                                        editData?.currency ||
-                                                        "TRY"}
-                                                </span>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-4 text-sm font-medium text-slate-800 dark:text-slate-200 md:grid-cols-2">
-                                                <div>
-                                                    <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
-                                                        {t(
-                                                            "reservation_departure"
-                                                        )}
+                                                <div className="mb-4 flex items-center justify-between gap-4">
+                                                    <span className="text-xl font-bold text-[#1E232C] dark:text-white">
+                                                        ✈️{" "}
+                                                        {selectedItem?.airline ||
+                                                            editData?.itemName}
                                                     </span>
-                                                    {formatFlightDateTime(
-                                                        selectedItem?.departureTime ||
-                                                        editData?.startDate
-                                                    )}
+
+                                                    <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
+                                                        {formatPrice(
+                                                            selectedItem?.price ??
+                                                            editData?.totalPrice
+                                                        )}{" "}
+                                                        {selectedItem?.currency ||
+                                                            editData?.currency ||
+                                                            "TRY"}
+                                                    </span>
                                                 </div>
 
-                                                <div>
-                                                    <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
-                                                        {t(
-                                                            "reservation_arrival"
-                                                        )}
-                                                    </span>
-                                                    {formatFlightDateTime(
-                                                        selectedItem?.arrivalTime ||
-                                                        editData?.endDate
-                                                    )}
-                                                </div>
-
-                                                {selectedItem?.transfers && (
+                                                <div className="grid grid-cols-1 gap-4 text-sm font-medium text-slate-800 dark:text-slate-200 md:grid-cols-2">
                                                     <div>
                                                         <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
                                                             {t(
-                                                                "reservation_transfers"
-                                                            )}
-                                                        </span>
-                                                        {
-                                                            selectedItem.transfers
-                                                        }
-                                                    </div>
-                                                )}
-
-                                                {selectedItem?.baggage && (
-                                                    <div>
-                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
-                                                            {t(
-                                                                "reservation_baggage"
-                                                            )}
-                                                        </span>
-                                                        {formatBaggage(
-                                                            selectedItem.baggage,
-                                                            t
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {selectedItem?.returnDepartureTime && (
-                                                <div className="mt-4 grid grid-cols-1 gap-4 border-t border-dashed border-slate-300 pt-4 text-sm font-medium text-slate-800 dark:border-slate-800 dark:text-slate-200 md:grid-cols-2">
-                                                    <div className="col-span-full font-bold">
-                                                        ↩{" "}
-                                                        {selectedItem.returnAirline ||
-                                                            selectedItem.airline}
-                                                    </div>
-
-                                                    <div>
-                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
-                                                            {t(
-                                                                "reservation_return_departure"
+                                                                "reservation_departure"
                                                             )}
                                                         </span>
                                                         {formatFlightDateTime(
-                                                            selectedItem.returnDepartureTime
+                                                            selectedItem?.departureTime ||
+                                                            editData?.startDate
                                                         )}
                                                     </div>
 
                                                     <div>
                                                         <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
                                                             {t(
-                                                                "reservation_return_arrival"
+                                                                "reservation_arrival"
                                                             )}
                                                         </span>
                                                         {formatFlightDateTime(
-                                                            selectedItem.returnArrivalTime
+                                                            selectedItem?.arrivalTime ||
+                                                            editData?.endDate
                                                         )}
                                                     </div>
+
+                                                    {selectedItem?.transfers && (
+                                                        <div>
+                                                            <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                                {t(
+                                                                    "reservation_transfers"
+                                                                )}
+                                                            </span>
+                                                            {
+                                                                selectedItem.transfers
+                                                            }
+                                                        </div>
+                                                    )}
+
+                                                    {selectedItem?.baggage && (
+                                                        <div>
+                                                            <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                                {t(
+                                                                    "reservation_baggage"
+                                                                )}
+                                                            </span>
+                                                            {formatBaggage(
+                                                                selectedItem.baggage,
+                                                                t
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                                </div>
+
+                                                {selectedItem?.returnDepartureTime && (
+                                                    <div className="mt-4 grid grid-cols-1 gap-4 border-t border-dashed border-slate-300 pt-4 text-sm font-medium text-slate-800 dark:border-slate-800 dark:text-slate-200 md:grid-cols-2">
+                                                        <div className="col-span-full font-bold">
+                                                            ↩{" "}
+                                                            {selectedItem.returnAirline ||
+                                                                selectedItem.airline}
+                                                        </div>
+
+                                                        <div>
+                                                            <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                                {t(
+                                                                    "reservation_return_departure"
+                                                                )}
+                                                            </span>
+                                                            {formatFlightDateTime(
+                                                                selectedItem.returnDepartureTime
+                                                            )}
+                                                        </div>
+
+                                                        <div>
+                                                            <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                                {t(
+                                                                    "reservation_return_arrival"
+                                                                )}
+                                                            </span>
+                                                            {formatFlightDateTime(
+                                                                selectedItem.returnArrivalTime
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
+                                        </div>
                                     ) : (
                                         <div className="flex flex-col sm:flex-row gap-0 rounded-[16px] border border-slate-200 bg-white/50 overflow-hidden dark:border-slate-800 dark:bg-slate-900/40">
                                             {(selectedItem?.imageUrl || selectedItem?.thumbnailFull || selectedItem?.thumbnail || editData?.imageUrl) && (
@@ -1195,51 +1236,51 @@ export default function ReservationPage() {
                                                 </div>
                                             )}
                                             <div className="flex-1 p-4 sm:p-6">
-                                                    <div className="mb-4 flex items-start justify-between gap-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xl font-bold text-[#1E232C] dark:text-white">
-                                                                🏨{" "}
-                                                                {selectedItem?.name ||
-                                                                    selectedItem?.hotelId ||
-                                                                    editData?.itemName ||
-                                                                    editData?.title}
-                                                            </span>
+                                                <div className="mb-4 flex items-start justify-between gap-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xl font-bold text-[#1E232C] dark:text-white">
+                                                            🏨{" "}
+                                                            {selectedItem?.name ||
+                                                                selectedItem?.hotelId ||
+                                                                editData?.itemName ||
+                                                                editData?.title}
+                                                        </span>
 
-                                                    <span className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                                                        {selectedItem?.region ||
-                                                            editData?.destination}
-                                                        {selectedItem?.stars
-                                                            ? ` • ${selectedItem.stars}★`
-                                                            : ""}
+                                                        <span className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                                            {selectedItem?.region ||
+                                                                editData?.destination}
+                                                            {selectedItem?.stars
+                                                                ? ` • ${selectedItem.stars}★`
+                                                                : ""}
+                                                        </span>
+                                                    </div>
+
+                                                    <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
+                                                        {formatPrice(
+                                                            selectedItem?.price ??
+                                                            editData?.totalPrice
+                                                        )}{" "}
+                                                        {selectedItem?.currency ||
+                                                            editData?.currency ||
+                                                            "TRY"}
                                                     </span>
                                                 </div>
 
-                                                <span className="text-xl font-bold text-[#3B82F6] dark:text-blue-400">
-                                                    {formatPrice(
-                                                        selectedItem?.price ??
-                                                        editData?.totalPrice
-                                                    )}{" "}
-                                                    {selectedItem?.currency ||
-                                                        editData?.currency ||
-                                                        "TRY"}
-                                                </span>
-                                            </div>
+                                                {selectedItem && (
+                                                    <div className="border-t border-slate-200 pt-4 text-sm font-medium text-slate-800 dark:border-slate-800 dark:text-slate-200">
+                                                        <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
+                                                            {t(
+                                                                "reservation_board_pension"
+                                                            )}
+                                                        </span>
 
-                                            {selectedItem && (
-                                                <div className="border-t border-slate-200 pt-4 text-sm font-medium text-slate-800 dark:border-slate-800 dark:text-slate-200">
-                                                    <span className="mb-1 block text-xs uppercase text-slate-500 dark:text-slate-400">
-                                                        {t(
-                                                            "reservation_board_pension"
-                                                        )}
-                                                    </span>
-
-                                                    {selectedItem.boardType ||
-                                                        selectedItem.pensionType ||
-                                                        t("reservation_na")}
-                                                </div>
-                                            )}
-                                                </div>
+                                                        {selectedItem.boardType ||
+                                                            selectedItem.pensionType ||
+                                                            t("reservation_na")}
+                                                    </div>
+                                                )}
                                             </div>
+                                        </div>
                                     )}
 
                                     <div className="space-y-4">
@@ -1291,7 +1332,11 @@ export default function ReservationPage() {
                                             )}`;
 
                                             const errors =
-                                                getPassengerErrors(passenger, index);
+                                                getPassengerErrors(
+                                                    passenger,
+                                                    index,
+                                                    passengers
+                                                );
 
                                             return (
                                                 <div
@@ -1419,153 +1464,153 @@ export default function ReservationPage() {
                                                                 </div>
                                                             </div>
 
-                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                    <div>
-                                                                        <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                                                            {t("reservation_gender", "Cinsiyet")}
-                                                                        </label>
-                                                                        <select
-                                                                            required
-                                                                            value={
-                                                                                passenger.gender || "MR"
-                                                                            }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
-                                                                                handlePassengerChange(
-                                                                                    index,
-                                                                                    "gender",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
-                                                                            }
-                                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-                                                                        >
-                                                                            <option value="MR">
-                                                                                {i18n.language?.startsWith("tr") ? "Erkek" : "Mr"}
-                                                                            </option>
-                                                                            <option value="MRS">
-                                                                                {i18n.language?.startsWith("tr") ? "Kadın" : "Mrs"}
-                                                                            </option>
-                                                                        </select>
-                                                                    </div>
-
-                                                                    <div>
-                                                                        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                            Doğum Tarihi
-                                                                        </label>
-                                                                        <input
-                                                                            required
-                                                                            type="date"
-                                                                            max={new Date()
-                                                                                .toISOString()
-                                                                                .split("T")[0]}
-                                                                            value={
-                                                                                passenger.birthDate ||
-                                                                                ""
-                                                                            }
-                                                                            onChange={(
-                                                                                event
-                                                                            ) =>
-                                                                                handlePassengerChange(
-                                                                                    index,
-                                                                                    "birthDate",
-                                                                                    event.target
-                                                                                        .value
-                                                                                )
-                                                                            }
-                                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
-                                                                                ? "border-red-500 ring-1 ring-red-500"
-                                                                                : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
-                                                                                }`}
-                                                                        />
-                                                                        {errors.birthDate && (
-                                                                            <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                                                                {
-                                                                                    errors.birthDate
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                                                        {t("reservation_gender", "Cinsiyet")}
+                                                                    </label>
+                                                                    <select
+                                                                        required
+                                                                        value={
+                                                                            passenger.gender || "MR"
+                                                                        }
+                                                                        onChange={(
+                                                                            event
+                                                                        ) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "gender",
+                                                                                event.target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                                                                    >
+                                                                        <option value="MR">
+                                                                            {i18n.language?.startsWith("tr") ? "Erkek" : "Mr"}
+                                                                        </option>
+                                                                        <option value="MRS">
+                                                                            {i18n.language?.startsWith("tr") ? "Kadın" : "Mrs"}
+                                                                        </option>
+                                                                    </select>
                                                                 </div>
 
-                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                    <div>
-                                                                        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                            Uyruk
-                                                                        </label>
-                                                                        <select
-                                                                            required
-                                                                            value={passenger.nationality || "TR"}
-                                                                            onChange={(event) => {
-                                                                                const newNat = event.target.value;
-                                                                                handlePassengerChange(index, "nationality", newNat);
-                                                                                handlePassengerChange(index, "identityNumber", "");
-                                                                            }}
-                                                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-                                                                        >
-                                                                            <option value="TR">Türkiye (TR)</option>
-                                                                            <option value="DE">Almanya (DE)</option>
-                                                                            <option value="RU">Rusya (RU)</option>
-                                                                            <option value="US">ABD (US)</option>
-                                                                            <option value="GB">İngiltere (GB)</option>
-                                                                            <option value="FR">Fransa (FR)</option>
-                                                                            <option value="AZ">Azerbaycan (AZ)</option>
-                                                                            <option value="OTHER">Diğer (OTHER)</option>
-                                                                        </select>
-                                                                    </div>
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                                        Doğum Tarihi
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="date"
+                                                                        max={new Date()
+                                                                            .toISOString()
+                                                                            .split("T")[0]}
+                                                                        value={
+                                                                            passenger.birthDate ||
+                                                                            ""
+                                                                        }
+                                                                        onChange={(
+                                                                            event
+                                                                        ) =>
+                                                                            handlePassengerChange(
+                                                                                index,
+                                                                                "birthDate",
+                                                                                event.target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.birthDate
+                                                                            ? "border-red-500 ring-1 ring-red-500"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.birthDate && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                                                            {
+                                                                                errors.birthDate
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
 
-                                                                    <div>
-                                                                        <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                                                            <ShieldCheck
-                                                                                size={12}
-                                                                            />
-                                                                            {passenger.nationality === "TR"
-                                                                                ? "T.C. Kimlik Numarası"
-                                                                                : "Pasaport Numarası"}
-                                                                        </label>
-                                                                        <input
-                                                                            required
-                                                                            type="text"
-                                                                            inputMode={
-                                                                                passenger.nationality === "TR"
-                                                                                    ? "numeric"
-                                                                                    : "text"
-                                                                            }
-                                                                            value={
-                                                                                passenger.identityNumber ||
-                                                                                ""
-                                                                            }
-                                                                            onChange={(event) => {
-                                                                                const rawValue =
-                                                                                    event.target.value;
-                                                                                const cleanValue = passenger.nationality === "TR"
-                                                                                    ? rawValue.replace(/\D/g, "").slice(0, 11)
-                                                                                    : rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
-
-                                                                                handlePassengerChange(index, "identityNumber", cleanValue);
-                                                                            }}
-                                                                            placeholder={
-                                                                                passenger.nationality === "TR"
-                                                                                    ? "11 haneli T.C. kimlik numarası"
-                                                                                    : "Pasaport numarası"
-                                                                            }
-                                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
-                                                                                ? "border-red-500 ring-1 ring-red-500"
-                                                                                : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
-                                                                                }`}
-                                                                        />
-                                                                        {errors.identityNumber && (
-                                                                            <span className="mt-1 block text-[10px] font-medium text-red-500">
-                                                                                {
-                                                                                    errors.identityNumber
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div>
+                                                                    <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                                        Uyruk
+                                                                    </label>
+                                                                    <select
+                                                                        required
+                                                                        value={passenger.nationality || "TR"}
+                                                                        onChange={(event) => {
+                                                                            const newNat = event.target.value;
+                                                                            handlePassengerChange(index, "nationality", newNat);
+                                                                            handlePassengerChange(index, "identityNumber", "");
+                                                                        }}
+                                                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                                                                    >
+                                                                        <option value="TR">Türkiye (TR)</option>
+                                                                        <option value="DE">Almanya (DE)</option>
+                                                                        <option value="RU">Rusya (RU)</option>
+                                                                        <option value="US">ABD (US)</option>
+                                                                        <option value="GB">İngiltere (GB)</option>
+                                                                        <option value="FR">Fransa (FR)</option>
+                                                                        <option value="AZ">Azerbaycan (AZ)</option>
+                                                                        <option value="OTHER">Diğer (OTHER)</option>
+                                                                    </select>
                                                                 </div>
 
-                                                                {index === 0 && (
+                                                                <div>
+                                                                    <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                                        <ShieldCheck
+                                                                            size={12}
+                                                                        />
+                                                                        {passenger.nationality === "TR"
+                                                                            ? "T.C. Kimlik Numarası"
+                                                                            : "Pasaport Numarası"}
+                                                                    </label>
+                                                                    <input
+                                                                        required
+                                                                        type="text"
+                                                                        inputMode={
+                                                                            passenger.nationality === "TR"
+                                                                                ? "numeric"
+                                                                                : "text"
+                                                                        }
+                                                                        value={
+                                                                            passenger.identityNumber ||
+                                                                            ""
+                                                                        }
+                                                                        onChange={(event) => {
+                                                                            const rawValue =
+                                                                                event.target.value;
+                                                                            const cleanValue = passenger.nationality === "TR"
+                                                                                ? rawValue.replace(/\D/g, "").slice(0, 11)
+                                                                                : rawValue.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 20);
+
+                                                                            handlePassengerChange(index, "identityNumber", cleanValue);
+                                                                        }}
+                                                                        placeholder={
+                                                                            passenger.nationality === "TR"
+                                                                                ? "11 haneli T.C. kimlik numarası"
+                                                                                : "Pasaport numarası"
+                                                                        }
+                                                                        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:outline-none dark:bg-slate-900 dark:text-white ${errors.identityNumber
+                                                                            ? "border-red-500 ring-1 ring-red-500"
+                                                                            : "border-slate-300 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/50 dark:border-slate-800"
+                                                                            }`}
+                                                                    />
+                                                                    {errors.identityNumber && (
+                                                                        <span className="mt-1 block text-[10px] font-medium text-red-500">
+                                                                            {
+                                                                                errors.identityNumber
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {index === 0 && (
                                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                                     <div>
                                                                         <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -1686,58 +1731,58 @@ export default function ReservationPage() {
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     {submitError && (
-                                <p className="text-right text-sm font-medium text-red-600 dark:text-red-400">
-                                    {submitError}
-                                </p>
-                            )}
+                                        <p className="text-right text-sm font-medium text-red-600 dark:text-red-400">
+                                            {submitError}
+                                        </p>
+                                    )}
 
-                            <div className="mt-8 flex justify-end gap-4">
-                                <button
-                                    type="button"
-                                    onClick={handleBack}
-                                    disabled={isSubmitting}
-                                    className="rounded-[12px] border border-slate-300 px-6 py-3 text-[14px] font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                                >
-                                    {t("reservation_cancel")}
-                                </button>
+                                    <div className="mt-8 flex justify-end gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={handleBack}
+                                            disabled={isSubmitting}
+                                            className="rounded-[12px] border border-slate-300 px-6 py-3 text-[14px] font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                                        >
+                                            {t("reservation_cancel")}
+                                        </button>
 
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        !isPassengerFormValid ||
-                                        isSubmitting
-                                    }
-                                    className="rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
-                                >
-                                    {isSubmitting
-                                        ? t(
-                                            "reservation_submitting"
-                                        )
-                                        : isEditMode
-                                            ? t(
-                                                "reservation_update_confirm",
-                                                "Güncelle"
-                                            )
-                                            : t(
-                                                "reservation_confirm_proceed"
-                                            )}
-                                </button>
-                            </div>
-                        </form>
+                                        <button
+                                            type="submit"
+                                            disabled={
+                                                !isPassengerFormValid ||
+                                                isSubmitting
+                                            }
+                                            className="rounded-[12px] bg-[#3B82F6] px-6 py-3 text-[14px] font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
+                                        >
+                                            {isSubmitting
+                                                ? t(
+                                                    "reservation_submitting"
+                                                )
+                                                : isEditMode
+                                                    ? t(
+                                                        "reservation_update_confirm",
+                                                        "Güncelle"
+                                                    )
+                                                    : t(
+                                                        "reservation_confirm_proceed"
+                                                    )}
+                                        </button>
+                                    </div>
+                                </form>
                             )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         </div >
     );
 }
