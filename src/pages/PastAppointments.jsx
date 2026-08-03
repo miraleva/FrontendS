@@ -471,17 +471,25 @@ export default function PastAppointments() {
                     {getIcon(appointment.type)}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-0 rounded-xl border border-slate-200 bg-white/95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/95">
-                    {(appointment.imageUrl || appointment.type === "HOTEL") && (
-                      <div className="w-full sm:w-56 shrink-0 h-40 sm:h-auto sm:self-stretch border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800">
+                  <div className="flex items-stretch rounded-2xl bg-white/95 dark:bg-[#0b1227] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg h-auto flex-col sm:flex-row gap-0 transition-all duration-200 hover:-translate-y-0.5">
+                    {appointment.type === "Flight" ? (
+                      <div className="flex items-center justify-center w-full sm:w-56 shrink-0 h-40 sm:h-auto sm:self-stretch bg-slate-100 dark:bg-[#18191b] border-b sm:border-b-0 sm:border-r border-slate-200/80 dark:border-slate-800/50 p-2 sm:p-3 overflow-hidden">
+                        <AirlineLogo
+                          airline={appointment.title || appointment.itemName}
+                          className="h-full w-full object-contain filter drop-shadow-md transition-transform duration-300 scale-125 sm:scale-135 group-hover:scale-140"
+                          style={{ maxHeight: '100%', maxWidth: '100%' }}
+                        />
+                      </div>
+                    ) : (appointment.imageUrl || appointment.type === "Hotel") ? (
+                      <div className="w-full sm:w-56 shrink-0 h-40 sm:h-auto sm:self-stretch border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 overflow-hidden">
                         <img
                           src={appointment.imageUrl || getHotelImage(appointment)}
                           alt={appointment.title}
-                          className="h-full w-full object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
+                          className="h-full w-full object-cover"
                           onError={(e) => handleHotelImageError(e, appointment)}
                         />
                       </div>
-                    )}
+                    ) : null}
 
                     <div className="flex flex-col flex-1 p-4 gap-3">
                       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">

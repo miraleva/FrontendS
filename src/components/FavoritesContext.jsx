@@ -32,31 +32,44 @@ export function FavoritesProvider({ children }) {
     }, 3000);
   };
 
-  const isFavorite = (item) => {
-    if (!item) return false;
-    const itemId = String(item.id || item.hotelId || item.offerId || item.pnrCode || item.name || "");
-    if (!itemId) return false;
-    return favorites.some(
-      (f) => String(f.id || f.hotelId || f.offerId || f.pnrCode || f.name) === itemId
-    );
+  const getItemId = (item) => {
+    if (!item) return "";
+    if (item.id) return String(item.id);
+    if (item.hotelId) return String(item.hotelId);
+    if (item.offerId) return String(item.offerId);
+    if (item.pnrCode) return String(item.pnrCode);
+    if (item.airline && item.departureTime) {
+      return `flight-${item.airline}-${item.departureTime}-${item.arrivalTime || ''}-${item.price || ''}`;
+    }
+    if (item.name || item.title || item.hotelName) {
+      return String(item.name || item.title || item.hotelName);
+    }
+    return "";
   };
 
-  const toggleFavorite = (item) => {
+  const isFavorite = (item) => {
+    if (!item) return false;
+    const itemId = getItemId(item);
+    if (!itemId) return false;
+    return favorites.some((f) => getItemId(f) === itemId || (f.id && String(f.id) === itemId));
+  };
+
+  const toggleFavorite = (item, options = {}) => {
     if (!item) return;
-    const itemId = String(item.id || item.hotelId || item.offerId || item.pnrCode || item.name || Date.now());
+    const itemId = getItemId(item) || `item-${Date.now()}`;
     const exists = isFavorite(item);
 
     if (exists) {
-      setFavorites((prev) =>
-        prev.filter((f) => String(f.id || f.hotelId || f.offerId || f.pnrCode || f.name) !== itemId)
-      );
-      const title = item.name || item.title || item.hotelName || "Öğe";
+      setFavorites((prev) => prev.filter((f) => getItemId(f) !== itemId && String(f.id) !== itemId));
+      const title = item.title || item.name || item.hotelName || item.airline || "Öğe";
       showToast(`"${title}" favorilerden çıkarıldı`, "remove");
     } else {
+      const itemTitle = item.title || item.name || item.hotelName || (item.airline ? `${item.airline} Uçuşu` : "Otel / Uçuş");
       const itemToSave = {
         id: itemId,
         hotelId: item.hotelId || item.id,
-        name: item.name || item.title || item.hotelName || "Otel / Uçuş",
+        name: itemTitle,
+        title: itemTitle,
         type: item.type || (item.airline ? "FLIGHT" : "HOTEL"),
         location: item.location || item.city || item.destination || (item.region ? `${item.city || ''}, ${item.region}` : ""),
         price: Number(item.price || item.totalPrice || item.totalAmount || 0),
@@ -65,17 +78,19 @@ export function FavoritesProvider({ children }) {
         boardType: item.boardType || item.boardName || item.pensionType || "",
         imageUrl: item.imageUrl || item.thumbnailFull || item.thumbnail || item.photo || "",
         addedAt: new Date().toISOString(),
+        sessionId: options.sessionId || item.sessionId || null,
+        itemDetails: item.itemDetails || item.rawItem || item,
         rawItem: item
       };
       setFavorites((prev) => [itemToSave, ...prev]);
-      showToast(`"${itemToSave.name}" favorilere eklendi ❤️`, "add");
+      showToast(`"${itemToSave.title}" favorilere eklendi ❤️`, "add");
     }
   };
 
   const removeFavorite = (id) => {
     if (!id) return;
     setFavorites((prev) =>
-      prev.filter((f) => String(f.id || f.hotelId || f.offerId || f.pnrCode || f.name) !== String(id))
+      prev.filter((f) => getItemId(f) !== String(id) && String(f.id) !== String(id))
     );
     showToast("Favorilerden çıkarıldı", "remove");
   };

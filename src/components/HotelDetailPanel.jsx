@@ -202,7 +202,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
           {t("hoteldetail_back_to_chat", "Sohbete Dön")}
         </button>
         <button
-          onClick={() => toggleFavorite(hotel)}
+          onClick={() => toggleFavorite(hotel, { sessionId })}
           className="p-2 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-900 transition-colors"
         >
           <Heart size={18} className={isFavorite(hotel) ? "fill-rose-500 text-rose-500" : ""} />

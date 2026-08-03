@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Plane, Calendar, Clock, Briefcase, ArrowRight, ArrowDown } from 'lucide-react';
+import { X, Plane, Calendar, Clock, Briefcase, ArrowRight, ArrowDown, Heart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AirlineLogo } from '../utils/airlineLogos';
+import { useFavorites } from './FavoritesContext';
 
 function formatFlightDateTime(value) {
   if (!value) return value;
@@ -268,8 +269,9 @@ function FlightSegment({ title, departureCity, arrivalCity, departureTime, arriv
   );
 }
 
-export default function FlightDetailPanel({ flight, bookingDetails, onClose, onProceed }) {
+export default function FlightDetailPanel({ flight, bookingDetails, sessionId, onClose, onProceed }) {
   const { t } = useTranslation();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   if (!flight) return null;
 
@@ -283,6 +285,7 @@ export default function FlightDetailPanel({ flight, bookingDetails, onClose, onP
     : `${flight.price} ${flight.currency || 'TRY'}`;
 
   const layoverInfo = getLayoverData(flight, false);
+  const isFav = isFavorite(flight);
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 font-sans w-full relative">
@@ -292,12 +295,22 @@ export default function FlightDetailPanel({ flight, bookingDetails, onClose, onP
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 z-20 rounded-full bg-white dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-700 shadow-xs"
-        >
-          <X size={20} />
-        </button>
+        <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => toggleFavorite(flight, { sessionId })}
+            className="rounded-full bg-white dark:bg-slate-800 p-2 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-700 shadow-xs"
+            title={isFav ? t("favorites_remove", "Favorilerden Çıkar") : t("favorites_add", "Favorilere Ekle")}
+          >
+            <Heart size={20} className={isFav ? "fill-rose-500 text-rose-500" : ""} />
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-full bg-white dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-700 shadow-xs"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
         {/* Airline Brand / Logo Header */}
         <div className="relative z-10 flex items-center justify-between pt-1">

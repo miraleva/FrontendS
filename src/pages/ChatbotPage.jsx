@@ -442,11 +442,11 @@ export default function Index() {
     }
   }, [sessionId]);
 
-  // Welcome sayfasından veya başka bir sayfadan aktarılan initialPrompt ve autoSend mantığı
+  // Welcome veya Favorites sayfasından aktarılan prompt ve selectedItem/inspectItem mantığı
   useEffect(() => {
-    if (location.state?.initialPrompt && !autoSendHandledRef.current) {
-      const prompt = location.state.initialPrompt;
-      const shouldAutoSend = location.state.autoSend;
+    const prompt = location.state?.autoPrompt || location.state?.initialPrompt;
+    if (prompt && !autoSendHandledRef.current) {
+      const shouldAutoSend = location.state.autoSend !== false;
       autoSendHandledRef.current = true;
       setSearchQuery(prompt);
       navigate(location.pathname + location.search, { replace: true, state: {} });
@@ -454,6 +454,19 @@ export default function Index() {
       if (shouldAutoSend) {
         handleSend(prompt);
       }
+    }
+
+    const itemToInspect = location.state?.inspectItem || location.state?.selectedItem;
+    if (itemToInspect) {
+      const itemType = location.state.searchType || (itemToInspect.airline ? "flight" : "hotel");
+      if (itemType === "flight") {
+        setSelectedFlight(itemToInspect);
+        setActivePanel("flightDetail");
+      } else {
+        setSelectedHotel(itemToInspect);
+        setActivePanel("hotelDetail");
+      }
+      navigate(location.pathname + location.search, { replace: true, state: {} });
     }
   }, [location.state]);
 
@@ -1139,6 +1152,7 @@ export default function Index() {
                 hotel={selectedHotel}
                 bookingDetails={bookingDetails}
                 loadingDetail={hotelDetailLoading}
+                sessionId={sessionId}
                 onClose={() => setActivePanel(null)}
                 onProceed={() => {
                   setActivePanel(null);
@@ -1180,6 +1194,7 @@ export default function Index() {
               <FlightDetailPanel
                 flight={selectedFlight}
                 bookingDetails={bookingDetails}
+                sessionId={sessionId}
                 onClose={() => setActivePanel(null)}
                 onProceed={() => {
                   setActivePanel(null);

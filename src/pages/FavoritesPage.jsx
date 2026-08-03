@@ -18,6 +18,7 @@ import ChatSidebar from "../components/ChatSidebar";
 import { useTheme } from "../components/ThemeContext";
 import { useFavorites } from "../components/FavoritesContext";
 import { getHotelImage, handleHotelImageError } from "../utils/hotelImageUtils";
+import { AirlineLogo } from "../utils/airlineLogos";
 
 export default function FavoritesPage() {
   const { t } = useTranslation();
@@ -37,11 +38,21 @@ export default function FavoritesPage() {
   });
 
   const handleCardClick = (item) => {
-    navigate("/reservation", {
+    const itemDetails = item.itemDetails || item.rawItem || item;
+    const title = item.title || item.name || "Otel";
+    const autoPrompt = item.type === "FLIGHT"
+      ? `${title} uçuşu hakkında detaylı bilgi almak ve rezervasyon adımlarına geçmek istiyorum.`
+      : `${title} oteli hakkında detaylı bilgi almak ve rezervasyon adımlarına geçmek istiyorum.`;
+
+    const targetUrl = item.sessionId ? `/chat?sessionId=${item.sessionId}` : "/chat";
+
+    navigate(targetUrl, {
       state: {
-        selectedItem: item.rawItem || item,
-        selectedHotel: item.type !== "FLIGHT" ? (item.rawItem || item) : null,
-        selectedFlight: item.type === "FLIGHT" ? (item.rawItem || item) : null,
+        autoPrompt: autoPrompt,
+        initialPrompt: autoPrompt,
+        autoSend: true,
+        selectedItem: itemDetails,
+        inspectItem: itemDetails,
         searchType: item.type === "FLIGHT" ? "flight" : "hotel",
       },
     });
@@ -138,7 +149,7 @@ export default function FavoritesPage() {
                 }`}
               >
                 <Hotel size={14} />
-                <span>{t("favorites_filter_hotels", "Oteller")}</span>
+                <span>{t("favorites_filter_hotels", "Oteller")} ({favorites.filter((f) => f.type !== "FLIGHT").length})</span>
               </button>
 
               <button
@@ -151,7 +162,7 @@ export default function FavoritesPage() {
                 }`}
               >
                 <Plane size={14} />
-                <span>{t("favorites_filter_flights", "Uçuşlar")}</span>
+                <span>{t("favorites_filter_flights", "Uçuşlar")} ({favorites.filter((f) => f.type === "FLIGHT").length})</span>
               </button>
             </div>
           )}
@@ -161,25 +172,39 @@ export default function FavoritesPage() {
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredFavorites.map((item, idx) => {
                 const isFlight = item.type === "FLIGHT";
-                const imageSrc = isFlight
-                  ? (item.imageUrl || "/ajet.png")
-                  : getHotelImage(item.rawItem || item, idx);
+                const airlineName = item.airline || item.airlineName || item.name || "AJET";
+                const imageSrc = !isFlight ? getHotelImage(item.rawItem || item, idx) : null;
 
                 return (
                   <div
                     key={item.id || idx}
                     className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90 backdrop-blur-md"
                   >
-                    {/* Image Header */}
+                    {/* Top Media Container */}
                     <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                      <img
-                        src={imageSrc}
-                        alt={item.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => handleHotelImageError(e, item.rawItem || item)}
-                      />
-                      
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
+                      {isFlight ? (
+                        <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
+                          <div className="flex h-full w-full items-center justify-center">
+                            <AirlineLogo
+                              airline={airlineName}
+                              theme={theme}
+                              className="h-full w-full max-h-28 max-w-[85%] object-contain filter drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                              style={{ maxHeight: "120px" }}
+                            />
+                          </div>
+                          <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-900/10 via-transparent to-transparent dark:from-slate-950/40" />
+                        </div>
+                      ) : (
+                        <div className="relative h-full w-full">
+                          <img
+                            src={imageSrc}
+                            alt={item.name}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={(e) => handleHotelImageError(e, item.rawItem || item)}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
+                        </div>
+                      )}
 
                       {/* Remove Favorite Button */}
                       <button

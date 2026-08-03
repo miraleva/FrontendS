@@ -69,7 +69,7 @@ export function AirlineLogo({
         className={`${className} object-contain shrink-0`}
         style={{
           filter: activeDark ? "drop-shadow(0px 2px 8px rgba(255, 255, 255, 0.12))" : "none",
-          maxHeight: "44px",
+          maxHeight: style.maxHeight || "44px",
           ...style
         }}
         onError={() => setImgError(true)}

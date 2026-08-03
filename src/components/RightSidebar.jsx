@@ -644,7 +644,7 @@ export default function RightSidebar({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              toggleFavorite(result);
+              toggleFavorite(result, { sessionId });
             }}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-md transition hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900"
           >
@@ -699,6 +699,7 @@ export default function RightSidebar({
   };
 
   const FlightResultCard = ({ result, idx }) => {
+    const isFav = isFavorite(result);
     const isSelected =
       selectedFlight &&
       ((selectedFlight.offerId && result.offerId && selectedFlight.offerId === result.offerId) ||
@@ -720,11 +721,27 @@ export default function RightSidebar({
               <span className="text-[11px] text-slate-400 dark:text-slate-500">{result.transfers || t("rightSidebar.directFlight", { defaultValue: "Direkt Uçuş" })}</span>
             </div>
           </div>
-          {result.baggage && (
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-              {result.baggage}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {result.baggage && (
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                {result.baggage}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(result, { sessionId });
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 transition hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600"
+              title={isFav ? t("favorites_remove", "Favorilerden Çıkar") : t("favorites_add", "Favorilere Ekle")}
+            >
+              <Heart
+                size={16}
+                className={isFav ? "fill-rose-500 text-rose-500" : "text-slate-600 dark:text-slate-300"}
+              />
+            </button>
+          </div>
         </div>
 
         <div className="mb-3 flex items-center justify-between rounded-xl bg-slate-50 p-3 dark:bg-slate-900/60">
