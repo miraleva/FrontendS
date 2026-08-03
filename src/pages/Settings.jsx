@@ -245,7 +245,7 @@ export default function Settings() {
     const themeContext = useTheme();
     const theme = themeContext?.theme || "light";
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
     const [activeTab, setActiveTab] = useState("general");
     const [settings, setSettings] = useState(readStoredSettings);
     const [savedSettings, setSavedSettings] = useState(readStoredSettings);
@@ -568,7 +568,7 @@ export default function Settings() {
                     </button>
                 )}
 
-                <div className="flex-1 overflow-y-auto px-4 py-8 md:px-8 md:py-12">
+                <div className="flex-1 overflow-y-auto px-4 pt-16 pb-8 md:px-8 md:py-12">
                     <div className="mx-auto w-full max-w-6xl">
                         <div className="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 md:p-8">
                             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

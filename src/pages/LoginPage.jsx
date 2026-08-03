@@ -306,18 +306,18 @@ export default function LoginPage() {
       {/* Top Left Branding Link to Welcome */}
       <Link 
         to="/welcome" 
-        className="fixed top-4 left-4 z-50 group flex items-center transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+        className="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 group flex items-center transition-transform hover:scale-105 active:scale-95 cursor-pointer"
         title={t('auth.backToHome', 'Ana Sayfaya Dön')}
       >
         <SannyLogo className="flex items-center gap-2 select-none" />
       </Link>
 
       {/* Top Right Controls (Theme Toggle + Language Selector) */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+      <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-1.5 sm:gap-2">
         <button
           type="button"
           onClick={toggleTheme}
-          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center shadow-lg w-10 h-10"
+          className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center shadow-lg w-9 h-9 sm:w-10 sm:h-10"
           title={theme === 'dark' ? (t('theme_light', 'Aydınlık Mod')) : (t('theme_dark', 'Karanlık Mod'))}
         >
           {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-slate-700" />}
@@ -341,7 +341,7 @@ export default function LoginPage() {
       <div className="fixed inset-0 z-10 pointer-events-none bg-slate-900/20 dark:bg-slate-950/70" />
 
       {/* Katman 3 (z-20): Form Container */}
-      <div className="relative z-20 w-full max-w-[520px] bg-white/40 backdrop-blur-md border border-white/30 dark:bg-slate-900/50 dark:border-slate-800/40 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-5 md:p-6 animate-fade-in my-4">
+      <div className="relative z-20 w-full max-w-[520px] bg-white/40 backdrop-blur-md border border-white/30 dark:bg-slate-900/50 dark:border-slate-800/40 rounded-3xl sm:rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-4 sm:p-6 animate-fade-in my-16 sm:my-4">
 
         {/* BAŞLIK */}
         <div className="text-center mb-4">
@@ -449,7 +449,7 @@ export default function LoginPage() {
                     setVerificationError('');
                   }}
                   placeholder="Doğrulama Kodu (Örn: 123456)"
-                  className="w-full bg-slate-100 dark:bg-slate-800/90 border border-slate-350 dark:border-slate-700 rounded-full py-2.5 text-center text-lg font-bold tracking-[8px] placeholder:tracking-normal text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
+                  className="w-full bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-full py-2.5 text-center text-lg font-bold tracking-[8px] placeholder:tracking-normal text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
                 />
                 {verificationError && (
                   <p className="text-[12px] text-red-500 text-center mt-1 font-semibold">{verificationError}</p>

@@ -335,7 +335,7 @@ export default function AppointmentDetailModal({ appointment, onClose, onEdit, o
         onClick={onClose}
       >
         <div
-          className="w-full max-w-[720px] min-h-[520px] max-h-[88vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+          className="w-full max-w-2xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-fade-in scale-100 transition-all border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header Banner Container */}

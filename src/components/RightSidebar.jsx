@@ -11,9 +11,12 @@ import {
   Hotel,
   Plane,
   Moon,
+  PanelLeftOpen,
   PanelRightClose,
+  X,
   Plus,
   Minus,
+  Smile,
   Baby,
   Star,
   Heart,
@@ -21,30 +24,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AirlineLogo } from "../utils/airlineLogos";
+import { getHotelImage, handleHotelImageError, DEFAULT_HOTEL_IMAGE } from "../utils/hotelImageUtils";
+import { useFavorites } from "./FavoritesContext";
 
-const HOTEL_FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=80",
-];
 
-function getHotelImage(result, idx) {
-  if (Array.isArray(result.photos) && result.photos.length > 0 && result.photos[0]) return result.photos[0];
-  if (Array.isArray(result.images) && result.images.length > 0 && result.images[0]) return result.images[0];
-  if (result.thumbnailFull) return result.thumbnailFull;
-  if (result.heroImage) return result.heroImage;
-  if (result.thumbnailUrl && !result.thumbnailUrl.includes("placeholder")) return result.thumbnailUrl;
-  if (result.thumbnail) return result.thumbnail;
-  if (result.photo) return result.photo;
-
-  // Gerçek API görseli bulunamadığında benzersiz (unique) fallback görsel atanır
-  const charCode = String(result.hotelId || result.id || result.name || idx).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const fallbackIdx = (charCode + idx) % HOTEL_FALLBACK_IMAGES.length;
-  return HOTEL_FALLBACK_IMAGES[fallbackIdx];
-}
 
 function sanitizeBadgeText(boardType) {
   if (!boardType) return null;
@@ -338,7 +321,7 @@ function GuestSelector({
       {childCount > 0 && (
         <div className="mt-1 border-t border-slate-200 pt-3 dark:border-slate-700">
           <div className="mb-3 flex items-center gap-2">
-            <Baby
+            <Smile
               size={16}
               className="text-[#FF8A00] dark:text-orange-400"
             />
@@ -461,6 +444,8 @@ function Stepper({ currentStep, setCurrentStep, t }) {
 export default function RightSidebar({
   isRightSidebarOpen,
   setIsRightSidebarOpen,
+  isSidebarOpen,
+  setIsSidebarOpen,
   searchType,
   bookingDetails = {},
   selectedHotel,
@@ -474,15 +459,7 @@ export default function RightSidebar({
   const { t, i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [resultSort, setResultSort] = useState("price_asc");
-  const [favoriteIds, setFavoriteIds] = useState(() => new Set());
-
-  const toggleFavorite = (id) => {
-    setFavoriteIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [adultCount, setAdultCount] = useState(
     Number(bookingDetails.adultCount) || 1
   );
@@ -637,8 +614,7 @@ export default function RightSidebar({
   });
 
   const HotelResultCard = ({ result, idx }) => {
-    const id = result.hotelId || result.offerId || idx;
-    const isFav = favoriteIds.has(id);
+    const isFav = isFavorite(result);
     const isSelected = selectedHotel && (selectedHotel.name === result.name || selectedHotel.hotelId === result.hotelId);
     const locationParts = [result.city, result.town, result.village, result.region].filter(Boolean);
     const locationText = [...new Set(locationParts)].join(', ');
@@ -657,10 +633,7 @@ export default function RightSidebar({
             src={hotelImage}
             alt={result.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = HOTEL_FALLBACK_IMAGES[idx % HOTEL_FALLBACK_IMAGES.length];
-            }}
+            onError={(e) => handleHotelImageError(e, result)}
           />
           {badgeText && (
             <span className="absolute left-3 top-3 rounded-full bg-black/65 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md shadow-sm">
@@ -671,7 +644,7 @@ export default function RightSidebar({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              toggleFavorite(id);
+              toggleFavorite(result);
             }}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-md transition hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900"
           >
@@ -726,8 +699,6 @@ export default function RightSidebar({
   };
 
   const FlightResultCard = ({ result, idx }) => {
-    const id = result.offerId || idx;
-    const isFav = favoriteIds.has(id);
     const isSelected =
       selectedFlight &&
       ((selectedFlight.offerId && result.offerId && selectedFlight.offerId === result.offerId) ||
@@ -805,7 +776,7 @@ export default function RightSidebar({
 
         <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700/60">
           <div>
-            <div className="text-[11px] text-slate-400">{t("rightSidebar.perPersonPrice", { defaultValue: "Kişi başı" })}</div>
+            <div className="text-[11px] text-slate-400">{t("rightSidebar.totalPrice", { defaultValue: "Toplam Fiyat" })}</div>
             <div className="text-lg font-extrabold text-[#FF8A00] dark:text-orange-400">
               {formatPrice(result.price)} {result.currency || "TRY"}
             </div>
@@ -1180,74 +1151,84 @@ export default function RightSidebar({
       });
 
   return (
-    <aside className="relative z-30 hidden h-full w-[420px] min-w-[420px] max-w-[420px] flex-none overflow-hidden border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:flex">
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
-        {/* Üst bölüm sabit kalır; panel kaydırıldığında kaybolmaz. */}
-        <div className="flex-shrink-0 border-b border-slate-100 bg-white px-6 pb-4 pt-5 dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-4 flex items-center justify-end">
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isRightSidebarOpen && (
+        <div
+          onClick={() => setIsRightSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-fade-in"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`fixed lg:relative inset-0 sm:left-auto sm:right-0 z-50 lg:z-30 h-full w-full sm:w-[450px] lg:w-[420px] lg:min-w-[420px] lg:max-w-[420px] flex-none overflow-hidden border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xl lg:shadow-none transition-all duration-300 ${isRightSidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0 hidden lg:flex"
+        }`}>
+        <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white dark:bg-slate-900">
+          {/* Üst bölüm sabit kalır; panel kaydırıldığında kaybolmaz. */}
+          <div className="flex-shrink-0 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 sticky top-0 z-20">
+            <div className="flex items-center justify-between gap-2">
+              {/* Title & Badge */}
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">
+                  {t("rightSidebar.title", {
+                    defaultValue: "Rezervasyon Özeti",
+                  })}
+                </h2>
+                <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full">
+                  {currentStep}/2
+                </span>
+              </div>
+
+              {/* Single Close Button on Mobile/Drawer */}
+              <button
+                type="button"
+                onClick={() => setIsRightSidebarOpen(false)}
+                className="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Paneli kapat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div
+                className="h-full rounded-full bg-[#FF8A00] transition-all duration-300 dark:bg-orange-500"
+                style={{
+                  width: `${(currentStep / 2) * 100}%`,
+                }}
+              />
+            </div>
+
+            <div className="mt-3">
+              <Stepper
+                currentStep={currentStep}
+                setCurrentStep={setCurrentStep}
+                t={t}
+              />
+            </div>
+          </div>
+
+          {/* Sadece adım içeriği kaydırılır. */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 sm:px-6 py-4 pb-20 lg:pb-5">
+            {currentStep === 1 &&
+              renderSelectionStep()}
+
+            {currentStep === 2 &&
+              renderReviewStep()}
+          </div>
+
+          <div className="flex-shrink-0 border-t border-slate-100 bg-white px-4 sm:px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
             <button
               type="button"
-              onClick={() => setIsRightSidebarOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
-              title={t("rightSidebar.closePanel", {
-                defaultValue: "Paneli kapat",
-              })}
+              onClick={handleNext}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8A00] px-4 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(255,138,0,0.28)] transition hover:bg-[#E87900] active:scale-[0.99] dark:bg-orange-500 dark:hover:bg-orange-600 cursor-pointer"
             >
-              <PanelRightClose size={17} />
+              {buttonText}
+              <ChevronRight size={16} />
             </button>
           </div>
-
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">
-              {t("rightSidebar.title", {
-                defaultValue: "Rezervasyon Özeti",
-              })}
-            </h1>
-
-            <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#FF8A00] dark:bg-orange-500/10 dark:text-orange-400">
-              {currentStep}/2
-            </span>
-          </div>
-
-          <div className="mb-5 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div
-              className="h-full rounded-full bg-[#FF8A00] transition-all duration-300 dark:bg-orange-500"
-              style={{
-                width: `${(currentStep / 2) * 100}%`,
-              }}
-            />
-          </div>
-
-          <Stepper
-            currentStep={currentStep}
-            setCurrentStep={setCurrentStep}
-            t={t}
-          />
         </div>
-
-        {/* Sadece adım içeriği kaydırılır. */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          {currentStep === 1 &&
-            renderSelectionStep()}
-
-          {currentStep === 2 &&
-            renderReviewStep()}
-        </div>
-
-        <div className="flex-shrink-0 border-t border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={isCombined && (!selectedHotel || !selectedFlight)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8A00] px-4 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(255,138,0,0.28)] transition hover:bg-[#E87900] active:scale-[0.99] dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isCombined && (!selectedHotel || !selectedFlight)
-              ? "1 Otel + 1 Uçuş Seçiniz"
-              : buttonText}
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

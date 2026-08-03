@@ -132,7 +132,7 @@ export default function Profile() {
     }, [theme]);
 
     const [isEditing, setIsEditing] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
 
     const [isGenderOpen, setIsGenderOpen] = useState(false);
     const genderRef = useRef(null);
@@ -527,7 +527,7 @@ export default function Profile() {
                 )}
 
                 {/* Scrollable Container holding the Glass Card */}
-                <div className="flex-1 overflow-y-auto px-[16px] py-[32px] md:py-[48px] flex justify-center items-start z-20">
+                <div className="flex-1 overflow-y-auto px-[16px] pt-16 pb-8 md:py-[48px] flex justify-center items-start z-20">
                     <div className="w-full max-w-[672px] mt-[16px] md:mt-[24px]">
                         {/* Main Profile Info Card */}
                         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} onKeyDown={handleFormKeyDown} className="bg-white/95 dark:bg-slate-900/95 rounded-[20px] shadow-xl p-[32px] md:p-[40px] border border-slate-200 dark:border-slate-800">

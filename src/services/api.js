@@ -12,7 +12,7 @@ api.interceptors.request.use(
   (config) => {
     const url = config.url || '';
     const isPublicAuthEndpoint =
-      url.includes('/api/auth') ||
+      (url.includes('/api/auth') && !url.includes('/api/auth/logout')) ||
       url.includes('/api/authenticationservice/login');
 
     if (isPublicAuthEndpoint) {

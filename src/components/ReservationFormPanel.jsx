@@ -23,6 +23,8 @@ import "react-phone-number-input/style.css";
 import api from "../services/api";
 import { useAuth } from "./AuthContext";
 import ReservationPreviewModal from "./ReservationPreviewModal";
+import { getHotelImage, handleHotelImageError, DEFAULT_HOTEL_IMAGE } from "../utils/hotelImageUtils";
+
 import { handleFormKeyDown } from "../utils/formNavigation";
 import { HotelConfirmationModal } from "./ConfirmationModal";
 
@@ -679,7 +681,7 @@ export default function ReservationFormPanel({
       totalPrice: Number(safeHotel?.price) || 0,
       currency: safeHotel?.currency || "TRY",
       chatSessionId: chatSessionId || null,
-      imageUrl: safeHotel?.thumbnailFull || safeHotel?.thumbnail || "",
+      imageUrl: getHotelImage(safeHotel),
       lang: i18n?.language || "tr",
       passengers: (guests || []).map((guest, index) => {
         const today = new Date();
@@ -789,25 +791,16 @@ export default function ReservationFormPanel({
     <>
       <div className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50 font-sans dark:bg-slate-900">
         <div className="relative h-52 flex-shrink-0 overflow-hidden bg-slate-800 md:h-64">
-          {safeHotel?.thumbnailFull ||
-            safeHotel?.thumbnail ? (
-            <img
-              src={
-                safeHotel.thumbnailFull ||
-                safeHotel.thumbnail
-              }
-              alt={
-                safeHotel.name ||
-                safeHotel.hotelId ||
-                "Hotel"
-              }
-              className="h-full w-full object-cover"
-              onError={(event) => {
-                event.currentTarget.style.display =
-                  "none";
-              }}
-            />
-          ) : null}
+          <img
+            src={getHotelImage(safeHotel)}
+            alt={
+              safeHotel?.name ||
+              safeHotel?.hotelId ||
+              "Hotel"
+            }
+            className="h-full w-full object-cover"
+            onError={(event) => handleHotelImageError(event, safeHotel)}
+          />
 
           {onBack && (
             <button

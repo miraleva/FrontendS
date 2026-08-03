@@ -245,7 +245,7 @@ export default function Users() {
 
                                             <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
                                                 <span className="text-gray-400 dark:text-slate-500">
-                                                    Son Giriş
+                                                    {t("users_page.last_login", "Son Giriş")}
                                                 </span>
                                                 <span className="font-semibold text-gray-700 dark:text-slate-350">
                                                     {formatDateTime(user.lastLoginAt)}
@@ -254,7 +254,7 @@ export default function Users() {
 
                                             <div className="flex justify-between items-center text-xs">
                                                 <span className="text-gray-400 dark:text-slate-500">
-                                                    Son Çıkış
+                                                    {t("users_page.last_logout", "Son Çıkış")}
                                                 </span>
                                                 <span className="font-semibold text-gray-700 dark:text-slate-350">
                                                     {formatDateTime(user.lastLogoutAt)}

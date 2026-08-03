@@ -110,7 +110,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-[#f07c24] selection:text-white transition-colors duration-300">
+    <div className="relative w-full min-h-screen md:h-screen overflow-y-auto md:overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-[#f07c24] selection:text-white transition-colors duration-300">
 
       {/* 1. FIXED BACKGROUND VIDEO & LIGHT/SOFT OVERLAY (NO BLUR) */}
       <div className="fixed inset-0 z-0">
@@ -129,10 +129,10 @@ export default function WelcomePage() {
       </div>
 
       {/* 2. FIXED FULL-WIDTH HEADER */}
-      <header className="absolute top-0 left-0 w-full z-50 px-6 sm:px-10 h-20 flex items-center justify-between backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors">
+      <header className="sticky md:absolute top-0 left-0 w-full z-50 px-4 sm:px-10 h-16 sm:h-20 flex items-center justify-between backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors">
         {/* Logo */}
         <div className="cursor-pointer" onClick={() => scrollToSectionIndex(0)}>
-          <SannyLogo className="flex items-center gap-3 select-none" imgClassName="w-10 h-10 object-contain drop-shadow-md" textClassName="font-display font-black text-[#f07c24] text-2xl tracking-wider" />
+          <SannyLogo className="flex items-center gap-2 select-none" imgClassName="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-md" textClassName="font-display font-black text-[#f07c24] text-xl sm:text-2xl tracking-wider" />
         </div>
 
         {/* Center Navigation Links */}
@@ -149,12 +149,12 @@ export default function WelcomePage() {
         </nav>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Theme Toggle Button */}
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer shadow-md flex items-center justify-center w-10 h-10"
+            className="p-2 sm:p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-amber-400 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer shadow-md flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10"
             title={theme === 'dark' ? (t('theme_light', 'Aydınlık Mod')) : (t('theme_dark', 'Karanlık Mod'))}
           >
             {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-slate-700" />}
@@ -174,7 +174,7 @@ export default function WelcomePage() {
       </header>
 
       {/* 3. SIDE DOT NAVIGATION (INDICATOR WITH SMOOTH EXPANSION) */}
-      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-4 items-center">
+      <div className="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 z-50 flex-col gap-4 items-center">
         {sections.map((sec, idx) => (
           <button
             key={sec.id}
@@ -201,11 +201,11 @@ export default function WelcomePage() {
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={() => setIsPaused(true)}
         onTouchEnd={() => setIsPaused(false)}
-        className="w-full h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth z-10 relative [will-change:transform,scroll-position] [backface-visibility:hidden]"
+        className="w-full h-full overflow-y-auto md:overflow-y-scroll md:snap-y md:snap-mandatory scroll-smooth z-10 relative"
       >
 
         {/* SECTION 1: HERO */}
-        <section className="h-screen w-full snap-start snap-always flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 pt-20 text-center relative">
+        <section className="min-h-screen md:h-screen w-full md:snap-start md:snap-always flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12 md:py-0 md:pt-20 text-center relative">
           <div className="max-w-4xl mx-auto flex flex-col items-center">
 
             {/* Badge */}
@@ -215,17 +215,17 @@ export default function WelcomePage() {
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
+            <h1 className="text-3xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight sm:leading-none text-white drop-shadow-lg">
               {t('landing.heroTitle')}
             </h1>
 
             {/* Subtitle */}
-            <p className="mt-6 text-base sm:text-xl text-slate-100 dark:text-slate-200 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md">
+            <p className="mt-4 sm:mt-6 text-sm sm:text-xl text-slate-100 dark:text-slate-200 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md">
               {t('landing.heroSubtitle')}
             </p>
 
             {/* Interactive Prompt Input Box */}
-            <div className="mt-10 max-w-2xl w-full mx-auto">
+            <div className="mt-8 sm:mt-10 max-w-2xl w-full mx-auto">
               <form onSubmit={handleStartSearch} className="relative group">
                 <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#f07c24] to-amber-500 opacity-40 group-hover:opacity-75 transition duration-500 blur-md" />
                 <div className="relative flex items-center bg-white/80 dark:bg-slate-900/85 backdrop-blur-xl border border-white/40 dark:border-slate-700/60 rounded-2xl p-2 shadow-2xl">
@@ -248,18 +248,18 @@ export default function WelcomePage() {
               </form>
             </div>
 
-            {/* Buttons */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            {/* CTA Action Buttons */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md mx-auto z-20 relative">
               <button
                 onClick={handleGuestEntry}
-                className="px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base bg-[#f07c24] hover:bg-[#e06b13] text-white transition-all shadow-lg hover:shadow-orange-500/30 flex items-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base bg-[#f07c24] hover:bg-[#e06b13] text-white transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{t('landing.tryAsGuest')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 onClick={() => navigate('/login')}
-                className="px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base bg-white/30 dark:bg-slate-800/50 hover:bg-white/50 dark:hover:bg-slate-800/80 text-white border border-white/40 dark:border-slate-700/60 transition-all cursor-pointer backdrop-blur-md shadow-md"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base bg-white/40 dark:bg-slate-800/60 hover:bg-white/60 dark:hover:bg-slate-800/80 text-white border border-white/50 dark:border-slate-700/60 transition-all cursor-pointer backdrop-blur-md shadow-md"
               >
                 {t('landing.login')}
               </button>
@@ -268,28 +268,28 @@ export default function WelcomePage() {
         </section>
 
         {/* SECTION 2: FEATURES */}
-        <section className="h-screen w-full snap-start snap-always flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 pt-16 relative">
+        <section className="min-h-screen md:h-screen w-full md:snap-start md:snap-always flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12 md:py-0 md:pt-16 relative">
           <div className="max-w-6xl mx-auto w-full">
 
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <h2 className="text-3xl sm:text-5xl font-bold text-white tracking-tight drop-shadow-md">
+            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-5xl font-bold text-white tracking-tight drop-shadow-md">
                 {t('landing.featuresTitle')}
               </h2>
-              <p className="mt-4 text-slate-200 dark:text-slate-300 text-sm sm:text-base font-medium drop-shadow-sm">
+              <p className="mt-3 sm:mt-4 text-slate-200 dark:text-slate-300 text-xs sm:text-base font-medium drop-shadow-sm">
                 {t('landing.featuresSubtitle')}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Feature 1: Hotel */}
-              <div className="group relative p-7 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5">
-                <div className="w-14 h-14 rounded-2xl bg-orange-500/10 dark:bg-orange-500/20 text-[#f07c24] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <Hotel className="w-7 h-7" />
+              <div className="group relative p-6 sm:p-7 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-orange-500/10 dark:bg-orange-500/20 text-[#f07c24] flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
+                  <Hotel className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
                   {t('landing.featureHotelTitle')}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
                   {t('landing.featureHotelDesc')}
                 </p>
                 <div className="inline-flex items-center gap-1.5 text-xs text-[#f07c24] bg-orange-500/10 px-3 py-1 rounded-xl border border-orange-500/20 font-semibold">
@@ -299,14 +299,14 @@ export default function WelcomePage() {
               </div>
 
               {/* Feature 2: Flight */}
-              <div className="group relative p-7 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5">
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <Plane className="w-7 h-7" />
+              <div className="group relative p-6 sm:p-7 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400 flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
+                  <Plane className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
                   {t('landing.featureFlightTitle')}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
                   {t('landing.featureFlightDesc')}
                 </p>
                 <div className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-500/10 px-3 py-1 rounded-xl border border-blue-500/20 font-semibold">
@@ -316,14 +316,14 @@ export default function WelcomePage() {
               </div>
 
               {/* Feature 3: PNR */}
-              <div className="group relative p-7 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <Ticket className="w-7 h-7" />
+              <div className="group relative p-6 sm:p-7 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
+                  <Ticket className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
                   {t('landing.featurePnrTitle')}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
                   {t('landing.featurePnrDesc')}
                 </p>
                 <div className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20 font-semibold">
@@ -337,54 +337,54 @@ export default function WelcomePage() {
         </section>
 
         {/* SECTION 3: HOW IT WORKS */}
-        <section className="h-screen w-full snap-start snap-always flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 pt-16 relative">
+        <section className="min-h-screen md:h-screen w-full md:snap-start md:snap-always flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12 md:py-0 md:pt-16 relative">
           <div className="max-w-6xl mx-auto w-full">
 
-            <div className="text-center max-w-3xl mx-auto mb-14">
-              <h2 className="text-3xl sm:text-5xl font-bold text-white tracking-tight drop-shadow-md">
+            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-14">
+              <h2 className="text-2xl sm:text-5xl font-bold text-white tracking-tight drop-shadow-md">
                 {t('landing.howTitle')}
               </h2>
-              <p className="mt-4 text-slate-200 dark:text-slate-300 text-sm sm:text-base font-medium drop-shadow-sm">
+              <p className="mt-3 sm:mt-4 text-slate-200 dark:text-slate-300 text-xs sm:text-base font-medium drop-shadow-sm">
                 {t('landing.howSubtitle')}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               {/* Step 1 */}
-              <div className="p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 flex flex-col items-center text-center relative overflow-hidden group shadow-xl">
-                <div className="w-14 h-14 rounded-2xl bg-[#f07c24] text-white font-black text-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform">
+              <div className="p-6 sm:p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 flex flex-col items-center text-center relative overflow-hidden group shadow-xl">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#f07c24] text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                   1
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
                   {t('landing.step1Title')}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
                   {t('landing.step1Desc')}
                 </p>
               </div>
 
               {/* Step 2 */}
-              <div className="p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 flex flex-col items-center text-center relative overflow-hidden group shadow-xl">
-                <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white font-black text-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform">
+              <div className="p-6 sm:p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 flex flex-col items-center text-center relative overflow-hidden group shadow-xl">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-600 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                   2
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
                   {t('landing.step2Title')}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
                   {t('landing.step2Desc')}
                 </p>
               </div>
 
               {/* Step 3 */}
-              <div className="p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 flex flex-col items-center text-center relative overflow-hidden group shadow-xl">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-black text-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform">
+              <div className="p-6 sm:p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/50 dark:border-slate-800/60 flex flex-col items-center text-center relative overflow-hidden group shadow-xl">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-600 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
                   3
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
                   {t('landing.step3Title')}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
                   {t('landing.step3Desc')}
                 </p>
               </div>
@@ -394,20 +394,20 @@ export default function WelcomePage() {
         </section>
 
         {/* SECTION 4: FAQ & SUPPORT & FOOTER */}
-        <section className="h-screen w-full snap-start snap-always flex flex-col justify-between items-center px-4 sm:px-6 lg:px-8 pt-24 pb-8 relative">
+        <section className="min-h-screen md:h-screen w-full md:snap-start md:snap-always flex flex-col justify-between items-center px-4 sm:px-6 lg:px-8 py-12 md:pt-24 md:pb-8 relative">
           <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col justify-center">
 
-            <div className="text-center mb-8">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight drop-shadow-md">
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight drop-shadow-md">
                 {t('landing.faqTitle')}
               </h2>
-              <p className="mt-2 text-slate-200 dark:text-slate-300 text-sm font-medium drop-shadow-sm">
+              <p className="mt-2 text-slate-200 dark:text-slate-300 text-xs sm:text-sm font-medium drop-shadow-sm">
                 {t('landing.faqSubtitle')}
               </p>
             </div>
 
             {/* Accordions */}
-            <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-none md:max-h-[40vh] md:overflow-y-auto pr-1">
               {[
                 { q: t('landing.faqQ1'), a: t('landing.faqA1') },
                 { q: t('landing.faqQ2'), a: t('landing.faqA2') },
@@ -457,15 +457,18 @@ export default function WelcomePage() {
           </div>
 
           {/* Footer at bottom of section 4 */}
-          <footer className="w-full max-w-6xl mx-auto pt-6 border-t border-white/20 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-200 dark:text-slate-400">
-            <div className="flex items-center gap-2">
+          <footer className="w-full max-w-6xl mx-auto mt-8 pt-6 border-t border-white/20 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-200 dark:text-slate-400">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
               <SannyLogo className="flex items-center gap-2 select-none" imgClassName="w-6 h-6 object-contain" textClassName="font-display font-black text-[#f07c24] text-lg tracking-wider" />
-              <span className="border-l border-white/20 dark:border-slate-800/60 pl-3">
+              <span className="hidden sm:inline-block border-l border-white/20 dark:border-slate-800/60 pl-3">
+                {t('landing.footerTagline')}
+              </span>
+              <span className="sm:hidden text-white/80 text-[11px]">
                 {t('landing.footerTagline')}
               </span>
             </div>
 
-            <p>© {new Date().getFullYear()} SANNY AI. {t('landing.allRightsReserved')}</p>
+            <p className="text-center sm:text-right font-medium">© {new Date().getFullYear()} SANNY AI. {t('landing.allRightsReserved')}</p>
           </footer>
         </section>
 

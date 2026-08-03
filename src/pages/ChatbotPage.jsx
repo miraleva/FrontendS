@@ -178,7 +178,7 @@ export default function Index() {
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const [isChatActive, setIsChatActive] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
@@ -202,14 +202,13 @@ export default function Index() {
     }
   };
 
-  // --- SeÃ§ilen Otel / UÃ§uÅŸ Objesi ---
+  // --- Seçilen Otel / Uçuş Objesi ---
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [hotelDetailLoading, setHotelDetailLoading] = useState(false);
 
-  // SaÄŸ paneldeki ("Sizin iÃ§in bulundu") otel kartlarÄ±ndan seÃ§im yapÄ±ldÄ±ÄŸÄ±nda
-  // Ã§aÄŸrÄ±lÄ±r â€” sohbet iÃ§indeki kart tÄ±klamasÄ±yla aynÄ± davranÄ±ÅŸÄ± (detay panelini
-  // aÃ§ma + TourVisio'dan tam bilgi Ã§ekme) tetikler.
+  // Sağa paneldeki ("Sizin için bulundu") otel kartlarından seçim yapıldığında
+  // çağrılır
   const handleSelectHotelFromPanel = async (result) => {
     const formattedPrice = `${formatPrice(result.price)} ${result.currency || 'TRY'}`;
     setSelectedHotel(result);
@@ -234,7 +233,7 @@ export default function Index() {
           prev && prev.hotelId === result.hotelId ? { ...prev, ...mappedDetail } : prev
         );
       } catch (err) {
-        console.log("Otel detaylarÄ± yÃ¼klenemedi:", err);
+        console.log("Otel detayları yüklenemedi:", err);
       } finally {
         setHotelDetailLoading(false);
       }
@@ -827,7 +826,7 @@ export default function Index() {
 
       {/* Katman 3 (z-20): Ana Ä°Ã§erik AlanÄ± */}
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-transparent z-20">
-        {!isSidebarOpen && (
+        {!isSidebarOpen && (!isRightSidebarOpen || window.innerWidth >= 768) && (
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="absolute top-4 left-4 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
@@ -837,18 +836,19 @@ export default function Index() {
           </button>
         )}
 
-        {!isRightSidebarOpen && isChatActive && hasValidSearch && (
+        {(!isRightSidebarOpen || window.innerWidth < 1024) && (hasValidSearch || selectedHotel || selectedFlight) && (
           <button
-            onClick={() => setIsRightSidebarOpen(true)}
-            className="absolute top-4 right-2 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center"
-            title="Expand Details Panel"
+            onClick={() => setIsRightSidebarOpen(prev => !prev)}
+            className="absolute top-4 right-3 z-30 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md hover:bg-slate-50 dark:hover:bg-slate-800 text-[#FF8A00] dark:text-orange-400 transition-all duration-200 focus:outline-none cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold"
+            title="Rezervasyon Paneli"
           >
             <PanelRightOpen size={18} />
+            <span className="hidden sm:inline">Rezervasyon Detayı</span>
           </button>
         )}
 
         <div
-          className="relative z-20 grid h-full min-w-0 flex-1 gap-0 overflow-hidden"
+          className="relative z-20 flex lg:grid h-full w-full min-w-0 flex-1 gap-0 overflow-hidden"
           style={{
             gridTemplateColumns:
               isChatActive && hasValidSearch && isRightSidebarOpen
@@ -875,7 +875,7 @@ export default function Index() {
                         {t(getGreetingKey(), { username })}
                       </h1>
                     </div>
-                    <p className="text-[#1E232C]/70 dark:text-slate-350 text-sm font-semibold">
+                    <p className="text-[#1E232C]/70 dark:text-slate-300 text-sm font-semibold">
                       {t("ops_subtitle")}
                     </p>
                   </div>
@@ -899,7 +899,7 @@ export default function Index() {
                               onChange={handleTextareaChange}
                               onKeyDown={handleKeyDown}
                               placeholder={t("input_placeholder_welcome")}
-                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
+                              className="w-full pl-3 pr-28 py-2.5 bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none resize-none max-h-32 text-sm leading-relaxed"
                             />
                             <div className="absolute right-2 flex items-center gap-1.5 z-40">
                               <button
@@ -1101,6 +1101,8 @@ export default function Index() {
             <RightSidebar
               isRightSidebarOpen={isRightSidebarOpen}
               setIsRightSidebarOpen={setIsRightSidebarOpen}
+              isSidebarOpen={isSidebarOpen}
+              setIsSidebarOpen={setIsSidebarOpen}
               searchType={searchType}
               bookingDetails={bookingDetails}
               selectedHotel={selectedHotel}

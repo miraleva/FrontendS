@@ -8,29 +8,10 @@ import {
   ShoppingBag, Landmark, Bike, Table2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getHotelImage, handleHotelImageError, DEFAULT_HOTEL_IMAGE } from '../utils/hotelImageUtils';
+import { useFavorites } from './FavoritesContext';
 
-const HOTEL_FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=80",
-];
 
-function getHotelImage(hotel, idx = 0) {
-  if (Array.isArray(hotel?.photos) && hotel.photos.length > 0 && hotel.photos[0]) return hotel.photos[0];
-  if (Array.isArray(hotel?.images) && hotel.images.length > 0 && hotel.images[0]) return hotel.images[0];
-  if (hotel?.thumbnailFull) return hotel.thumbnailFull;
-  if (hotel?.heroImage) return hotel.heroImage;
-  if (hotel?.thumbnailUrl && !hotel.thumbnailUrl.includes("placeholder")) return hotel.thumbnailUrl;
-  if (hotel?.thumbnail) return hotel.thumbnail;
-  if (hotel?.photo) return hotel.photo;
-
-  const charCode = String(hotel?.hotelId || hotel?.id || hotel?.name || idx).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const fallbackIdx = (charCode + idx) % HOTEL_FALLBACK_IMAGES.length;
-  return HOTEL_FALLBACK_IMAGES[fallbackIdx];
-}
 
 function parseHotelDescription(rawDescription) {
   if (!rawDescription) return { cleanAbout: '', importantInfo: [], serviceSummaries: [], cancellationPolicy: [] };
@@ -127,7 +108,7 @@ function getFacilityIcon(name) {
 export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail, onClose, onProceed }) {
   const { t } = useTranslation();
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   // Otel değiştiğinde (yeni bir karta tıklanınca) galeriyi başa sar
   useEffect(() => {
@@ -221,10 +202,10 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
           {t("hoteldetail_back_to_chat", "Sohbete Dön")}
         </button>
         <button
-          onClick={() => setIsFavorite(v => !v)}
+          onClick={() => toggleFavorite(hotel)}
           className="p-2 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-900 transition-colors"
         >
-          <Heart size={18} className={isFavorite ? "fill-rose-500 text-rose-500" : ""} />
+          <Heart size={18} className={isFavorite(hotel) ? "fill-rose-500 text-rose-500" : ""} />
         </button>
       </div>
 
@@ -269,12 +250,7 @@ export default function HotelDetailPanel({ hotel, bookingDetails, loadingDetail,
                       src={photos[photoIndex]}
                       alt={hotel.name || "Hotel"}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        if (e.currentTarget.nextElementSibling) {
-                          e.currentTarget.nextElementSibling.classList.remove('hidden');
-                        }
-                      }}
+                      onError={(e) => handleHotelImageError(e, hotel)}
                     />
                   ) : null}
                   <div className={`absolute inset-0 flex items-center justify-center ${photos.length > 0 ? 'hidden' : ''}`}>

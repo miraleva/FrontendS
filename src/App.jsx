@@ -9,6 +9,7 @@ import SearchChats from "./pages/SearchChats.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import Settings from "./pages/Settings.jsx";
 import Reservation from "./pages/ReservationPage.jsx";
+import FavoritesPage from "./pages/FavoritesPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPassword.jsx";
 import ResetPasswordPage from "./pages/ResetPassword.jsx";
 
@@ -27,6 +28,7 @@ import TourVisioErrors from "./pages/admin/TourVisioErrors.jsx";
 
 import { ThemeProvider } from "./components/ThemeContext.jsx";
 import { AuthProvider, useAuth } from "./components/AuthContext.jsx";
+import { FavoritesProvider } from "./components/FavoritesContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
@@ -66,86 +68,92 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
-            {/* Dark mode ve açık tema için global sarmalayıcı */}
-          <div className="relative min-h-screen w-full bg-white text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-50">
-            <Routes>
-              {/* Ana yönlendirme */}
-              <Route path="/" element={<RootRoute />} />
-              <Route path="/welcome" element={<WelcomePage />} />
+          <FavoritesProvider>
+            <BrowserRouter>
+              {/* Dark mode ve açık tema için global sarmalayıcı */}
+            <div className="relative min-h-screen w-full bg-white text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-50">
+              <Routes>
+                {/* Ana yönlendirme */}
+                <Route path="/" element={<RootRoute />} />
+                <Route path="/welcome" element={<WelcomePage />} />
 
-              {/* Layout dışında açılması gereken sayfalar */}
+                {/* Layout dışında açılması gereken sayfalar */}
 
-              {/* Layout dışında açılması gereken sayfalar */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route
-                path="/forgot-password"
-                element={<ForgotPasswordPage />}
-              />
-              <Route
-                path="/reset-password"
-                element={<ResetPasswordPage />}
-              />
-
-              {/* ADMIN ROTALARI */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
+                {/* Layout dışında açılması gereken sayfalar */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
                 <Route
-                  path="reservations"
-                  element={<Reservations />}
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
                 />
-                <Route path="users" element={<Users />} />
-                <Route path="chats" element={<ChatLogs />} />
-                <Route path="metrics" element={<SystemMetrics />} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="forecaster" element={<Forecaster />} />
-                <Route path="errors" element={<TourVisioErrors />} />
-              </Route>
+                <Route
+                  path="/reset-password"
+                  element={<ResetPasswordPage />}
+                />
 
-              {/* KULLANICI & GUEST ROTALARI (ProtectedRoute) */}
-              <Route element={<ProtectedRoute allowedTypes={['authenticated', 'guest']} />}>
-                <Route element={<MainLayout />}>
-                  <Route path="/chat" element={<ChatbotPage />} />
+                {/* ADMIN ROTALARI */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<Dashboard />} />
                   <Route
-                    path="/chat/search"
-                    element={<SearchChats />}
+                    path="reservations"
+                    element={<Reservations />}
                   />
-                  <Route
-                    path="/documents"
-                    element={<DocumentPagePlaceholder />}
-                  />
-                  <Route
-                    path="/history"
-                    element={<HistoryPagePlaceholder />}
-                  />
-                  <Route
-                    path="/reservation"
-                    element={<Reservation />}
-                  />
+                  <Route path="users" element={<Users />} />
+                  <Route path="chats" element={<ChatLogs />} />
+                  <Route path="metrics" element={<SystemMetrics />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="forecaster" element={<Forecaster />} />
+                  <Route path="errors" element={<TourVisioErrors />} />
                 </Route>
-              </Route>
 
-              {/* SADECE GİRİŞ YAPMIŞ KULLANICI ROTALARI */}
-              <Route element={<ProtectedRoute allowedTypes={['authenticated']} redirectGuestTo="/chat" />}>
-                <Route element={<MainLayout />}>
-                  <Route
-                    path="/past-reservations"
-                    element={<PastAppointments />}
-                  />
-                  <Route
-                    path="/profile"
-                    element={<ProfilePage />}
-                  />
-                  <Route
-                    path="/settings"
-                    element={<Settings />}
-                  />
+                {/* KULLANICI & GUEST ROTALARI (ProtectedRoute) */}
+                <Route element={<ProtectedRoute allowedTypes={['authenticated', 'guest']} />}>
+                  <Route element={<MainLayout />}>
+                    <Route path="/chat" element={<ChatbotPage />} />
+                    <Route
+                      path="/chat/search"
+                      element={<SearchChats />}
+                    />
+                    <Route
+                      path="/favorites"
+                      element={<FavoritesPage />}
+                    />
+                    <Route
+                      path="/documents"
+                      element={<DocumentPagePlaceholder />}
+                    />
+                    <Route
+                      path="/history"
+                      element={<HistoryPagePlaceholder />}
+                    />
+                    <Route
+                      path="/reservation"
+                      element={<Reservation />}
+                    />
+                  </Route>
                 </Route>
-              </Route>
-            </Routes>
-          </div>
-        </BrowserRouter>
+
+                {/* SADECE GİRİŞ YAPMIŞ KULLANICI ROTALARI */}
+                <Route element={<ProtectedRoute allowedTypes={['authenticated']} redirectGuestTo="/chat" />}>
+                  <Route element={<MainLayout />}>
+                    <Route
+                      path="/past-reservations"
+                      element={<PastAppointments />}
+                    />
+                    <Route
+                      path="/profile"
+                      element={<ProfilePage />}
+                    />
+                    <Route
+                      path="/settings"
+                      element={<Settings />}
+                    />
+                  </Route>
+                </Route>
+              </Routes>
+            </div>
+          </BrowserRouter>
+        </FavoritesProvider>
       </AuthProvider>
     </ThemeProvider>
   </ErrorBoundary>

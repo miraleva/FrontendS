@@ -15,7 +15,7 @@ import api from "../services/api";
 export default function SearchChats() {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sessions, setSessions] = useState([]);
@@ -220,8 +220,17 @@ export default function SearchChats() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-y-auto bg-transparent z-20">
+        {!isSidebarOpen && (
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 transition-all cursor-pointer"
+            title="Open Sidebar"
+          >
+            <PanelLeftOpen size={18} />
+          </button>
+        )}
 
-        <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-20 relative">
+        <div className="flex-1 p-4 pt-16 sm:p-6 md:p-10 max-w-4xl mx-auto w-full animate-fade-in z-20 relative">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#0F172A] dark:text-slate-100 font-display mb-2">
               {t('search_chats.title', 'Search Chats')}

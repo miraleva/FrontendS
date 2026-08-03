@@ -156,7 +156,7 @@ export default function OtpModal({
         </div>
 
         {/* OTP Input Boxes */}
-        <div className="mt-6 flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+        <div className="mt-6 flex justify-center gap-1.5 sm:gap-3" onPaste={handlePaste}>
           {code.map((digit, idx) => (
             <input
               key={idx}
@@ -167,7 +167,7 @@ export default function OtpModal({
               value={digit}
               onChange={(e) => handleChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
-              className="h-12 w-11 sm:h-14 sm:w-12 text-center text-xl font-bold rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-800/70 text-slate-900 dark:text-white shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+              className="h-10 w-9 sm:h-14 sm:w-12 text-center text-lg sm:text-xl font-bold rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-800/70 text-slate-900 dark:text-white shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
             />
           ))}
         </div>
