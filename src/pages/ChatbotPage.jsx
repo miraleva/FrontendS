@@ -455,22 +455,73 @@ export default function Index() {
   const username = profileFullNameForGreeting || (email ? (email.includes('@') ? email.split('@')[0] : email) : "User");
 
 
-  // Misafir sohbetini kayıt/giriş sonrasında aynı tarayıcıda devam ettir.
+  // Misafir sohbetini kayıt/giriş sonrasında kullanıcı hesabına bağla ve devam ettir.
   useEffect(() => {
-    if (isGuest || !user || urlSessionId) return;
+    // URL'de sessionId olsa bile claim işlemini atlama.
+    // Giriş sonrası misafir sohbeti ekranda açılabilir; fakat claim edilmezse
+    // /api/chat/sessions listesine girmez ve "Son Sohbetler" bölümünde görünmez.
+    if (isGuest || !user) return;
 
     const pendingGuestSessionId =
       sessionStorage.getItem('pendingGuestSessionId');
 
     if (!pendingGuestSessionId) return;
 
-    setSearchParams(
-      { sessionId: pendingGuestSessionId },
-      { replace: true }
-    );
+    let isCancelled = false;
 
-    sessionStorage.removeItem('pendingGuestSessionId');
-  }, [isGuest, user, urlSessionId, setSearchParams]);
+    const restoreGuestSession = async () => {
+      try {
+        await api.post(
+          `/api/chat/sessions/${pendingGuestSessionId}/claim`
+        );
+
+        if (isCancelled) return;
+
+        // Zaten doğru sohbet açıksa gereksiz URL güncellemesi yapma.
+        if (urlSessionId !== pendingGuestSessionId) {
+          setSearchParams(
+            { sessionId: pendingGuestSessionId },
+            { replace: true }
+          );
+        }
+
+        // Claim başarıyla tamamlandıktan sonra guest/pending değerlerini temizle.
+        sessionStorage.removeItem('pendingGuestSessionId');
+        sessionStorage.removeItem('guestSessionId');
+
+        // ChatSidebar /api/chat/sessions listesini yeniden çeksin.
+        window.dispatchEvent(
+          new Event('chatSessionsUpdated')
+        );
+      } catch (error) {
+        console.error(
+          'Misafir sohbeti kullanıcı hesabına bağlanamadı:',
+          error
+        );
+
+        if (isCancelled) return;
+
+        // Claim başarısız olsa bile mevcut sohbetin ekranda kalmasını sağla.
+        if (urlSessionId !== pendingGuestSessionId) {
+          setSearchParams(
+            { sessionId: pendingGuestSessionId },
+            { replace: true }
+          );
+        }
+      }
+    };
+
+    restoreGuestSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    isGuest,
+    user,
+    urlSessionId,
+    setSearchParams,
+  ]);
 
   const continueAfterAuthentication = (path) => {
     const guestChatSessionId = getGuestSessionId();
