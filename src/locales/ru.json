@@ -341,10 +341,10 @@
   "recent_chat_logs_title": "Последние чат-логи",
   "recent_chat_logs_subtitle": "Вопросы пользователей в реальном времени от Sanny AI",
   "open_chat_center": "Открыть центр чата",
-  "dashboard_menu": "Панель управления",
+  "dashboard_menu": "Общая сводка",
   "reservations_menu": "Бронирования",
   "users_menu": "Пользователи",
-  "chat_logs_menu": "Журналы чатов",
+  "chat_logs_menu": "Логи чатов",
   "tours_menu": "Туры",
   "operations_assistant": "Операционный помощник",
   "services_active": "Сервисы активны",
@@ -502,21 +502,25 @@
   },
   "users_page": {
     "title": "Пользователи",
-    "description": "Просматривайте и управляйте зарегистрированными пользователями.",
-    "search_placeholder": "Поиск по имени пользователя или электронной почте...",
-    "role_label": "Роль",
-    "reservation_label": "Бронирования",
-    "make_inactive": "Деактивировать пользователя",
-    "make_active": "Активировать пользователя",
-    "not_found": "Пользователи не найдены.",
+    "description": "Управление всеми учетными записями пользователей и ролями в системе.",
+    "search_placeholder": "Поиск по имени или email...",
     "status": {
       "active": "Активен",
       "inactive": "Неактивен"
     },
+    "role_label": "Роль",
     "roles": {
       "admin": "Администратор",
       "user": "Пользователь"
-    }
+    },
+    "reservation_label": "Бронирование",
+    "last_login": "Последний вход",
+    "last_logout": "Последний выход",
+    "make_inactive": "Приостановить учетную запись",
+    "make_active": "Активировать учетную запись",
+    "access_denied": "У вас нет прав для просмотра этих данных. Пожалуйста, войдите с учетной записью администратора.",
+    "load_error": "Произошла ошибка при получении списка пользователей. Пожалуйста, попробуйте позже.",
+    "status_toggle_error": "Не удалось обновить статус пользователя. Пожалуйста, попробуйте еще раз."
   },
   "chat_logs_page": {
     "title": "Журналы чатов",
@@ -860,43 +864,33 @@
   "favorites_clear_all": "Очистить все",
   "favorites_inspect": "Обзор",
   "favorites_price": "Цена",
-  "dashboard_menu": "Общая сводка",
   "system_metrics_menu": "Системные метрики",
   "analytics_menu": "Аналитика",
   "forecaster_menu": "AI Прогноз и Риск",
   "errors_menu": "Ошибки TourVisio",
-  "reservations_menu": "Бронирования",
-  "users_menu": "Пользователи",
-  "chat_logs_menu": "Логи чатов",
   "admin_panel_title": "Панель администратора",
   "change_language": "Сменить язык",
   "light_mode": "Светлый режим",
   "dark_mode": "Темный режим",
   "logout": "Выйти",
-  "users_page": {
-    "title": "Пользователи",
-    "description": "Управление всеми учетными записями пользователей и ролями в системе.",
-    "search_placeholder": "Поиск по имени или email...",
-    "status": {
-      "active": "Активен",
-      "inactive": "Неактивен"
-    },
-    "role_label": "Роль",
-    "roles": {
-      "admin": "Администратор",
-      "user": "Пользователь"
-    },
-    "reservation_label": "Бронирование",
-    "last_login": "Последний вход",
-    "last_logout": "Последний выход",
-    "make_inactive": "Приостановить учетную запись",
-    "make_active": "Активировать учетную запись",
-    "access_denied": "У вас нет прав для просмотра этих данных. Пожалуйста, войдите с учетной записью администратора.",
-    "load_error": "Произошла ошибка при получении списка пользователей. Пожалуйста, попробуйте позже.",
-    "status_toggle_error": "Не удалось обновить статус пользователя. Пожалуйста, попробуйте еще раз."
-  },
   "tourvisio_errors_page": {
     "title": "Ошибки интеграции TourVisio",
     "description": "Задержки внешней интеграции TourVisio XML/JSON и журналы ошибок подключения."
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "loading": "Загрузка уведомлений...",
+    "empty": "У вас пока нет уведомлений.",
+    "allRead": "Все уведомления прочитаны",
+    "markAllRead": "Отметить все как прочитанные",
+    "close": "Закрыть панель уведомлений",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "noneNew": "Новых уведомлений нет",
+    "itemFallbackTitle": "Уведомление",
+    "unreadCount_one": "{{count}} непрочитанное уведомление",
+    "unreadCount_few": "{{count}} непрочитанных уведомления",
+    "unreadCount_many": "{{count}} непрочитанных уведомлений",
+    "unreadCount_other": "{{count}} непрочитанных уведомлений"
   }
 }

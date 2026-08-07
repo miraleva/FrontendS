@@ -15,7 +15,10 @@ import {
   Sun,
   Moon,
   LogIn,
-  Heart
+  Heart,
+  Bell,
+  Plane,
+  Building2
 } from 'lucide-react';
 import SannyLogo from './SannyLogo';
 import LanguageSelector from './LanguageSelector';
@@ -47,6 +50,183 @@ export default function ChatSidebar({
   const [sessionToDelete, setSessionToDelete] = useState(null);
 
   const [sessions, setSessions] = useState([]);
+
+  // Bildirim merkezi
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+
+  const fetchNotifications = async () => {
+    if (isGuest) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    setIsNotificationsLoading(true);
+    try {
+      const [notificationsResponse, unreadResponse] = await Promise.all([
+        api.get('/api/notifications'),
+        api.get('/api/notifications/unread-count'),
+      ]);
+
+      const notificationList = Array.isArray(notificationsResponse.data)
+        ? notificationsResponse.data
+        : [];
+
+      setNotifications(notificationList);
+
+      // Liste ile rozet/metin her zaman aynı durumu göstersin.
+      // Sunucudan gelen count ile listedeki unread sayısı uyuşmazsa,
+      // kullanıcının ekranda gördüğü listeyi esas alıyoruz.
+      const listUnreadCount = notificationList.filter(
+        (notification) => !notification.isRead
+      ).length;
+
+      const serverUnreadCount = Number(unreadResponse.data?.count || 0);
+
+      setUnreadCount(
+        notificationList.length > 0
+          ? listUnreadCount
+          : serverUnreadCount
+      );
+    } catch (err) {
+      console.error('Bildirimler alınamadı:', err);
+    } finally {
+      setIsNotificationsLoading(false);
+    }
+  };
+
+  const markNotificationAsRead = async (notification) => {
+    if (!notification || notification.isRead) return;
+
+    try {
+      await api.put(`/api/notifications/${notification.id}/read`);
+      setNotifications((current) =>
+        current.map((item) =>
+          item.id === notification.id ? { ...item, isRead: true } : item
+        )
+      );
+      setUnreadCount((current) => Math.max(0, current - 1));
+    } catch (err) {
+      console.error('Bildirim okundu olarak işaretlenemedi:', err);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    if (unreadCount === 0) return;
+
+    try {
+      await api.put('/api/notifications/read-all');
+      setNotifications((current) =>
+        current.map((item) => ({ ...item, isRead: true }))
+      );
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Bildirimler okundu olarak işaretlenemedi:', err);
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification) return;
+
+    await markNotificationAsRead(notification);
+
+    const combinedText = `${notification.title || ''} ${notification.message || ''}`;
+
+    const reservationMatch = combinedText.match(
+      /(RES-[A-Z0-9-]+|RSV-[A-Z0-9-]+)/i
+    );
+
+    if (reservationMatch?.[1]) {
+      setIsNotificationsOpen(false);
+
+      navigate('/past-reservations', {
+        state: {
+          highlightPnr: reservationMatch[1],
+        },
+      });
+    }
+  };
+
+  const formatNotificationTime = (value) => {
+    if (!value) return '';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const now = new Date();
+
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+    const startOfNotificationDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+
+    const dayDifference = Math.round(
+      (startOfToday - startOfNotificationDay) / (1000 * 60 * 60 * 24)
+    );
+
+    const time = date.toLocaleTimeString('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    if (dayDifference === 0) {
+      return `${t('notifications.today', 'Bugün')} • ${time}`;
+    }
+
+    if (dayDifference === 1) {
+      return `${t('notifications.yesterday', 'Dün')} • ${time}`;
+    }
+
+    const dateLabel = date.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+    });
+
+    return `${dateLabel} • ${time}`;
+  };
+
+  const getNotificationVisual = (notification) => {
+    const text = `${notification?.title || ''} ${notification?.message || ''}`.toLocaleLowerCase('tr-TR');
+
+    if (
+      text.includes('uçuş') ||
+      text.includes('ucus') ||
+      text.includes('flight')
+    ) {
+      return {
+        Icon: Plane,
+        iconClass:
+          'bg-sky-50 text-sky-600 border-sky-100 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/60',
+      };
+    }
+
+    if (
+      text.includes('otel') ||
+      text.includes('hotel')
+    ) {
+      return {
+        Icon: Building2,
+        iconClass:
+          'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/60',
+      };
+    }
+
+    return {
+      Icon: Bell,
+      iconClass:
+        'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60',
+    };
+  };
 
   const fetchSessions = async () => {
     // Misafirlik bilgisini localStorage/sessionStorage yerine AuthContext'ten al.
@@ -113,6 +293,21 @@ export default function ChatSidebar({
         "chatSessionsUpdated",
         refreshSessions
       );
+    };
+  }, [isGuest, user?.id, user?.email]);
+
+  useEffect(() => {
+    fetchNotifications();
+
+    if (isGuest) return undefined;
+
+    const refreshNotifications = () => fetchNotifications();
+    const intervalId = window.setInterval(refreshNotifications, 30000);
+    window.addEventListener('notificationsUpdated', refreshNotifications);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('notificationsUpdated', refreshNotifications);
     };
   }, [isGuest, user?.id, user?.email]);
 
@@ -397,6 +592,130 @@ export default function ChatSidebar({
               )}
             </div>
           </div>
+
+          {/* Bildirim Merkezi — Misafirlere gösterilmez */}
+          {!isGuest && (
+            <div className="relative flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNotificationsOpen((current) => !current);
+                  if (!isNotificationsOpen) fetchNotifications();
+                }}
+                className="relative p-2 rounded-lg text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-orange-400 transition-colors focus:outline-none cursor-pointer"
+                title={t('notifications.title', 'Bildirimler')}
+                aria-label={t('notifications.title', 'Bildirimler')}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-extrabold leading-none text-white shadow">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && createPortal(
+                <>
+                  <button
+                    type="button"
+                    aria-label={t('notifications.close', 'Bildirim panelini kapat')}
+                    onClick={() => setIsNotificationsOpen(false)}
+                    className="fixed inset-0 z-[80] cursor-default bg-transparent"
+                  />
+
+                  <div className="fixed bottom-16 left-3 z-[90] w-[calc(100vw-24px)] max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3.5 dark:border-slate-800">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
+                            <Bell size={15} />
+                          </span>
+                          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                            {t('notifications.title', 'Bildirimler')}
+                          </h3>
+                        </div>
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          {unreadCount > 0
+                            ? t('notifications.unreadCount', '{{count}} okunmamış bildirim', { count: unreadCount })
+                            : notifications.length > 0
+                              ? t('notifications.allRead', 'Tüm bildirimler okundu')
+                              : t('notifications.noneNew', 'Yeni bildiriminiz yok')}
+                        </p>
+                      </div>
+
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={markAllNotificationsAsRead}
+                          className="text-[11px] font-bold text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {t('notifications.markAllRead', 'Tümünü okundu yap')}
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-[360px] overflow-y-auto">
+                      {isNotificationsLoading && notifications.length === 0 ? (
+                        <p className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                          {t('notifications.loading', 'Bildirimler yükleniyor...')}
+                        </p>
+                      ) : notifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center">
+                          <Bell size={24} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            {t('notifications.empty', 'Henüz bildiriminiz yok.')}
+                          </p>
+                        </div>
+                      ) : (
+                        notifications.map((notification) => {
+                          const visual = getNotificationVisual(notification);
+                          const NotificationIcon = visual.Icon;
+
+                          return (
+                            <button
+                              type="button"
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`group flex w-full gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 dark:border-slate-800 ${notification.isRead
+                                ? 'bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/70'
+                                : 'bg-blue-50/45 hover:bg-blue-50/80 dark:bg-blue-950/15 dark:hover:bg-blue-950/25'
+                                }`}
+                            >
+                              <span
+                                className={`relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${visual.iconClass}`}
+                              >
+                                <NotificationIcon size={17} />
+
+                                {!notification.isRead && (
+                                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-500 dark:border-slate-900" />
+                                )}
+                              </span>
+
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[12px] font-extrabold leading-4 text-slate-900 dark:text-slate-100">
+                                  {notification.title || t('notifications.itemFallbackTitle', 'Bildirim')}
+                                </span>
+
+                                <span className="mt-1.5 block text-[11px] leading-[17px] text-slate-600 dark:text-slate-400">
+                                  {notification.message}
+                                </span>
+
+                                <span className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                                  <Clock size={11} />
+                                  {formatNotificationTime(notification.createdAt)}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </>,
+                document.body
+              )}
+            </div>
+          )}
 
           {/* Dil Seçimi (LanguageSelector - Dropup) */}
           <LanguageSelector direction="up" className="relative" align="left" />

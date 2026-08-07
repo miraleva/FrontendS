@@ -258,25 +258,61 @@ export default function Settings() {
     const [showSessions, setShowSessions] = useState(false);
 
     useEffect(() => {
-        async function fetchProfile() {
+        let isCancelled = false;
+
+        async function fetchSettingsData() {
             try {
-                const response = await api.get("/api/profile");
-                if (response.data) {
-                    const is2fa = response.data.isTwoFactorEnabled === true;
-                    updateSection("security", "twoFactorEnabled", is2fa);
-                    setSavedSettings(prev => ({
-                        ...prev,
-                        security: {
-                            ...prev.security,
-                            twoFactorEnabled: is2fa
-                        }
-                    }));
-                }
+                const [profileResponse, notificationResponse] = await Promise.all([
+                    api.get("/api/profile"),
+                    api.get("/api/profile/notification-settings"),
+                ]);
+
+                if (isCancelled) return;
+
+                const is2fa = profileResponse.data?.isTwoFactorEnabled === true;
+                const notificationData = notificationResponse.data || {};
+
+                setSettings((prev) => ({
+                    ...prev,
+                    notifications: {
+                        ...prev.notifications,
+                        ...notificationData,
+                    },
+                    security: {
+                        ...prev.security,
+                        twoFactorEnabled: is2fa,
+                    },
+                }));
+
+                setSavedSettings((prev) => ({
+                    ...prev,
+                    notifications: {
+                        ...prev.notifications,
+                        ...notificationData,
+                    },
+                    security: {
+                        ...prev.security,
+                        twoFactorEnabled: is2fa,
+                    },
+                }));
+
+                localStorage.setItem(
+                    "notificationSettings",
+                    JSON.stringify({
+                        ...DEFAULT_SETTINGS.notifications,
+                        ...notificationData,
+                    })
+                );
             } catch (err) {
-                console.error("Failed to fetch profile in Settings:", err);
+                console.error("Ayarlar backend'den yüklenemedi:", err);
             }
         }
-        fetchProfile();
+
+        fetchSettingsData();
+
+        return () => {
+            isCancelled = true;
+        };
     }, []);
 
     const videoRef = useRef(null);
@@ -420,6 +456,13 @@ export default function Settings() {
             if (settings.security.twoFactorEnabled !== savedSettings.security.twoFactorEnabled) {
                 await api.put("/api/profile/two-factor", { enabled: settings.security.twoFactorEnabled });
             }
+
+            // Bildirim tercihlerini kullanıcı hesabına kaydet.
+            // Böylece farklı cihazdan giriş yapıldığında da aynı tercihler yüklenir.
+            await api.put(
+                "/api/profile/notification-settings",
+                settings.notifications
+            );
 
             const settingsToSave = JSON.parse(JSON.stringify(settings));
             localStorage.setItem(STORAGE_KEY, JSON.stringify(settingsToSave));

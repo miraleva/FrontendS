@@ -340,7 +340,7 @@
   "recent_chat_logs_title": "Son Sohbet Kayıtları",
   "recent_chat_logs_subtitle": "Sanny AI'dan canlı kullanıcı soruları",
   "open_chat_center": "Sohbet Merkezi'ni Aç",
-  "dashboard_menu": "Kontrol Paneli",
+  "dashboard_menu": "Genel Özet",
   "reservations_menu": "Rezervasyonlar",
   "users_menu": "Kullanıcılar",
   "chat_logs_menu": "Sohbet Kayıtları",
@@ -504,21 +504,25 @@
   "sidebar_history": "Geçmiş İşlemler",
   "users_page": {
     "title": "Kullanıcılar",
-    "description": "Sisteme kayıtlı kullanıcıları görüntüleyin ve yönetin.",
-    "search_placeholder": "Kullanıcı adı veya e-posta ara...",
-    "role_label": "Rol",
-    "reservation_label": "Rezervasyon",
-    "make_inactive": "Kullanıcıyı Pasif Yap",
-    "make_active": "Kullanıcıyı Aktif Yap",
-    "not_found": "Kullanıcı bulunamadı.",
+    "description": "Sistemdeki tüm kullanıcı kayıtlarını ve rollerini yönetin.",
+    "search_placeholder": "Kullanıcı adı veya e-posta ile ara...",
     "status": {
       "active": "Aktif",
-      "inactive": "Pasif"
+      "inactive": "İnaktif"
     },
+    "role_label": "Rol",
     "roles": {
-      "admin": "Admin",
+      "admin": "Yönetici",
       "user": "Kullanıcı"
-    }
+    },
+    "reservation_label": "Rezervasyon",
+    "last_login": "Son Giriş",
+    "last_logout": "Son Çıkış",
+    "make_inactive": "Hesabı Askıya Al",
+    "make_active": "Hesabı Aktifleştir",
+    "access_denied": "Bu verileri görüntülemek için yetkiniz bulunmamaktadır. Lütfen yönetici hesabıyla giriş yapın.",
+    "load_error": "Kullanıcı listesi alınırken bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.",
+    "status_toggle_error": "Kullanıcı durumu güncellenemedi. Lütfen tekrar deneyin."
   },
   "chat_logs_page": {
     "title": "Sohbet Kayıtları",
@@ -861,43 +865,31 @@
   "favorites_clear_all": "Tümünü Temizle",
   "favorites_inspect": "İncele",
   "favorites_price": "Fiyat",
-  "dashboard_menu": "Genel Özet",
   "system_metrics_menu": "Sistem Metrikleri",
   "analytics_menu": "Analitik",
   "forecaster_menu": "AI Tahmin & Risk",
   "errors_menu": "TourVisio Hataları",
-  "reservations_menu": "Rezervasyonlar",
-  "users_menu": "Kullanıcılar",
-  "chat_logs_menu": "Sohbet Kayıtları",
   "admin_panel_title": "Admin Paneli",
   "change_language": "Dil değiştir",
   "light_mode": "Açık moda geç",
   "dark_mode": "Karanlık moda geç",
   "logout": "Çıkış yap",
-  "users_page": {
-    "title": "Kullanıcılar",
-    "description": "Sistemdeki tüm kullanıcı kayıtlarını ve rollerini yönetin.",
-    "search_placeholder": "Kullanıcı adı veya e-posta ile ara...",
-    "status": {
-      "active": "Aktif",
-      "inactive": "İnaktif"
-    },
-    "role_label": "Rol",
-    "roles": {
-      "admin": "Yönetici",
-      "user": "Kullanıcı"
-    },
-    "reservation_label": "Rezervasyon",
-    "last_login": "Son Giriş",
-    "last_logout": "Son Çıkış",
-    "make_inactive": "Hesabı Askıya Al",
-    "make_active": "Hesabı Aktifleştir",
-    "access_denied": "Bu verileri görüntülemek için yetkiniz bulunmamaktadır. Lütfen yönetici hesabıyla giriş yapın.",
-    "load_error": "Kullanıcı listesi alınırken bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.",
-    "status_toggle_error": "Kullanıcı durumu güncellenemedi. Lütfen tekrar deneyin."
-  },
   "tourvisio_errors_page": {
     "title": "TourVisio Entegrasyon Hataları",
     "description": "TourVisio XML/JSON dış servis entegrasyonu gecikme süreleri ve bağlantı hata logları."
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "loading": "Bildirimler yükleniyor...",
+    "empty": "Henüz bildiriminiz yok.",
+    "allRead": "Tüm bildirimler okundu",
+    "markAllRead": "Tümünü okundu yap",
+    "close": "Bildirim panelini kapat",
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "noneNew": "Yeni bildiriminiz yok",
+    "itemFallbackTitle": "Bildirim",
+    "unreadCount_one": "{{count}} okunmamış bildirim",
+    "unreadCount_other": "{{count}} okunmamış bildirim"
   }
 }
